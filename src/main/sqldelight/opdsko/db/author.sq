@@ -1,0 +1,70 @@
+import java.time.LocalDateTime;
+
+CREATE TABLE author
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT ,
+    fb2id       TEXT,
+    first_name  TEXT,
+    middle_name TEXT,
+    last_name   TEXT,
+    nickname    TEXT,
+    added       TEXT AS LocalDateTime NOT NULL
+);
+
+CREATE INDEX author_added ON author (added);
+
+CREATE INDEX author_fb2id
+    ON author (fb2id);
+
+CREATE INDEX author_first_name
+    ON author (first_name);
+
+CREATE INDEX author_last_name_first_name_middle_name
+    ON author (last_name, first_name, middle_name);
+
+CREATE INDEX author_middle_name
+    ON author (middle_name);
+
+findByNames:
+SELECT id FROM author
+WHERE (lower(last_name)=lower(trim(:lastName)) OR (last_name ISNULL AND :lastName ISNULL ))
+    AND (lower(first_name)=lower(trim(:firstName)) OR (first_name ISNULL AND :firstName ISNULL ))
+    AND (lower(middle_name)=lower(trim(:middleName)) OR (middle_name ISNULL AND :middleName ISNULL ))
+    AND (lower(nickname)=lower(trim(:nickname)) OR (nickname ISNULL AND :nickname ISNULL ));
+
+create:
+INSERT INTO author(fb2id,first_name,middle_name,last_name,nickname,added)
+VALUES (?,?,?,?,?,?);
+
+byId:
+SELECT * FROM author WHERE id=?;
+
+latestUpdate:
+SELECT book.added
+FROM book_author
+INNER JOIN book ON book.id=book_author.book_id
+WHERE book_author.author_id=?
+ORDER BY book.added DESC
+LIMIT 1;
+
+hasSeries:
+SELECT book.id
+FROM book_author
+INNER JOIN book ON book.id=book_author.book_id
+WHERE book_author.author_id=?
+    AND book.sequence IS NOT NULL
+LIMIT 1;
+
+seriesNames:
+SELECT book.sequence
+FROM book
+INNER JOIN book_author ON book.id=book_author.book_id
+WHERE book_author.author_id=? AND book.sequence IS NOT NULL;
+
+allSeriesLastUpdate:
+SELECT book.added
+FROM book
+INNER JOIN book_author ON book.id=book_author.book_id
+WHERE book_author.author_id=? AND book.sequence IS NOT NULL
+ORDER BY book.added DESC
+LIMIT 1;

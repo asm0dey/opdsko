@@ -1,0 +1,8 @@
+CREATE TABLE version (
+current INTEGER NOT NULL PRIMARY KEY
+);
+
+INSERT INTO version(current) VALUES (0);
+
+currentVersion:
+SELECT current FROM version LIMIT 1;

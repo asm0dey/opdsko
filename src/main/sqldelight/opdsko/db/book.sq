@@ -1,0 +1,71 @@
+import java.time.LocalDateTime;
+
+CREATE TABLE book
+(
+    id              INTEGER PRIMARY KEY AUTOINCREMENT ,
+    path            TEXT NOT NULL UNIQUE ,
+    name            TEXT NOT NULL ,
+    date            TEXT,
+    added           TEXT AS LocalDateTime NOT NULL DEFAULT CURRENT_TIMESTAMP ,
+    sequence        TEXT,
+    sequence_number INTEGER,
+    lang            TEXT
+);
+
+CREATE INDEX book_added ON book (added);
+CREATE UNIQUE INDEX book_path ON book (path);
+CREATE UNIQUE INDEX book_path_name ON book (path, name);
+
+getPathById:
+SELECT path FROM book WHERE id=?;
+
+findBookByPathAndId:
+SELECT id FROM book WHERE id=:id AND path=:path;
+
+findBookByPathAndName:
+SELECT id FROM book WHERE name=? AND path=?;
+
+getGenresById:
+SELECT genre.name FROM book
+INNER JOIN book_genre ON book_genre.book_id = book.id
+INNER JOIN genre ON genre.id=book_genre.genre_id
+WHERE book.id=?;
+
+deleteBookByPath:
+DELETE FROM book WHERE path=?;
+
+createBook:
+INSERT INTO book(path,name,date,added,sequence,sequence_number,lang) VALUES (?,?,?,?,?,?,?);
+
+idByPath:
+SELECT id FROM book WHERE path=?;
+
+lastUpdate:
+SELECT added FROM book ORDER BY added DESC LIMIT 1;
+
+lastN:
+SELECT *
+FROM book
+ORDER BY added DESC
+LIMIT :amount;
+
+pathsByIds:
+SELECT id, path
+FROM book
+WHERE id IN ?;
+
+allByAuthorId:
+SELECT book.*
+FROM book
+INNER JOIN book_author ON book_author.book_id=book.id
+WHERE book_author.author_id=?
+ORDER BY book.name;
+
+booksWithAuthorsAndGenres:
+SELECT book.*, genre.*, author.*
+FROM book
+LEFT JOIN book_author ON book.id=book_author.book_id
+INNER JOIN author ON book_author.author_id=author.id
+LEFT JOIN book_genre ON book_genre.book_id=genre_id
+INNER JOIN genre ON book_genre.genre_id=genre.id
+WHERE book.id IN ?;

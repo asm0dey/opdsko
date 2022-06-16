@@ -1,0 +1,22 @@
+CREATE TABLE book_genre (
+book_id INTEGER NOT NULL REFERENCES book,
+genre_id INTEGER NOT NULL REFERENCES genre,
+    CONSTRAINT pk_book_genre
+        PRIMARY KEY (book_id, genre_id)
+
+);
+
+CREATE INDEX book_genre_book_id
+    ON book_genre (book_id);
+
+CREATE INDEX book_genre_genre_id
+    ON book_genre (genre_id);
+
+create:
+INSERT INTO book_genre VALUES ?;
+
+booksGenres:
+SELECT book_genre.book_id,genre.name
+FROM book_genre
+INNER JOIN genre ON book_genre.genre_id=genre.id
+WHERE book_genre.book_id IN ?;
