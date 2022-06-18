@@ -1,14 +1,19 @@
+import org.jetbrains.kotlin.cli.jvm.main
+import org.jooq.meta.jaxb.ForcedType
+import org.jooq.meta.jaxb.Logging
+
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
+val tinylog_version: String by project
 
 plugins {
     java
     application
     kotlin("jvm") version "1.7.0"
     kotlin("plugin.serialization") version "1.7.0"
-    id("com.squareup.sqldelight") version "1.5.3"
     id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("nu.studer.jooq") version "7.1.1"
 }
 
 group = "io.github.asm0dey"
@@ -34,19 +39,22 @@ dependencies {
     implementation("io.ktor:ktor-server-resources:$ktor_version")
     implementation("io.ktor:ktor-server-metrics-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
-    implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("org.redundent:kotlin-xml-builder:1.7.4")
-    implementation("com.github.ajalt.clikt:clikt:3.4.2")
     implementation("com.sun.xml.bind:jaxb-impl:2.3.6")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+    jooqGenerator("org.xerial:sqlite-jdbc:3.36.0.3")
     implementation("org.jsoup:jsoup:1.15.1")
     implementation("commons-codec:commons-codec:1.15")
-    implementation("com.squareup.sqldelight:sqlite-driver:1.5.3")
-    implementation("com.squareup.sqldelight:coroutines-extensions:1.5.3")
-    implementation("org.tinylog:tinylog-api-kotlin:2.5.0-M2")
-    implementation("org.tinylog:tinylog-impl:2.5.0-M2")
+    implementation("org.tinylog:tinylog-api-kotlin:$tinylog_version")
+    implementation("org.tinylog:slf4j-tinylog:$tinylog_version")
+    implementation("org.tinylog:tinylog-impl:$tinylog_version")
+    implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.84.2")
+    implementation("io.github.pdvrieze.xmlutil:ktor:0.84.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-xml:$ktor_version")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+    implementation("org.flywaydb:flyway-core:8.5.13")
+
 
 }
 
@@ -56,18 +64,57 @@ configure<SourceSetContainer> {
     }
 }
 
-sqldelight {
-    database("OpdsDb") {
-        packageName = "opdsko.db"
-        dialect = "sqlite:3.25"
-    }
-}
-
 kotlin {
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(11))
     }
 }
 
+jooq {
+    configurations {
+        create("main") {
+            jooqConfiguration.apply {
 
-
+                logging = Logging.WARN
+                jdbc.apply {
+                    url = "jdbc:sqlite:referencedb/opds.db"
+                }
+                generator.apply {
+                    generate.apply {
+                        isDeprecated = false
+                        isRecords = true
+                        isImmutablePojos = true
+                        isFluentSetters = true
+                        isJavaTimeTypes = true
+                        isImmutableInterfaces = true
+                        isDaos = true
+                    }
+                    target.apply {
+                        packageName = "io.github.asm0dey.opdsko.jooq"
+                        directory = "src/main/java"
+                    }
+                    database.apply {
+                        forcedTypes.addAll(
+                            listOf(
+                                ForcedType().apply {
+                                    name = "TIMESTAMP"
+                                    includeExpression = ".*\\.added"
+                                },
+                                ForcedType().apply {
+                                    name = "BIGINT"
+                                    includeExpression = ".*\\.id"
+                                },
+                                ForcedType().apply {
+                                    name = "BIGINT"
+                                    includeExpression = ".*\\..*_id"
+                                },
+                            )
+                        )
+                        excludes = "gen_.*"
+                        isIncludeExcludeColumns = true
+                    }
+                }
+            }
+        }
+    }
+}

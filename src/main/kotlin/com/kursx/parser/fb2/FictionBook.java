@@ -6,12 +6,14 @@ import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
 import org.jsoup.parser.Parser;
 import org.tinylog.Logger;
+import org.tinylog.TaggedLogger;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,6 +25,7 @@ import java.util.*;
 
 public class FictionBook {
 
+    public static final TaggedLogger FB2_LOGGER = Logger.tag("FB2");
     protected Xmlns[] xmlns;
     protected Description description;
     protected List<Body> bodies = new ArrayList<>();
@@ -33,8 +36,7 @@ public class FictionBook {
     public FictionBook() {
     }
 
-    public FictionBook(File file) {
-        Logger.tag("fb2").info(() -> "Processing " + file.getAbsolutePath());
+    public FictionBook(File file) throws XMLStreamException, IOException, ParserConfigurationException {
         Document doc;
         try {
             String inferred = XMLInputFactory.newInstance().createXMLStreamReader(new FileReader(file)).getCharacterEncodingScheme();
@@ -51,10 +53,10 @@ public class FictionBook {
                     foundIllegalCharacters = true;
                 }
             } catch (Exception e) {
-                Logger.tag("fb2").error(e);
+                FB2_LOGGER.error(e);
             }
             if (foundIllegalCharacters) {
-                Logger.tag("fb2").debug(() -> "Found illegal characters in " + file.getAbsolutePath());
+                FB2_LOGGER.debug(() -> "Found illegal characters in " + file.getAbsolutePath());
                 StringBuilder text = new StringBuilder();
                 br = new BufferedReader(new FileReader(file));
                 String line = br.readLine();
@@ -67,23 +69,24 @@ public class FictionBook {
                 }
                 br.close();
                 try {
-                    Logger.tag("fb2").debug(() -> "Parsing " + file.getAbsolutePath() + " without explicitly specified encoding");
+                    FB2_LOGGER.debug(() -> "Parsing " + file.getAbsolutePath() + " without explicitly specified encoding");
                     doc = db.parse(new InputSource(new StringReader(text.toString())));
                 } catch (SAXException sax) {
-                    Logger.tag("fb2").debug(() -> "Parsing " + file.getAbsolutePath() + " filed, falling back to Jsoup");
+                    FB2_LOGGER.warn(sax, () -> "Parsing " + file.getAbsolutePath() + " filed, falling back to Jsoup");
                     doc = W3CDom.convert(Jsoup.parse(file, encoding, "https://yandex.ru", Parser.xmlParser()));
                 }
             } else {
                 try {
-                    Logger.tag("fb2").debug(() -> "Parsing " + file.getAbsolutePath() + " with encoding " + encoding);
+                    FB2_LOGGER.debug(() -> "Parsing " + file.getAbsolutePath() + " with encoding " + encoding);
                     doc = db.parse(new InputSource(new InputStreamReader(inputStream, encoding)));
                 } catch (SAXException sax) {
-                    Logger.tag("fb2").debug(() -> "Parsing " + file.getAbsolutePath() + " filed, falling back to Jsoup");
+                    FB2_LOGGER.warn(sax, () -> "Parsing " + file.getAbsolutePath() + " filed, falling back to Jsoup");
                     doc = W3CDom.convert(Jsoup.parse(file, encoding, "https://yandex.ru", Parser.xmlParser()));
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Error while processing " + file.getAbsolutePath(), e);
+        } catch (IOException | ParserConfigurationException | XMLStreamException e) {
+            FB2_LOGGER.error(e, () -> "Error while processing " + file.getAbsolutePath());
+            throw e;
         }
         initXmlns(doc);
         description = new Description(doc);
@@ -98,7 +101,7 @@ public class FictionBook {
             try {
                 binaries.put(binary1.getId().replace("#", ""), binary1);
             } catch (Exception e) {
-                Logger.tag("fb2").error(e, () -> "Invalid binary " + binary1 + " in file " + file.getAbsolutePath());
+                FB2_LOGGER.error(e, () -> "Invalid binary " + binary1 + " in file " + file.getAbsolutePath());
             }
         }
     }
