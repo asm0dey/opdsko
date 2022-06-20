@@ -5,8 +5,9 @@ import nl.adaptivity.xmlutil.serialization.XmlChildrenName
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
 
-val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+val dtf = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 const val NAVIGATION_TYPE = "application/atom+xml;profile=opds-catalog;kind=navigation"
 const val ACQUISITION_TYPE = "application/atom+xml;profile=opds-catalog;kind=acquisition"
 
@@ -70,7 +71,7 @@ data class NavFeed(
         @XmlSerialName("category", "http://www.w3.org/2005/Atom", "atom")
         data class XCategory(
             @XmlElement(false) @XmlSerialName("term", "", "") val term: String,
-            @XmlElement(false) @XmlSerialName("term", "", "") val label: String = term,
+            @XmlElement(false) @XmlSerialName("label", "", "") val label: String = term,
         )
     }
 }

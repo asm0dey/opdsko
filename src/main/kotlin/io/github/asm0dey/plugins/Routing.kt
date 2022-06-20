@@ -2,34 +2,41 @@ package io.github.asm0dey.plugins
 
 import com.kursx.parser.fb2.Binary
 import com.kursx.parser.fb2.FictionBook
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.github.asm0dey.*
 import io.github.asm0dey.opdsko.jooq.Tables.*
 import io.github.asm0dey.opdsko.jooq.tables.Book
-import io.github.asm0dey.opdsko.jooq.tables.daos.AuthorDao
 import io.github.asm0dey.opdsko.jooq.tables.interfaces.IAuthor
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
-import io.ktor.http.*
+import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
 import io.ktor.http.ContentDisposition.Companion.Attachment
 import io.ktor.http.ContentDisposition.Parameters.FileName
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders.ContentDisposition
 import io.ktor.server.application.*
 import io.ktor.server.http.content.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.future.await
 import org.apache.commons.codec.binary.Base64
-import org.jooq.Record1
-import org.jooq.Record4
-import org.jooq.Result
+import org.jooq.*
+import org.jooq.conf.Settings
 import org.jooq.impl.DSL.*
+import org.jooq.impl.DefaultExecuteListener
+import org.jooq.impl.DefaultExecuteListenerProvider
+import org.tinylog.kotlin.Logger
 import java.io.File
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.Charset
-import java.sql.Timestamp
 import java.text.StringCharacterIterator
 import java.time.LocalDateTime
-import java.util.*
+import java.time.LocalDateTime.now
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.util.concurrent.CompletionStage
 import kotlin.math.abs
 import kotlin.math.sign
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Author as AuthorPojo
@@ -66,7 +73,10 @@ fun Application.routes() {
                             ContentDisposition,
                             Attachment.withParameter(FileName, "$bookId.fb2").toString()
                         )
-                        call.respondBytes(File(bookPath(bookId)).readBytes(), ContentType.parse("application/fb2"))
+                        call.respondBytes(
+                            File(bookPath(bookId).await().single().value1()).readBytes(),
+                            ContentType.parse("application/fb2")
+                        )
                     }
                 }
                 route("/author") {
@@ -74,7 +84,7 @@ fun Application.routes() {
                         val path = call.request.path()
                         val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", Charset.defaultCharset())
                         val trim = nameStart.length < 5
-                        val items = authorNameStarts(nameStart, trim)
+                        val items = authorNameStarts(nameStart, trim).await().map { it.component1() to it.component2() }
                         call.respond(authorCatalogue(nameStart, path, items, trim))
                     }
                     route("/browse") {
@@ -117,13 +127,13 @@ fun Application.routes() {
     }
 }
 
-private fun booksWithoutSeries(authorId: Long, path: String): NavFeed {
+private suspend fun booksWithoutSeries(authorId: Long, path: String): NavFeed {
     val books = getBookWithInfo()
         .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
         .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId), BOOK.SEQUENCE.isNull)
         .orderBy(BOOK.NAME)
-        .fetch()
-    val authorName = authorName(authorId)
+        .fetchAsync()
+    val authorName = authorName(authorId).await().single().component1()
     return bookFeed(books, path, "All books by $authorName without series", "author:$authorId:out")
 }
 
@@ -135,7 +145,7 @@ private fun authorCatalogue(
 ) = NavFeed(
     id = "authors:start_with:$nameStart",
     title = if (nameStart.isBlank()) "First character of all authors" else "Authors starting with $nameStart",
-    updated = df.format(Date()),
+    updated = dtf.format(now().z),
     author = feedAuthor,
     links = listOf(
         selfLink(path, NAVIGATION_TYPE),
@@ -152,21 +162,24 @@ private fun authorCatalogue(
             ),
             id = "authors:start_with:${item.first}",
             description = if (trim) "${item.second} items" else item.first,
-            updated = df.format(Date())
+            updated = dtf.format(now().z)
         )
     }
 )
 
-fun series(authorId: Long, seriesName: String, path: String): NavFeed {
+private val LocalDateTime.z: ZonedDateTime
+    get() = ZonedDateTime.of(this, ZoneId.systemDefault())
+
+suspend fun series(authorId: Long, seriesName: String, path: String): NavFeed {
     val result = getBookWithInfo()
         .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
         .where(BOOK.SEQUENCE.eq(seriesName))
         .orderBy(BOOK.SEQUENCE_NUMBER.asc().nullsLast(), BOOK.NAME)
-        .fetch()
+        .fetchAsync()
     return bookFeed(result, path, seriesName, "author:$authorId:series:$seriesName")
 }
 
-private fun authorNameStarts(prefix: String, trim: Boolean = true): List<Pair<String, Long>> {
+private fun authorNameStarts(prefix: String, trim: Boolean = true): CompletionStage<Result<Record2<String, Long>>> {
     val primaryNamesAreNulls = AUTHOR.LAST_NAME.isNull
         .and(AUTHOR.MIDDLE_NAME.isNull)
         .and(AUTHOR.FIRST_NAME.isNull)
@@ -196,14 +209,39 @@ private fun authorNameStarts(prefix: String, trim: Boolean = true): List<Pair<St
         .where(toSelect.isNotNull, toSelect.ne(""), toSelect.startsWith(prefix))
         .groupBy(toSelect)
         .orderBy(toSelect)
-        .fetch { it[toSelect] to it[second] }
+        .fetchAsync()
 }
 
 const val OPDSKO_JDBC = "jdbc:sqlite:opds.db"
 
-val create get() = using(OPDSKO_JDBC)
+var ds = run {
+    val config = HikariConfig()
+    config.poolName = "opdsko pool"
+    config.driverClassName = "org.sqlite.JDBC"
+    config.jdbcUrl = OPDSKO_JDBC
+    config.connectionTestQuery = "SELECT 1"
+    config.maxLifetime = 60000 // 60 Sec
+    config.idleTimeout = 45000 // 45 Sec
+    config.maximumPoolSize = 3 // 50 Connections (including idle connections)
+    HikariDataSource(config)
+}
 
-fun allSeries(authorId: Long, path: String): NavFeed {
+val create = using(ds, SQLDialect.SQLITE).apply {
+    settings().apply {
+        isExecuteLogging = false
+    }
+    configuration().set(DefaultExecuteListenerProvider(object : DefaultExecuteListener() {
+        override fun executeStart(ctx: ExecuteContext) {
+            val create =
+                using(ctx.dialect(), Settings().withRenderFormatted(false))
+            if (ctx.query() != null) {
+                Logger.tag("JOOQ").info(create.renderInlined(ctx.query()));
+            }
+        }
+    }))
+}
+
+suspend fun allSeries(authorId: Long, path: String): NavFeed {
     val namesWithDates = create.select(BOOK.SEQUENCE, BOOK.ADDED)
         .from(BOOK)
         .innerJoin(BOOK_AUTHOR).on(BOOK.ID.eq(BOOK_AUTHOR.BOOK_ID))
@@ -213,8 +251,8 @@ fun allSeries(authorId: Long, path: String): NavFeed {
         .mapValues { it.value.max() }
     return NavFeed(
         "author:$authorId:series",
-        "All series by ${authorName(authorId)}",
-        df.format(namesWithDates.values.max().toDate()),
+        "All series by ${authorName(authorId).await().single().component1()}",
+        dtf.format(namesWithDates.values.max().z),
         feedAuthor,
         listOf(
             startLink(),
@@ -231,13 +269,13 @@ fun allSeries(authorId: Long, path: String): NavFeed {
                 ),
                 id = "author:$authorId:series:$it",
                 description = null,
-                updated = df.format(namesWithDates[it]!!.toDate())
+                updated = dtf.format(namesWithDates[it]!!.z)
             )
         }
     )
 }
 
-fun getBookAuthors() = multiset(
+val bookAuthors = multiset(
     selectDistinct(AUTHOR.asterisk())
         .from(AUTHOR)
         .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.AUTHOR_ID.eq(AUTHOR.ID))
@@ -249,39 +287,49 @@ val bookGenres = multiset(
         .from(GENRE)
         .innerJoin(BOOK_GENRE).on(BOOK_GENRE.GENRE_ID.eq(GENRE.ID))
         .where(BOOK_GENRE.BOOK_ID.eq(BOOK.ID))
-).`as`("genres")
+).`as`("genres").convertFrom { it.toList() }
+
+private fun Result<Record1<String>>.toList(): List<String> =
+    collect(Records.intoList())
 
 val bookById = run {
     val bookAlias = Book("b")
-    multiset(selectFrom(bookAlias).where(bookAlias.ID.eq(BOOK.ID))).`as`("book")
+    multiset(selectFrom(bookAlias).where(bookAlias.ID.eq(BOOK.ID)))
+        .`as`("book")
         .convertFrom { it.into(BookPojo::class.java) }
+
 }
 
 private fun getBookWithInfo() = create
     .selectDistinct(
         BOOK.ID,
         bookById,
-        getBookAuthors(),
+        bookAuthors,
         bookGenres,
     )
     .from(BOOK)
 
-fun allAuthorBooks(authorId: Long, path: String): NavFeed {
+suspend fun allAuthorBooks(authorId: Long, path: String): NavFeed {
     val books = getBookWithInfo()
         .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
         .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
-        .fetch()
-    val authorName = authorName(authorId)
+        .fetchAsync()
+    val authorName = authorName(authorId).await().single().component1()
     return bookFeed(books, path, "All books by $authorName", "author:$authorId:all")
 }
 
 
-private fun authorRootFeed(path: String, authorId: Long, authorName: String): NavFeed {
-    val (inseries, out) = hasSeries(authorId)
+private suspend fun authorRootFeed(
+    path: String,
+    authorId: Long,
+    authorNameProvider: CompletionStage<Result<Record1<String>>>,
+): NavFeed {
+    val (inseries, out) = hasSeries(authorId).await().single()
+    val authorName = authorNameProvider.await().single().value1()
     return NavFeed(
         id = "author:$authorId",
         title = authorName,
-        updated = df.format(latestAuthorUpdate(authorId)),
+        updated = dtf.format((latestAuthorUpdate(authorId).await().firstOrNull()?.value1() ?: now()).z),
         author = feedAuthor,
         links = listOf(
             startLink(),
@@ -298,10 +346,10 @@ private fun authorRootFeed(path: String, authorId: Long, authorName: String): Na
                     ),
                     id = "author:$authorId:series",
                     description = "All books by $authorName by series",
-                    updated = df.format(Date()),
+                    updated = dtf.format(now().z),
                 )
             } else null,
-            if (out > 0) {
+            if (out > 0 && inseries > 0) {
                 NavFeed.NavEntry(
                     name = "Out of series",
                     link = NavFeed.NavLink(
@@ -311,7 +359,7 @@ private fun authorRootFeed(path: String, authorId: Long, authorName: String): Na
                     ),
                     id = "author:$authorId:out",
                     description = "All books by $authorName",
-                    updated = df.format(Date()),
+                    updated = dtf.format(now().z),
                 )
             } else null,
             NavFeed.NavEntry(
@@ -323,13 +371,13 @@ private fun authorRootFeed(path: String, authorId: Long, authorName: String): Na
                 ),
                 id = "author:$authorId:all",
                 description = "All books by $authorName",
-                updated = df.format(Date()),
+                updated = dtf.format(now().z),
             ),
         )
     )
 }
 
-private fun hasSeries(authorId: Long): Pair<Int, Int> {
+private fun hasSeries(authorId: Long): CompletionStage<Result<Record2<Int, Int>>> {
     val notnull = count(BOOK.ID).filterWhere(BOOK.SEQUENCE.isNotNull).`as`("x")
     val isnull = count(BOOK.ID).filterWhere(BOOK.SEQUENCE.isNull).`as`("y")
     return create
@@ -341,27 +389,26 @@ private fun hasSeries(authorId: Long): Pair<Int, Int> {
         .innerJoin(BOOK).on(BOOK.ID.eq(BOOK_AUTHOR.BOOK_ID))
         .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
         .limit(1)
-        .fetchOne { it[notnull] to it[isnull] }!!
+        .fetchAsync()
 }
 
-private fun latestAuthorUpdate(authorId: Long): Date {
-    return create.select(BOOK.ADDED)
+private fun latestAuthorUpdate(authorId: Long): CompletionStage<Result<Record1<LocalDateTime>>> {
+    return create
+        .select(BOOK.ADDED)
         .from(BOOK)
         .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
         .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
         .orderBy(BOOK.ADDED.desc())
         .limit(1)
-        .fetchOne { it[BOOK.ADDED] }
-        ?.toDate() ?: Date()
+        .fetchAsync()
 }
 
-private fun authorName(authorId: Long) = AuthorDao(create.configuration()).fetchOneById(authorId).buildName()
 
 private fun bookPath(bookId: Long) =
-    create.select(BOOK.PATH).from(BOOK).where(BOOK.ID.eq(bookId)).fetchOne { it[BOOK.PATH] }!!
+    create.select(BOOK.PATH).from(BOOK).where(BOOK.ID.eq(bookId)).fetchAsync()
 
-private fun imageByBookId(bookId: Long): Pair<Binary, ByteArray> {
-    val path = bookPath(bookId)
+private suspend fun imageByBookId(bookId: Long): Pair<Binary, ByteArray> {
+    val path = bookPath(bookId).await().single().value1()
     val fb = FictionBook(File(path))
     val id = fb.description.titleInfo.coverPage.first().value.replace("#", "")
     val binary = fb.binaries[id]!!
@@ -373,7 +420,7 @@ private fun rootFeed(path: String): NavFeed {
     return NavFeed(
         id = "root",
         title = "Asm0dey's books",
-        updated = df.format(Timestamp.valueOf(latestUpdate())),
+        updated = dtf.format(latestUpdate()!!.z),
         author = feedAuthor,
         links = listOf(
             startLink(),
@@ -389,7 +436,7 @@ private fun rootFeed(path: String): NavFeed {
                 ),
                 id = "new",
                 description = "Recent publications from this catalog",
-                updated = df.format(Date())
+                updated = dtf.format(now().z)
             ),
             NavFeed.NavEntry(
                 name = "Books by authors",
@@ -400,7 +447,7 @@ private fun rootFeed(path: String): NavFeed {
                 ),
                 id = "authors",
                 description = "Authors categorized",
-                updated = df.format(Date())
+                updated = dtf.format(now().z)
             ),
         )
     )
@@ -413,32 +460,34 @@ private fun latestUpdate() = create
     .limit(1)
     .fetchOne(BOOK.ADDED)
 
-private fun newFeed(path: String): NavFeed {
+private suspend fun newFeed(path: String): NavFeed {
     return bookFeed(latestBooks(), path, "Latest books", "latest")
 }
 
-typealias BookWithPathAuthorsAndGenres = Result<Record4<Long, List<BookPojo>, List<AuthorPojo>, Result<Record1<String>>>>
+typealias BookWithPathAuthorsAndGenres = CompletionStage<Result<Record4<Long, List<BookPojo>, List<Author>, List<String>>>>
 
-private fun bookFeed(
+private suspend fun bookFeed(
     bookRecord: BookWithPathAuthorsAndGenres,
     path: String,
     title: String,
     feedId: String,
 ): NavFeed {
-    val books = bookRecord.map { record ->
-        object {
-            val id = record[BOOK.ID]
-            val book = record[bookById].first()
-            val authors = record[getBookAuthors()]
-            val genres = record[bookGenres].map { it[GENRE.NAME] }.map { genreNames[it] ?: it }
+    val books = bookRecord
+        .await()
+        .map { record ->
+            object {
+                val id = record[BOOK.ID]
+                val book = record[bookById].single()
+                val authors = record[bookAuthors]
+                val genres = record[bookGenres]?.map { genreNames[it] ?: it } ?: emptyList()
+            }
         }
-    }
     val descriptions = bookDescriptions(books.map { it.id to it.book.path })
     val imageTypes = imageTypes(books.map { it.id to it.book.path })
     return NavFeed(
         id = feedId,
         title = title,
-        updated = df.format(Timestamp.valueOf(books.maxOf { it.book.added })),
+        updated = dtf.format(books.maxOf { it.book.added }.z),
         author = feedAuthor,
         links = listOf(
             startLink(),
@@ -450,7 +499,7 @@ private fun bookFeed(
                 title = book.name,
                 id = "book:${book.id}",
                 author = bookRaw.authors.toAuthorEntries(),
-                published = df.format(book.added.toDate()),
+                published = dtf.format(book.added.z),
                 lang = book.lang,
                 date = book.date,
                 summary = descriptions[bookRaw.id]?.let { it.substring(0 until kotlin.math.min(150, it.length)) + "…" },
@@ -502,6 +551,38 @@ fun imageTypes(pathsByIds: List<Pair<Long, String>>): Map<Long, String?> {
 
 private fun List<Author>.toAuthorEntries() = map { NavFeed.XAuthor(it.buildName(), "/opds/author/browse/${it.id}") }
 
+private fun authorName(authorId: Long) = create
+    .select(
+        concat(
+            coalesce(AUTHOR.LAST_NAME, ""),
+            if_(
+                AUTHOR.FIRST_NAME.isNotNull,
+                if_(AUTHOR.LAST_NAME.isNotNull, concat(", ", AUTHOR.FIRST_NAME), AUTHOR.FIRST_NAME),
+                ""
+            ),
+            if_(
+                AUTHOR.MIDDLE_NAME.isNotNull,
+                if_(
+                    AUTHOR.FIRST_NAME.isNotNull.or(AUTHOR.LAST_NAME.isNotNull),
+                    concat(" ", AUTHOR.MIDDLE_NAME),
+                    AUTHOR.MIDDLE_NAME
+                ),
+                ""
+            ),
+            if_(
+                AUTHOR.NICKNAME.isNotNull,
+                if_(
+                    AUTHOR.FIRST_NAME.isNull.and(AUTHOR.LAST_NAME.isNotNull).and(AUTHOR.MIDDLE_NAME.isNotNull),
+                    AUTHOR.NICKNAME,
+                    concat(`val`(" ("), AUTHOR.NICKNAME, `val`(")"))
+                ),
+                ""
+            ),
+        )
+    )
+    .from(AUTHOR)
+    .where(AUTHOR.ID.eq(authorId))
+    .fetchAsync()
 
 private fun IAuthor.buildName() = buildString {
     if (lastName != null) append(lastName)
@@ -526,13 +607,11 @@ fun bookDescriptions(pathsByIds: List<Pair<Long, String>>): Map<Long, String?> {
         }
 }
 
-private fun latestBooks() =
+private suspend fun latestBooks() =
     getBookWithInfo()
         .orderBy(BOOK.ADDED.desc())
         .limit(20)
-        .fetch()
-
-fun LocalDateTime.toDate() = Timestamp.valueOf(this)
+        .fetchAsync()
 
 fun Long.humanReadable(): String {
     val absB = if (this == Long.MIN_VALUE) Long.MAX_VALUE else abs(this)

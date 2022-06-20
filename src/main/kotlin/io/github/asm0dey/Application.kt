@@ -10,19 +10,37 @@ import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
 import io.github.asm0dey.opdsko.jooq.tables.pojos.BookAuthor
 import io.github.asm0dey.opdsko.jooq.tables.pojos.BookGenre
 import io.github.asm0dey.opdsko.jooq.tables.records.AuthorRecord
+import io.github.asm0dey.opdsko.jooq.tables.records.BookAuthorRecord
+import io.github.asm0dey.opdsko.jooq.tables.records.BookGenreRecord
 import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
 import io.github.asm0dey.plugins.OPDSKO_JDBC
 import io.github.asm0dey.plugins.create
+import io.ktor.network.sockets.*
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
+import io.r2dbc.spi.ConnectionFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.supervisorScope
 import org.flywaydb.core.Flyway
-import org.jooq.impl.DSL.*
+import org.jooq.Configuration
+import org.jooq.DSLContext
+import org.jooq.Publisher
+import org.jooq.TransactionalRunnable
+import org.jooq.impl.DSL.using
+import org.jooq.impl.DefaultDSLContext
+import org.reactivestreams.Subscriber
 import org.tinylog.kotlin.Logger
 import java.io.File
 import java.time.LocalDateTime
+import java.util.concurrent.CompletionStage
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events.StartElement
+import kotlin.collections.set
 import kotlin.concurrent.thread
 
 val genreNames = genreNames()
@@ -36,6 +54,10 @@ fun Application.main() {
         thread(start = true, isDaemon = true, name = "Scanner", priority = 1) {
             scan(dir)
         }
+        val pathsToDelete = create.select(BOOK.PATH).from(BOOK).fetchLazy()
+            .mapNotNull { it[BOOK.PATH].takeIf { !File(it).exists() } }
+        Logger.info("Need to delete $pathsToDelete")
+        create.deleteFrom(BOOK).where(BOOK.PATH.`in`(pathsToDelete)).execute()
     }
 }
 
@@ -123,20 +145,17 @@ private fun scan(libraryRoot: String) {
                         )
                     )
                 )
-                .returning(BOOK.ID)
-                .fetchOne { it.id }!!
+                .returning()
+                .fetchSingle()
+                .id
             val authorIds = fb.description.titleInfo.authors.map {
                 transaction.select(AUTHOR.ID)
                     .from(AUTHOR)
                     .where(
-                        if (it.middleName == null) AUTHOR.MIDDLE_NAME.isNull
-                        else trim(lower(AUTHOR.MIDDLE_NAME)).eq(trim(lower(it.middleName!!))),
-                        if (it.lastName == null) AUTHOR.LAST_NAME.isNull
-                        else trim(lower(AUTHOR.LAST_NAME)).eq(trim(lower(it.lastName!!))),
-                        if (it.firstName == null) AUTHOR.FIRST_NAME.isNull
-                        else trim(lower(AUTHOR.FIRST_NAME)).eq(trim(lower(it.firstName!!))),
-                        if (it.nickname == null) AUTHOR.NICKNAME.isNull
-                        else trim(lower(AUTHOR.NICKNAME)).eq(trim(lower(it.nickname!!))),
+                        it.middleName.normalizeName()?.let { AUTHOR.MIDDLE_NAME.eq(it) } ?: AUTHOR.MIDDLE_NAME.isNull,
+                        it.lastName.normalizeName()?.let { AUTHOR.LAST_NAME.eq(it) } ?: AUTHOR.LAST_NAME.isNull,
+                        it.firstName.normalizeName()?.let { AUTHOR.FIRST_NAME.eq(it) } ?: AUTHOR.FIRST_NAME.isNull,
+                        it.nickname.normalizeName()?.let { AUTHOR.NICKNAME.eq(it) } ?: AUTHOR.NICKNAME.isNull,
                     )
                     .fetchOne { it[AUTHOR.ID] }
                     ?: transaction.insertInto(AUTHOR)
@@ -145,24 +164,46 @@ private fun scan(libraryRoot: String) {
                                 Author(
                                     null,
                                     it.id,
-                                    it.firstName?.trim(),
-                                    it.middleName?.trim(),
-                                    it.lastName?.trim(),
-                                    it.nickname?.trim() ,
+                                    it.firstName.normalizeName(),
+                                    it.middleName.normalizeName(),
+                                    it.lastName.normalizeName(),
+                                    it.nickname.normalizeName(),
                                     LocalDateTime.now()
                                 )
                             )
                         )
                         .returning(AUTHOR.ID)
-                        .fetchOne { it.id }!!
+                        .fetchSingle()
+                        .id
             }.toSet()
             val genreIds = fb.description.titleInfo.genres.map {
                 GenreDao(txConfig).fetchByName(it).firstOrNull()?.id
-                    ?: transaction.insertInto(GENRE, GENRE.NAME).values(it).returning().fetchOne()!!.id
+                    ?: transaction
+                        .insertInto(GENRE, GENRE.NAME)
+                        .values(it)
+                        .returning()
+                        .fetchSingle()
+                        .id
             }.toSet()
             BookAuthorDao(txConfig).insert(authorIds.map { BookAuthor(bookId, it) })
             BookGenreDao(txConfig).insert(genreIds.map { BookGenre(bookId, it) })
+            transaction.batchInsert(
+                *authorIds.map { BookAuthorRecord(bookId, it) }.toTypedArray(),
+                *genreIds.map { BookGenreRecord(bookId, it) }.toTypedArray()
+            )
+
         }
     }
 }
 
+fun String?.normalizeName() = if (isNullOrBlank()) null else trim().split(" ").joinToString(" ") {
+    it.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+}
+
+suspend inline fun DSLContext.transactionCoroutine(crossinline block: suspend (Configuration) -> Unit): CompletionStage<Void> {
+    return transactionAsync {
+        GlobalScope.launch(Dispatchers.IO) {
+            block.invoke(it)
+        }
+    }
+}

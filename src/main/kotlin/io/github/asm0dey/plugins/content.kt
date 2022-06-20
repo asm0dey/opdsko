@@ -9,7 +9,7 @@ import nl.adaptivity.xmlutil.serialization.XML
 
 fun Application.content() {
     install(ContentNegotiation) {
-        xml(contentType = ContentType.parse("application/atom+xml"), format = XML {
+        xml(contentType = ContentType.parse("application/atom+xml;profile=opds-catalog;kind=navigation; charset=utf-8"), format = XML {
             xmlVersion = nl.adaptivity.xmlutil.core.XmlVersion.XML10
             xmlDeclMode = XmlDeclMode.Charset
             autoPolymorphic = true

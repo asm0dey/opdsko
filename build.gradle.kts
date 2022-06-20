@@ -54,8 +54,9 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-xml:$ktor_version")
     implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
     implementation("org.flywaydb:flyway-core:8.5.13")
-
-
+    implementation("com.zaxxer:HikariCP:5.0.1")
+    implementation("org.jooq:jooq-kotlin:3.16.7")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.2")
 }
 
 configure<SourceSetContainer> {
