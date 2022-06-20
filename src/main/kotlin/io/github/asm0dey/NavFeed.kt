@@ -1,10 +1,9 @@
 package io.github.asm0dey
 
 import kotlinx.serialization.Serializable
-import nl.adaptivity.xmlutil.serialization.XmlChildrenName
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
-import java.text.SimpleDateFormat
+import nl.adaptivity.xmlutil.serialization.XmlValue
 import java.time.format.DateTimeFormatter
 
 val dtf = DateTimeFormatter.ISO_OFFSET_DATE_TIME
@@ -38,6 +37,8 @@ data class NavFeed(
         @XmlElement(false) @XmlSerialName("type", "", "") val type: String,
         @XmlElement(false) @XmlSerialName("rel", "", "") val rel: String,
         @XmlElement(false) @XmlSerialName("href", "", "") val href: String,
+        @XmlElement(false) @XmlSerialName("count", "http://purl.org/syndication/thread/1.0", "thr") val count: Long? = null,
+        @XmlElement(false) @XmlSerialName("title", "", "") val title: String? = null,
     )
 
     @Serializable
@@ -46,32 +47,53 @@ data class NavFeed(
     @Serializable
     @XmlSerialName("entry", "http://www.w3.org/2005/Atom", "")
     data class NavEntry(
-        @XmlElement(true) @XmlSerialName("title", "http://www.w3.org/2005/Atom", "atom") val name: String,
+        @XmlElement(true) @XmlSerialName("title", "http://www.w3.org/2005/Atom", "") val name: String,
         val link: NavLink,
-        @XmlElement(true) @XmlSerialName("id", "http://www.w3.org/2005/Atom", "atom") val id: String,
-        @XmlElement(true) @XmlSerialName("summary", "http://www.w3.org/2005/Atom", "atom") val description: String? = null,
-        @XmlElement(true) @XmlSerialName("updated", "http://www.w3.org/2005/Atom", "atom") val updated: String,
+        @XmlElement(true) @XmlSerialName("id", "http://www.w3.org/2005/Atom", "") val id: String,
+        @XmlElement(true) @XmlSerialName(
+            "summary",
+            "http://www.w3.org/2005/Atom",
+            ""
+        ) val description: String? = null,
+        @XmlElement(true) @XmlSerialName("updated", "http://www.w3.org/2005/Atom", "") val updated: String,
     ) : Entry
 
     @Serializable
-    @XmlSerialName("entry", "http://www.w3.org/2005/Atom", "atom")
+    @XmlSerialName("entry", "http://www.w3.org/2005/Atom", "")
     data class BookEntry(
-        @XmlElement(true) @XmlSerialName("title", "http://www.w3.org/2005/Atom", "atom") val title: String,
-        @XmlElement(true) @XmlSerialName("id", "http://www.w3.org/2005/Atom", "atom") val id: String,
+        @XmlElement(true) @XmlSerialName("title", "http://www.w3.org/2005/Atom", "") val title: String,
+        @XmlElement(true) @XmlSerialName("id", "http://www.w3.org/2005/Atom", "") val id: String,
         val author: List<XAuthor>,
-        @XmlElement(true) @XmlSerialName("published", "http://www.w3.org/2005/Atom", "atom") val published: String,
+        @XmlElement(true) @XmlSerialName("published", "http://www.w3.org/2005/Atom", "") val published: String,
         @XmlElement(true) @XmlSerialName("language", "http://purl.org/dc/terms/", "dcterms") val lang: String?,
         @XmlElement(true) @XmlSerialName("date", "http://purl.org/dc/terms/", "dcterms") val date: String?,
         val genres: List<XCategory>,
         val links: List<NavLink>,
-        @XmlElement(true) @XmlSerialName("summary", "http://www.w3.org/2005/Atom", "atom") val summary: String?,
-        @XmlElement(true) @XmlSerialName("content", "http://www.w3.org/2005/Atom", "atom") @XmlChildrenName("p","http://www.w3.org/1999/xhtml","x") val content: List<String> = listOf(),
+        @XmlElement(true) @XmlSerialName("summary", "http://www.w3.org/2005/Atom", "") val summary: String?,
+        @XmlElement(true) @XmlSerialName(
+            "content",
+            "http://www.w3.org/2005/Atom",
+            ""
+        ) val content: EntryContent?,
     ) : Entry {
         @Serializable
-        @XmlSerialName("category", "http://www.w3.org/2005/Atom", "atom")
+        @XmlSerialName("category", "http://www.w3.org/2005/Atom", "")
         data class XCategory(
             @XmlElement(false) @XmlSerialName("term", "", "") val term: String,
             @XmlElement(false) @XmlSerialName("label", "", "") val label: String = term,
         )
+
+        @XmlElement(true)
+        @Serializable
+        @XmlSerialName("content", "http://www.w3.org/2005/Atom", "")
+        data class EntryContent(
+            @XmlValue(true) val data: String?,
+            @XmlElement(false) @XmlSerialName(
+                "type",
+                "http://www.w3.org/2005/Atom",
+                ""
+            ) val type: String = "html",
+        )
     }
 }
+
