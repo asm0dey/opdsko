@@ -5,9 +5,11 @@ package io.github.asm0dey.opdsko.jooq;
 
 
 import io.github.asm0dey.opdsko.jooq.tables.Author;
+import io.github.asm0dey.opdsko.jooq.tables.AuthorsFts;
 import io.github.asm0dey.opdsko.jooq.tables.Book;
 import io.github.asm0dey.opdsko.jooq.tables.BookAuthor;
 import io.github.asm0dey.opdsko.jooq.tables.BookGenre;
+import io.github.asm0dey.opdsko.jooq.tables.BooksFts;
 import io.github.asm0dey.opdsko.jooq.tables.Genre;
 import io.github.asm0dey.opdsko.jooq.tables.SqliteSequence;
 
@@ -24,6 +26,11 @@ public class Tables {
     public static final Author AUTHOR = Author.AUTHOR;
 
     /**
+     * The table <code>authors_fts</code>.
+     */
+    public static final AuthorsFts AUTHORS_FTS = AuthorsFts.AUTHORS_FTS;
+
+    /**
      * The table <code>book</code>.
      */
     public static final Book BOOK = Book.BOOK;
@@ -37,6 +44,11 @@ public class Tables {
      * The table <code>book_genre</code>.
      */
     public static final BookGenre BOOK_GENRE = BookGenre.BOOK_GENRE;
+
+    /**
+     * The table <code>books_fts</code>.
+     */
+    public static final BooksFts BOOKS_FTS = BooksFts.BOOKS_FTS;
 
     /**
      * The table <code>genre</code>.

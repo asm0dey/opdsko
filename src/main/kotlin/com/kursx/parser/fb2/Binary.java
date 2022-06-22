@@ -1,6 +1,5 @@
 package com.kursx.parser.fb2;
 
-import com.sun.xml.bind.v2.runtime.unmarshaller.Base64Data;
 import org.jetbrains.annotations.NotNull;
 
 import org.w3c.dom.NamedNodeMap;

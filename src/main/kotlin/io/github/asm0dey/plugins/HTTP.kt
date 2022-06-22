@@ -7,6 +7,7 @@ import io.ktor.server.plugins.compression.*
 fun Application.http() {
     install(Compression) {
         gzip {
+            matchContentType()
             priority = 1.0
         }
         deflate {

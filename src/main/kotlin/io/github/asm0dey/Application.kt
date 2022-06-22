@@ -15,24 +15,15 @@ import io.github.asm0dey.opdsko.jooq.tables.records.BookGenreRecord
 import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
 import io.github.asm0dey.plugins.OPDSKO_JDBC
 import io.github.asm0dey.plugins.create
-import io.ktor.network.sockets.*
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
-import io.r2dbc.spi.ConnectionFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactor.mono
-import kotlinx.coroutines.supervisorScope
 import org.flywaydb.core.Flyway
 import org.jooq.Configuration
 import org.jooq.DSLContext
-import org.jooq.Publisher
-import org.jooq.TransactionalRunnable
 import org.jooq.impl.DSL.using
-import org.jooq.impl.DefaultDSLContext
-import org.reactivestreams.Subscriber
 import org.tinylog.kotlin.Logger
 import java.io.File
 import java.time.LocalDateTime
@@ -53,11 +44,11 @@ fun Application.main() {
     if (dir != null) {
         thread(start = true, isDaemon = true, name = "Scanner", priority = 1) {
             scan(dir)
+            val pathsToDelete = create.select(BOOK.ID, BOOK.PATH).from(BOOK).fetchLazy()
+                .mapNotNull { r -> r[BOOK.PATH].takeIf { !File(it).exists() }?.let { r[BOOK.ID] } }
+            create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
+            create.deleteFrom(BOOKS_FTS).where(BOOKS_FTS.ID.`in`(pathsToDelete))
         }
-        val pathsToDelete = create.select(BOOK.PATH).from(BOOK).fetchLazy()
-            .mapNotNull { it[BOOK.PATH].takeIf { !File(it).exists() } }
-        Logger.info("Need to delete $pathsToDelete")
-        create.deleteFrom(BOOK).where(BOOK.PATH.`in`(pathsToDelete)).execute()
     }
 }
 

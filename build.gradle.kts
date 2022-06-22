@@ -40,7 +40,6 @@ dependencies {
     implementation("io.ktor:ktor-server-metrics-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
     implementation("org.redundent:kotlin-xml-builder:1.7.4")
-    implementation("com.sun.xml.bind:jaxb-impl:2.3.6")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
     jooqGenerator("org.xerial:sqlite-jdbc:3.36.0.3")
@@ -57,6 +56,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.jooq:jooq-kotlin:3.16.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.2")
+    implementation("org.glassfish.jaxb:jaxb-runtime:4.0.0")
 }
 
 configure<SourceSetContainer> {
@@ -106,13 +106,16 @@ jooq {
                                     includeExpression = ".*\\.id"
                                 },
                                 ForcedType().apply {
+                                    name = "TEXT"
+                                    includeExpression = ".*_fts\\..*"
+                                },
+                                ForcedType().apply {
                                     name = "BIGINT"
                                     includeExpression = ".*\\..*_id"
                                 },
                             )
                         )
-                        excludes = "gen_.*"
-                        isIncludeExcludeColumns = true
+                        excludes = ".*_fts_.*"
                     }
                 }
             }

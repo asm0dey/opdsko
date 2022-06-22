@@ -5,9 +5,11 @@ package io.github.asm0dey.opdsko.jooq;
 
 
 import io.github.asm0dey.opdsko.jooq.tables.Author;
+import io.github.asm0dey.opdsko.jooq.tables.AuthorsFts;
 import io.github.asm0dey.opdsko.jooq.tables.Book;
 import io.github.asm0dey.opdsko.jooq.tables.BookAuthor;
 import io.github.asm0dey.opdsko.jooq.tables.BookGenre;
+import io.github.asm0dey.opdsko.jooq.tables.BooksFts;
 import io.github.asm0dey.opdsko.jooq.tables.Genre;
 import io.github.asm0dey.opdsko.jooq.tables.SqliteSequence;
 
@@ -38,6 +40,11 @@ public class DefaultSchema extends SchemaImpl {
     public final Author AUTHOR = Author.AUTHOR;
 
     /**
+     * The table <code>authors_fts</code>.
+     */
+    public final AuthorsFts AUTHORS_FTS = AuthorsFts.AUTHORS_FTS;
+
+    /**
      * The table <code>book</code>.
      */
     public final Book BOOK = Book.BOOK;
@@ -51,6 +58,11 @@ public class DefaultSchema extends SchemaImpl {
      * The table <code>book_genre</code>.
      */
     public final BookGenre BOOK_GENRE = BookGenre.BOOK_GENRE;
+
+    /**
+     * The table <code>books_fts</code>.
+     */
+    public final BooksFts BOOKS_FTS = BooksFts.BOOKS_FTS;
 
     /**
      * The table <code>genre</code>.
@@ -79,9 +91,11 @@ public class DefaultSchema extends SchemaImpl {
     public final List<Table<?>> getTables() {
         return Arrays.asList(
             Author.AUTHOR,
+            AuthorsFts.AUTHORS_FTS,
             Book.BOOK,
             BookAuthor.BOOK_AUTHOR,
             BookGenre.BOOK_GENRE,
+            BooksFts.BOOKS_FTS,
             Genre.GENRE,
             SqliteSequence.SQLITE_SEQUENCE
         );

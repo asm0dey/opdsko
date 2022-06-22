@@ -1,6 +1,7 @@
 package io.github.asm0dey.plugins
 
 import com.kursx.parser.fb2.Binary
+import com.kursx.parser.fb2.Element
 import com.kursx.parser.fb2.FictionBook
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -33,7 +34,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URLDecoder
 import java.net.URLEncoder
-import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets.UTF_8
 import java.text.StringCharacterIterator
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
@@ -103,7 +104,7 @@ fun Application.routes() {
                 route("/author") {
                     get("/c/{name?}") {
                         val path = call.request.path()
-                        val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", Charset.defaultCharset())
+                        val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", UTF_8)
                         val trim = nameStart.length < 5
                         val items = authorNameStarts(nameStart, trim).await().map { it.component1() to it.component2() }
                         call.respond(authorCatalogue(nameStart, path, items, trim))
@@ -127,7 +128,7 @@ fun Application.routes() {
                         }
                         get("/{id}/series/{name}") {
                             val authorId = call.parameters["id"]!!.toLong()
-                            val seriesName = call.parameters["name"]!!
+                            val seriesName = URLDecoder.decode(call.parameters["name"]!!, UTF_8)
                             val path = call.request.path()
                             call.respond(series(authorId, seriesName, path))
                         }
@@ -209,7 +210,7 @@ private fun authorCatalogue(
             link = NavFeed.NavLink(
                 type = NAVIGATION_TYPE,
                 rel = "subsection",
-                href = if (trim) "/opds/author/c/${URLEncoder.encode(item.first, Charset.defaultCharset())}"
+                href = if (trim) "/opds/author/c/${URLEncoder.encode(item.first, UTF_8)}"
                 else "/opds/author/browse/${item.second}",
                 count = if (trim) item.second else null,
             ),
@@ -311,7 +312,7 @@ suspend fun allSeries(authorId: Long, path: String): NavFeed {
             selfLink(path, NAVIGATION_TYPE)
         ),
         namesWithDates.keys.map {
-            val encodedSeriesName = it
+            val encodedSeriesName = URLEncoder.encode(it, UTF_8)
             NavFeed.NavEntry(
                 name = it,
                 link = NavFeed.NavLink(
@@ -663,7 +664,7 @@ private fun IAuthor.buildName() = buildString {
 fun bookDescriptions(pathsByIds: List<Pair<Long, String>>): Map<Long, String?> {
     return pathsByIds
         .associate { (id, path) ->
-            id to FictionBook(File(path)).description.titleInfo.annotation?.text
+            id to Element.getText(FictionBook(File(path)).description.titleInfo.annotation?.elements?: arrayListOf(), "<br>")
         }
 }
 
