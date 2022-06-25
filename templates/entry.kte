@@ -1,0 +1,37 @@
+@import io.github.asm0dey.plugins.*
+@import java.time.*
+
+@param content: String
+@param summary: String
+@param book: BookWithInfo
+@param imageType: String
+<?xml version="1.0" encoding="UTF-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom" xmlns:dcterms="http://purl.org/dc/terms/">
+    <title>${book.book.name}</title>
+    <id>/opds/book/${book.id}/info</id>
+    @for(author in book.authors)
+    <author>
+        <name>${author.buildName()}</name>
+        <uri>/opds/author/browse/${author.id}</uri>
+    </author>
+    @endfor
+    <published>${formatDate(ZonedDateTime.now())}</published>
+    <updated>${formatDate(book.book.added)}</updated>
+    @if(book.book.lang != null)
+    <dcterms:language>${book.book.lang}</dcterms:language>
+    @endif
+    @if(book.book.date != null)
+    <dcterms:date>${book.book.date}</dcterms:date>
+    @endif
+    @for(genre in book.genres)
+    <category term="${genre}" label="${genre}"/>
+    @endfor
+    @if(imageType != null)
+    <link type="${imageType}" rel="http://opds-spec.org/image" href="/opds/image/${book.id}"/>
+    @endif
+    <link type="application/fb2+zip" rel="http://opds-spec.org/acquisition/open-access" href="/opds/book/${book.id}/download"/>
+    @if(summary != null)
+    <summary type="text">${summary}</summary>
+    <content type="html">$unsafe{content}</content>
+    @endif
+</entry>

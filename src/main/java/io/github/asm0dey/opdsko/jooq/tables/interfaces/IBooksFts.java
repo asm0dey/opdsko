@@ -22,9 +22,4 @@ public interface IBooksFts extends Serializable {
      * Getter for <code>books_fts.sequence</code>.
      */
     public String getSequence();
-
-    /**
-     * Getter for <code>books_fts.id</code>.
-     */
-    public Long getId();
 }

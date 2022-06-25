@@ -1,0 +1,54 @@
+@import io.github.asm0dey.plugins.*
+@import java.time.*
+@param books: List<BookWithInfo>
+@param bookDescriptions: Map<Long, String?>
+@param imageTypes: Map<Long, String?>
+@param path: String
+@param title: String
+@param feedId: String
+@param feedUpdated: java.time.temporal.TemporalAccessor
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog" xmlns:dcterms="http://purl.org/dc/terms/"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+    <id>${feedId}</id>
+    <title>${title}</title>
+    <updated>${formatDate(books.maxOf { it.book.added })}</updated>
+    <author>
+        <name>Pasha Finkelshteyn</name>
+        <uri>https://github.com/asm0dey/opdsKo</uri>
+    </author>
+    <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="start" href="/opds"/>
+    <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" rel="self" href="${path}"/>
+    <link type="application/opensearchdescription+xml" rel="search" href="/opds/search"/>
+    @for(book in books)
+    <entry>
+        <title>${book.book.name}</title>
+        <id>book:${book.id}</id>
+        @for(author in book.authors)
+        <author>
+            <name>${author.buildName()}</name>
+            <uri>/opds/author/browse/${author.id}</uri>
+        </author>
+        @endfor
+        <published>${formatDate(ZonedDateTime.now())}</published>
+        <updated>${formatDate(feedUpdated)}</updated>
+        @if(book.book.lang != null)
+        <dcterms:language>${book.book.lang}</dcterms:language>
+        @endif
+        @if(book.book.date != null)
+        <dcterms:date>${book.book.date}</dcterms:date>
+        @endif
+        @for(genre in book.genres)
+        <category term="${genre}" label="${genre}"/>
+        @endfor
+        @if(imageTypes[book.id] != null)
+        <link type="${imageTypes[book.id]}" rel="http://opds-spec.org/image" href="/opds/image/${book.id}"/>
+        @endif
+        <link type="application/atom+xml;type=entry;profile=opds-catalog" rel="alternate" href="/opds/book/${book.id}/info" title="Full entry for ${book.book.name}"/>
+        <link type="application/fb2+zip" rel="http://opds-spec.org/acquisition/open-access" href="/opds/book/${book.id}/download"/>
+        @if(bookDescriptions[book.id] != null)
+        <summary type="text">${bookDescriptions[book.id]}</summary>
+        @endif
+    </entry>
+    @endfor
+</feed>

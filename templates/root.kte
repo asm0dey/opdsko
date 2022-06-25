@@ -1,0 +1,28 @@
+!{val x = java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME}
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>root</id>
+  <title>Asm0dey's books</title>
+  <updated>2022-06-21T12:14:28.209+03:00</updated>
+  <author>
+    <name>Pasha Finkelshteyn</name>
+    <uri>https://github.com/asm0dey/opdsKo</uri>
+  </author>
+  <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="start" href="/opds"/>
+  <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="self" href="/opds"/>
+  <link type="application/opensearchdescription+xml" rel="search" href="/opds/search"/>
+  <entry>
+    <title>New books</title>
+    <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" rel="http://opds-spec.org/sort/new" href="/opds/new"/>
+    <id>new</id>
+    <summary>Recent publications from this catalog</summary>
+    <updated>${x.format(java.time.ZonedDateTime.now())}</updated>
+  </entry>
+  <entry>
+    <title>Books by authors</title>
+    <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="category" href="/opds/author/c/"/>
+    <id>authors</id>
+    <summary>Authors categorized</summary>
+    <updated>${x.format(java.time.ZonedDateTime.now())}</updated>
+  </entry>
+</feed>

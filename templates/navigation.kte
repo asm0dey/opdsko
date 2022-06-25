@@ -1,0 +1,41 @@
+@import java.time.*
+@import io.github.asm0dey.plugins.*
+@import io.github.asm0dey.model.*
+@param feedId: String
+@param feedTitle: String
+@param feedUpdated: ZonedDateTime
+@param path:String
+@param entries: List<Entry>
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+    <id>${feedId}</id>
+    <title>${feedTitle}</title>
+    <updated>${formatDate(feedUpdated)}</updated>
+    <author>
+        <name>Pasha Finkelshteyn</name>
+        <uri>https://github.com/asm0dey/opdsKo</uri>
+    </author>
+    <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="self" href="${path}"/>
+    <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="start" href="/opds"/>
+    <link type="application/opensearchdescription+xml" rel="search" href="/opds/search"/>
+    @for(entry in entries)
+    <entry>
+        <title>${entry.title}</title>
+        @for(link in entry.links)
+        @template.link(
+            rel=link.rel,
+            href=link.href,
+            type=link.type,
+            count=link.count,
+            title=link.title
+        )
+        @endfor
+        <id>${entry.id}</id>
+        @if(entry.summary != null)
+        <summary>${entry.summary}</summary>
+        @endif
+        <updated>${formatDate(entry.updated)}</updated>
+    </entry>
+    @endfor
+</feed>

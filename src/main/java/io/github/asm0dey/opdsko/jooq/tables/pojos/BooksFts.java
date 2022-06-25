@@ -17,22 +17,18 @@ public class BooksFts implements IBooksFts {
 
     private final String name;
     private final String sequence;
-    private final Long   id;
 
     public BooksFts(IBooksFts value) {
         this.name = value.getName();
         this.sequence = value.getSequence();
-        this.id = value.getId();
     }
 
     public BooksFts(
         String name,
-        String sequence,
-        Long   id
+        String sequence
     ) {
         this.name = name;
         this.sequence = sequence;
-        this.id = id;
     }
 
     /**
@@ -51,21 +47,12 @@ public class BooksFts implements IBooksFts {
         return this.sequence;
     }
 
-    /**
-     * Getter for <code>books_fts.id</code>.
-     */
-    @Override
-    public Long getId() {
-        return this.id;
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("BooksFts (");
 
         sb.append(name);
         sb.append(", ").append(sequence);
-        sb.append(", ").append(id);
 
         sb.append(")");
         return sb.toString();

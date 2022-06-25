@@ -11,7 +11,7 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row5;
+import org.jooq.Row4;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -61,11 +61,6 @@ public class AuthorsFts extends TableImpl<AuthorsFtsRecord> {
      * The column <code>authors_fts.nickname</code>.
      */
     public final TableField<AuthorsFtsRecord, String> NICKNAME = createField(DSL.name("nickname"), SQLDataType.CLOB, this, "");
-
-    /**
-     * The column <code>authors_fts.id</code>.
-     */
-    public final TableField<AuthorsFtsRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT, this, "");
 
     private AuthorsFts(Name alias, Table<AuthorsFtsRecord> aliased) {
         this(alias, aliased, null);
@@ -132,11 +127,11 @@ public class AuthorsFts extends TableImpl<AuthorsFtsRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row5 type methods
+    // Row4 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row5<String, String, String, String, Long> fieldsRow() {
-        return (Row5) super.fieldsRow();
+    public Row4<String, String, String, String> fieldsRow() {
+        return (Row4) super.fieldsRow();
     }
 }

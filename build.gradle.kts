@@ -1,6 +1,6 @@
-import org.jetbrains.kotlin.cli.jvm.main
 import org.jooq.meta.jaxb.ForcedType
 import org.jooq.meta.jaxb.Logging
+import java.nio.file.Paths
 
 val ktor_version: String by project
 val kotlin_version: String by project
@@ -14,10 +14,12 @@ plugins {
     kotlin("plugin.serialization") version "1.7.0"
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("nu.studer.jooq") version "7.1.1"
+    id("gg.jte.gradle") version "2.1.1"
+
 }
 
 group = "io.github.asm0dey"
-version = "0.0.1"
+version = "0.0.2"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -57,6 +59,10 @@ dependencies {
     implementation("org.jooq:jooq-kotlin:3.16.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.2")
     implementation("org.glassfish.jaxb:jaxb-runtime:4.0.0")
+    implementation("io.ktor:ktor-server-jte:$ktor_version")
+    implementation("gg.jte:jte-kotlin:2.1.1")
+
+    implementation("com.lordcodes.turtle:turtle:0.7.0")
 }
 
 configure<SourceSetContainer> {
@@ -121,4 +127,12 @@ jooq {
             }
         }
     }
+}
+
+jte {
+    generate()
+    sourceDirectory.set(Paths.get("templates"))
+    contentType.set(gg.jte.ContentType.Html)
+    binaryStaticContent.set(true)
+    trimControlStructures.set(true)
 }

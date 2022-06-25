@@ -11,7 +11,7 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row3;
+import org.jooq.Row2;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -51,11 +51,6 @@ public class BooksFts extends TableImpl<BooksFtsRecord> {
      * The column <code>books_fts.sequence</code>.
      */
     public final TableField<BooksFtsRecord, String> SEQUENCE = createField(DSL.name("sequence"), SQLDataType.CLOB, this, "");
-
-    /**
-     * The column <code>books_fts.id</code>.
-     */
-    public final TableField<BooksFtsRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT, this, "");
 
     private BooksFts(Name alias, Table<BooksFtsRecord> aliased) {
         this(alias, aliased, null);
@@ -122,11 +117,11 @@ public class BooksFts extends TableImpl<BooksFtsRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row3 type methods
+    // Row2 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row3<String, String, Long> fieldsRow() {
-        return (Row3) super.fieldsRow();
+    public Row2<String, String> fieldsRow() {
+        return (Row2) super.fieldsRow();
     }
 }

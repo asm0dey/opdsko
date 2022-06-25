@@ -1,6 +1,7 @@
 package io.github.asm0dey
 
 import com.kursx.parser.fb2.FictionBook
+import io.github.asm0dey.model.Entry
 import io.github.asm0dey.opdsko.jooq.Tables.*
 import io.github.asm0dey.opdsko.jooq.tables.daos.BookAuthorDao
 import io.github.asm0dey.opdsko.jooq.tables.daos.BookGenreDao
@@ -17,22 +18,18 @@ import io.github.asm0dey.plugins.OPDSKO_JDBC
 import io.github.asm0dey.plugins.create
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import org.flywaydb.core.Flyway
-import org.jooq.Configuration
-import org.jooq.DSLContext
+import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.using
-import org.tinylog.kotlin.Logger
+import org.tinylog.Logger
 import java.io.File
 import java.time.LocalDateTime
-import java.util.concurrent.CompletionStage
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events.StartElement
 import kotlin.collections.set
 import kotlin.concurrent.thread
+
 
 val genreNames = genreNames()
 
@@ -47,9 +44,9 @@ fun Application.main() {
             val pathsToDelete = create.select(BOOK.ID, BOOK.PATH).from(BOOK).fetchLazy()
                 .mapNotNull { r -> r[BOOK.PATH].takeIf { !File(it).exists() }?.let { r[BOOK.ID] } }
             create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
-            create.deleteFrom(BOOKS_FTS).where(BOOKS_FTS.ID.`in`(pathsToDelete))
         }
     }
+
 }
 
 private fun initDb() {
@@ -59,7 +56,7 @@ private fun initDb() {
 private fun genreNames(): HashMap<String, String> {
     fun StartElement.getAttributeValue(attribute: String) = getAttributeByName(QName.valueOf(attribute)).value
 
-    NavFeed.BookEntry::class.java.classLoader.getResourceAsStream("genres.xml")?.buffered().use {
+    Entry::class.java.classLoader.getResourceAsStream("genres.xml")?.buffered().use {
         val reader = XMLInputFactory.newDefaultFactory().createXMLEventReader(it)
         var currentGenre = ""
         val data = hashMapOf<String, String>()
@@ -189,12 +186,4 @@ private fun scan(libraryRoot: String) {
 
 fun String?.normalizeName() = if (isNullOrBlank()) null else trim().split(" ").joinToString(" ") {
     it.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-}
-
-suspend inline fun DSLContext.transactionCoroutine(crossinline block: suspend (Configuration) -> Unit): CompletionStage<Void> {
-    return transactionAsync {
-        GlobalScope.launch(Dispatchers.IO) {
-            block.invoke(it)
-        }
-    }
 }

@@ -32,9 +32,4 @@ public interface IAuthorsFts extends Serializable {
      * Getter for <code>authors_fts.nickname</code>.
      */
     public String getNickname();
-
-    /**
-     * Getter for <code>authors_fts.id</code>.
-     */
-    public Long getId();
 }

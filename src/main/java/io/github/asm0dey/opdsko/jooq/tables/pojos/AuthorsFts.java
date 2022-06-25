@@ -19,28 +19,24 @@ public class AuthorsFts implements IAuthorsFts {
     private final String firstName;
     private final String middleName;
     private final String nickname;
-    private final Long   id;
 
     public AuthorsFts(IAuthorsFts value) {
         this.lastName = value.getLastName();
         this.firstName = value.getFirstName();
         this.middleName = value.getMiddleName();
         this.nickname = value.getNickname();
-        this.id = value.getId();
     }
 
     public AuthorsFts(
         String lastName,
         String firstName,
         String middleName,
-        String nickname,
-        Long   id
+        String nickname
     ) {
         this.lastName = lastName;
         this.firstName = firstName;
         this.middleName = middleName;
         this.nickname = nickname;
-        this.id = id;
     }
 
     /**
@@ -75,14 +71,6 @@ public class AuthorsFts implements IAuthorsFts {
         return this.nickname;
     }
 
-    /**
-     * Getter for <code>authors_fts.id</code>.
-     */
-    @Override
-    public Long getId() {
-        return this.id;
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("AuthorsFts (");
@@ -91,7 +79,6 @@ public class AuthorsFts implements IAuthorsFts {
         sb.append(", ").append(firstName);
         sb.append(", ").append(middleName);
         sb.append(", ").append(nickname);
-        sb.append(", ").append(id);
 
         sb.append(")");
         return sb.toString();
