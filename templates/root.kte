@@ -26,4 +26,11 @@
     <summary>Authors categorized</summary>
     <updated>${x.format(java.time.ZonedDateTime.now())}</updated>
   </entry>
+  <entry>
+    <title>Books by series</title>
+    <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="category" href="/opds/series/browse/"/>
+    <id>series</id>
+    <summary>Series by first letters</summary>
+    <updated>${x.format(java.time.ZonedDateTime.now())}</updated>
+  </entry>
 </feed>

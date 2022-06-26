@@ -131,7 +131,7 @@ public class Book extends TableImpl<BookRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.BOOK_ADDED, Indexes.BOOK_PATH, Indexes.BOOK_PATH_NAME);
+        return Arrays.asList(Indexes.BOOK_ADDED, Indexes.BOOK_PATH, Indexes.BOOK_PATH_NAME, Indexes.BOOK_SEQ);
     }
 
     @Override

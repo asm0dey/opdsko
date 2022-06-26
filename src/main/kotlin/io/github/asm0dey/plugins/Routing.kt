@@ -9,6 +9,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.asm0dey.genreNames
 import io.github.asm0dey.model.Entry
+import io.github.asm0dey.model.Entry.Link
 import io.github.asm0dey.opdsko.jooq.Tables.*
 import io.github.asm0dey.opdsko.jooq.tables.Book
 import io.github.asm0dey.opdsko.jooq.tables.interfaces.IAuthor
@@ -91,17 +92,15 @@ fun Application.routes() {
                         val searchTerm = URLDecoder.decode(call.parameters["searchTerm"]!!, UTF_8)
                         val (books, hasMore) = searchBookByText(searchTerm, page)
                         call.respond(
-                            JteContent(
-                                "books.kte",
+                            bookJte(
                                 books(
                                     books,
                                     call.request.uri,
                                     "Search results for \"$searchTerm\"",
                                     "search:$searchTerm",
                                     ZonedDateTime.now(),
-                                    paginationLinks(hasMore, searchTerm, page)
-                                ),
-                                contentType = ContentType.parse(ACQUISITION_TYPE)
+                                    searchPaginationLinks(hasMore, searchTerm, page)
+                                )
                             )
                         )
                     }
@@ -109,11 +108,7 @@ fun Application.routes() {
                 get("/new") {
                     val books = latestBooks().map { BookWithInfo(it) }
                     call.respond(
-                        JteContent(
-                            "books.kte",
-                            params = books(books, call.request.path(), "Latest books", "new"),
-                            contentType = ContentType.parse(ACQUISITION_TYPE)
-                        )
+                        bookJte(books(books, call.request.path(), "Latest books", "new"))
                     )
                 }
                 get("/image/{id}") {
@@ -170,33 +165,16 @@ fun Application.routes() {
                         val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", UTF_8)
                         val trim = nameStart.length < 5
                         val items = authorNameStarts(nameStart, trim)
-                        call.respond(JteContent(
-                            template = "navigation.kte",
-                            params = mapOf(
-                                "feedId" to "authors:start_with:$nameStart",
-                                "feedTitle" to if (nameStart.isBlank()) "First character of all authors" else "Authors starting with $nameStart",
-                                "feedUpdated" to ZonedDateTime.now(),
-                                "path" to path,
-                                "entries" to items.map { (name, countOrId) ->
-                                    Entry(
-                                        title = name,
-                                        links = listOf(
-                                            Entry.Link(
-                                                type = NAVIGATION_TYPE,
-                                                rel = "subsection",
-                                                href = if (trim) "/opds/author/c/${URLEncoder.encode(name, UTF_8)}"
-                                                else "/opds/author/browse/${countOrId}",
-                                                count = if (trim) countOrId else null,
-                                            )
-                                        ),
-                                        id = "authors:start_with:$nameStart",
-                                        summary = name,
-                                        updated = ZonedDateTime.now()
-                                    )
-                                }
-                            ),
-                            contentType = ContentType.parse(NAVIGATION_TYPE)
-                        ))
+                        call.respond(
+                            navJte(
+                                navigation(
+                                    path,
+                                    "authors:start_with:$nameStart",
+                                    if (nameStart.isBlank()) "First character of all authors" else "Authors starting with $nameStart",
+                                    entries = authorStartEntries(items, trim, nameStart)
+                                )
+                            )
+                        )
                     }
                     route("/browse") {
                         get("/{id}") {
@@ -206,56 +184,11 @@ fun Application.routes() {
                             val (inseries, out) = hasSeries(authorId)
                             val latestAuthorUpdate = latestAuthorUpdate(authorId).z
                             call.respond(
-                                JteContent(
-                                    template = "navigation.kte",
-                                    params = mapOf(
-                                        "feedId" to "author:$authorId",
-                                        "feedTitle" to authorName,
-                                        "feedUpdated" to latestAuthorUpdate,
-                                        "path" to path,
-                                        "entries" to listOfNotNull(
-                                            if (inseries > 0) Entry(
-                                                title = "By series",
-                                                links = listOf(
-                                                    Entry.Link(
-                                                        type = NAVIGATION_TYPE,
-                                                        rel = "subsection",
-                                                        href = "/opds/author/browse/$authorId/series",
-                                                    )
-                                                ),
-                                                id = "author:$authorId:series",
-                                                summary = "All books by $authorName by series",
-                                                updated = ZonedDateTime.now(),
-                                            ) else null,
-                                            if (out > 0 && inseries > 0) Entry(
-                                                title = "Out of series",
-                                                links = listOf(
-                                                    Entry.Link(
-                                                        type = NAVIGATION_TYPE,
-                                                        rel = "subsection",
-                                                        href = "/opds/author/browse/$authorId/out",
-                                                    )
-                                                ),
-                                                id = "author:$authorId:out",
-                                                summary = "All books by $authorName",
-                                                updated = ZonedDateTime.now(),
-                                            ) else null,
-                                            Entry(
-                                                title = "All books",
-                                                links = listOf(
-                                                    Entry.Link(
-                                                        type = NAVIGATION_TYPE,
-                                                        rel = "subsection",
-                                                        href = "/opds/author/browse/$authorId/all",
-                                                    )
-                                                ),
-                                                id = "author:$authorId:all",
-                                                summary = "All books by $authorName",
-                                                updated = latestAuthorUpdate,
-                                            ),
-                                        )
-                                    ),
-                                    contentType = ContentType.parse(NAVIGATION_TYPE)
+                                navJte(
+                                    navigation(
+                                        path, "author:$authorId", authorName, latestAuthorUpdate,
+                                        authorEntries(inseries, authorId, authorName, out, latestAuthorUpdate)
+                                    )
                                 )
                             )
                         }
@@ -269,10 +202,7 @@ fun Application.routes() {
                                 .fetch { BookWithInfo(it) }
                             val authorName = authorName(authorId)
                             call.respond(
-                                JteContent(
-                                    "books.kte", books(books, path, "All books by $authorName", "author:$authorId:all"),
-                                    contentType = ContentType.parse(ACQUISITION_TYPE)
-                                )
+                                bookJte(books(books, path, "All books by $authorName", "author:$authorId:all"))
                             )
                         }
                         get("/{id}/series") {
@@ -280,37 +210,17 @@ fun Application.routes() {
                             val path = call.request.path()
                             val namesWithDates = seriesByAuthorId(authorId)
                             val authorName = authorName(authorId)
-                            call.respond(JteContent(
-                                template = "navigation.kte",
-                                params = mapOf(
-                                    "feedId" to "author:$authorId:series",
-                                    "feedTitle" to "Series of $authorName",
-                                    "feedUpdated" to namesWithDates.values.maxOf { it.first }.z,
-                                    "path" to path,
-                                    "entries" to namesWithDates.map { (name, dateAndCount) ->
-                                        Entry(
-                                            name,
-                                            listOf(
-                                                Entry.Link(
-                                                    rel = "subsection",
-                                                    href = "/opds/author/browse/$authorId/series/${
-                                                        URLEncoder.encode(
-                                                            name,
-                                                            UTF_8
-                                                        )
-                                                    }",
-                                                    type = ACQUISITION_TYPE,
-                                                    count = dateAndCount.second.toLong()
-                                                )
-                                            ),
-                                            "author:$authorId:series:$name",
-                                            name,
-                                            dateAndCount.first.z
-                                        )
-                                    }
-                                ),
-                                contentType = ContentType.parse(NAVIGATION_TYPE)
-                            ))
+                            call.respond(
+                                navJte(
+                                    navigation(
+                                        path,
+                                        "author:$authorId:series",
+                                        "Series of $authorName",
+                                        namesWithDates.values.maxOf { it.first }.z,
+                                        authorSeries(namesWithDates, authorId)
+                                    )
+                                )
+                            )
                         }
                         get("/{id}/series/{name}") {
                             val authorId = call.parameters["id"]!!.toLong()
@@ -318,10 +228,8 @@ fun Application.routes() {
                             val result = booksBySeriesAndAuthor(seriesName, authorId)
                             val path = call.request.path()
                             call.respond(
-                                JteContent(
-                                    template = "books.kte",
-                                    params = books(result, path, seriesName, "author:$authorId:series:$seriesName"),
-                                    contentType = ContentType.parse(ACQUISITION_TYPE)
+                                bookJte(
+                                    books(result, path, seriesName, "author:$authorId:series:$seriesName")
                                 )
                             )
                         }
@@ -331,18 +239,109 @@ fun Application.routes() {
                             val books = booksWithoutSeriesByAuthorId(authorId)
                             val authorName = authorName(authorId)
                             call.respond(
-                                JteContent(
-                                    template = "books.kte",
-                                    params = books(
+                                bookJte(
+                                    books(
                                         books,
                                         path,
                                         "Books without series by $authorName",
                                         "author:$authorId:series:out"
-                                    ),
-                                    contentType = ContentType.parse(ACQUISITION_TYPE)
+                                    )
                                 )
                             )
                         }
+                    }
+                }
+                route("/series/") {
+                    get("/browse/{name?}") {
+                        val path = call.request.path()
+                        val nameStart = (call.parameters["name"] ?: "").decoded
+                        val trim = nameStart.length < 5
+                        val series = seriesNameStarts(nameStart, trim)
+                        call.respond(
+                            navJte(
+                                navigation(
+                                    path,
+                                    "series:start:$nameStart",
+                                    if (nameStart.isEmpty()) "First letter of all series"
+                                    else "Series starting with $nameStart",
+                                    entries = series.map { (name, count, complete) ->
+                                        Entry(
+                                            name,
+                                            "series:start:$nameStart:$name",
+                                            "${if (!complete) "Series starting with $name: " else ""}$count books",
+                                            ZonedDateTime.now(),
+                                            Link(
+                                                "subsection",
+                                                if (complete) "/opds/series/item/${name.encoded}" else "/opds/series/browse/${name.encoded}",
+                                                NAVIGATION_TYPE,
+                                                count.toLong()
+                                            )
+                                        )
+                                    },
+                                )
+                            )
+                        )
+                    }
+                    get("/item/{name}") {
+                        val path = call.request.path()
+                        val name = call.parameters["name"]!!.decoded
+                        val authorFilter = call.parameters["author"]?.toLongOrNull()
+                        val sorting = call.request.queryParameters["sort"] ?: "num"
+                        val books = getBookWithInfo()
+                            .where(BOOK.SEQUENCE.eq(name))
+                            .fetch { BookWithInfo(it) }
+                            .asSequence()
+                        val allAuthors = books.flatMap { it.authors.map { it.buildName() to it.id } }.toSet()
+                        val sorted = when (sorting) {
+                            "num" -> books.sortedBy { it.book.sequenceNumber ?: Int.MAX_VALUE }
+                            "name" -> books.sortedBy { it.book.name!! }
+                            else -> books
+                        }
+                        val filtered =
+                            authorFilter?.let { aId -> sorted.filter { it.authors.any { it.id == aId } } }?.toList()
+                                ?: sorted.toList()
+                        call.respond(
+                            bookJte(
+                                books(
+                                    filtered,
+                                    path,
+                                    name,
+                                    "series:$name",
+                                    sorted.maxOf { it.book.added }.z,
+                                    listOfNotNull(
+                                        Link(
+                                            "http://opds-spec.org/facet",
+                                            "$path?sort=num" + if (authorFilter != null) "&author=$authorFilter" else "",
+                                            ACQUISITION_TYPE,
+                                            title = "Order by number in series",
+                                            facetGroup = "Sorting",
+                                            activeFacet = sorting == "num"
+                                        ),
+                                        Link(
+                                            "http://opds-spec.org/facet",
+                                            "$path?sort=name" + if (authorFilter != null) "&author=$authorFilter" else "",
+                                            ACQUISITION_TYPE,
+                                            title = "Order by name of book",
+                                            facetGroup = "Sorting",
+                                            activeFacet = sorting == "name"
+                                        ),
+
+                                        ) + if (allAuthors.size > 1)
+                                        allAuthors.map { (authorName, id) ->
+                                            Link(
+                                                "http://opds-spec.org/facet",
+                                                "$path?sort=$sorting&author=$id",
+                                                ACQUISITION_TYPE,
+                                                title = "Only books in $name by $authorName",
+                                                facetGroup = "Author",
+                                                activeFacet = authorFilter == id
+                                            )
+
+                                        }
+                                    else listOf()
+                                )
+                            )
+                        )
                     }
                 }
             }
@@ -350,31 +349,106 @@ fun Application.routes() {
     }
 }
 
-private fun paginationLinks(
+private val String.decoded: String get() = URLDecoder.decode(this, UTF_8)
+
+
+private fun navJte(params: Map<String, Any>) = JteContent(
+    "navigation.kte", params, contentType = ContentType.parse(NAVIGATION_TYPE)
+)
+
+fun bookJte(params: Map<String, Any>): JteContent = JteContent(
+    "books.kte", params, contentType = ContentType.parse(ACQUISITION_TYPE)
+)
+
+private fun authorSeries(namesWithDates: Map<String, Pair<LocalDateTime, Int>>, authorId: Long) =
+    namesWithDates.map { (name, dateAndCount) ->
+        Entry(
+            name,
+            listOf(
+                Link(
+                    "subsection",
+                    "/opds/author/browse/$authorId/series/${name.encoded}",
+                    ACQUISITION_TYPE,
+                    dateAndCount.second.toLong()
+                )
+            ),
+            "author:$authorId:series:$name",
+            "$name: $dateAndCount books",
+            dateAndCount.first.z
+        )
+    }
+
+private fun authorStartEntries(items: List<Pair<String, Long>>, trim: Boolean, nameStart: String?) =
+    items.map { (name, countOrId) ->
+        Entry(
+            name,
+            listOf(
+                Link(
+                    "subsection",
+                    if (trim) "/opds/author/c/${name.encoded}"
+                    else "/opds/author/browse/${countOrId}",
+                    NAVIGATION_TYPE, if (trim) countOrId else null,
+                )
+            ),
+            "authors:start_with:$nameStart", name + if (trim) ": $countOrId books" else "", ZonedDateTime.now()
+        )
+    }
+
+private val String.encoded: String get() = URLEncoder.encode(this, UTF_8)
+
+private fun authorEntries(
+    inseries: Int,
+    authorId: Long,
+    authorName: String,
+    out: Int,
+    latestAuthorUpdate: ZonedDateTime,
+) = listOfNotNull(
+    if (inseries > 0) Entry(
+        "By series",
+        listOf(Link("subsection", "/opds/author/browse/$authorId/series", NAVIGATION_TYPE)),
+        "author:$authorId:series", "All books by $authorName by series", ZonedDateTime.now(),
+    ) else null,
+    if (out > 0 && inseries > 0) Entry(
+        "Out of series",
+        listOf(Link("subsection", "/opds/author/browse/$authorId/out", NAVIGATION_TYPE)),
+        "author:$authorId:out", "All books by $authorName", ZonedDateTime.now(),
+    ) else null,
+    Entry(
+        "All books",
+        listOf(Link("subsection", "/opds/author/browse/$authorId/all", NAVIGATION_TYPE)),
+        "author:$authorId:all", "All books by $authorName", latestAuthorUpdate,
+    ),
+)
+
+private fun navigation(
+    path: String,
+    id: String,
+    title: String,
+    updated: ZonedDateTime = ZonedDateTime.now(),
+    entries: List<Entry>,
+    additionalLinks: List<Link> = listOf(),
+) = mapOf(
+    "feedId" to id,
+    "feedTitle" to title,
+    "feedUpdated" to updated,
+    "path" to path,
+    "entries" to entries,
+    "additionalLinks" to additionalLinks
+)
+
+private fun searchPaginationLinks(
     hasMore: Boolean,
-    searchTerm: String?,
+    searchTerm: String,
     page: Int,
 ) = listOfNotNull(
     if (hasMore) {
-        Entry.Link(
-            rel = "next",
-            "/opds/search/${URLEncoder.encode(searchTerm, UTF_8)}?page=${page + 1}",
-            type = ACQUISITION_TYPE
-        )
+        Link("next", "/opds/search/${searchTerm.encoded}?page=${page + 1}", ACQUISITION_TYPE)
     } else null,
     if (page > 0) {
-        Entry.Link(
-            rel = "previous",
-            "/opds/search/${URLEncoder.encode(searchTerm, UTF_8)}?page=${page - 1}",
-            type = ACQUISITION_TYPE
-        )
+        Link("previous", "/opds/search/${searchTerm.encoded}?page=${page - 1}", ACQUISITION_TYPE)
     } else null,
     if (page > 0) {
-        Entry.Link(
-            rel = "first",
-            type = ACQUISITION_TYPE,
-            href = "/opds/search/${URLEncoder.encode(searchTerm, UTF_8)}"
-        )
+        Link("first", "/opds/search/${searchTerm.encoded}", ACQUISITION_TYPE)
     } else null,
 )
 
@@ -384,7 +458,7 @@ private fun books(
     title: String,
     id: String,
     updated: ZonedDateTime = books.maxOf { it.book.added }.z,
-    additionalLinks: List<Entry.Link> = listOf(),
+    additionalLinks: List<Link> = listOf(),
 ) = mapOf(
     "books" to books,
     "bookDescriptions" to bookDescriptionsShorter(books.map { it.id to it.book }),
@@ -416,7 +490,7 @@ private fun booksBySeriesAndAuthor(
     .orderBy(BOOK.SEQUENCE_NUMBER.asc().nullsLast(), BOOK.NAME)
     .fetch { BookWithInfo(it) }
 
-private fun authorNameStarts(prefix: String, trim: Boolean = true): MutableList<Pair<String, Long>> {
+private fun authorNameStarts(prefix: String, trim: Boolean = true): List<Pair<String, Long>> {
     val primaryNamesAreNulls = AUTHOR.LAST_NAME.isNull
         .and(AUTHOR.MIDDLE_NAME.isNull)
         .and(AUTHOR.FIRST_NAME.isNull)
@@ -447,6 +521,26 @@ private fun authorNameStarts(prefix: String, trim: Boolean = true): MutableList<
         .groupBy(toSelect)
         .orderBy(toSelect)
         .fetch { it[toSelect] to it[second] }
+}
+
+private fun seriesNameStarts(
+    prefix: String,
+    trim: Boolean = true,
+): List<Triple<String, Int, Boolean>> {
+    val fst = (
+            if (trim) substring(BOOK.SEQUENCE, 1, prefix.length + 1)
+            else BOOK.SEQUENCE
+            )
+        .`as`("term")
+    val snd = count(BOOK.ID).`as`("cnt")
+    val third = if (trim) field(length(BOOK.SEQUENCE).eq(prefix.length)) else value(true)
+    return create
+        .selectDistinct(fst, snd, third)
+        .from(BOOK)
+        .where(fst.isNotNull, trim(fst).ne(""), fst.startsWith(prefix))
+        .groupBy(fst)
+        .orderBy(fst)
+        .fetch { Triple(it[fst], it[snd], it[third]) }
 }
 
 @Suppress("SpellCheckingInspection")

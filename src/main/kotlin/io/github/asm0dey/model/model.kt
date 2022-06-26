@@ -31,6 +31,14 @@ data class Entry(
     val summary: String? = null,
     val updated: ZonedDateTime,
 ) {
+    constructor(
+        title: String,
+        id: String,
+        summary: String? = null,
+        updated: ZonedDateTime,
+        vararg links: Link,
+    ) : this(title, links.toList(), id, summary, updated)
+
     data class Link(
         val rel: String,
         val href: String,
@@ -38,7 +46,7 @@ data class Entry(
         val count: Long? = null,
         val title: String? = null,
         val facetGroup: String? = null,
-        val activeFacet: String? = null,
+        val activeFacet: Boolean? = null,
 
         )
 }

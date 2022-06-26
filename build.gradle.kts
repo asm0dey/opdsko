@@ -20,7 +20,7 @@ plugins {
 }
 
 group = "io.github.asm0dey"
-version = "0.0.3"
+version = "0.0.4"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -104,10 +104,12 @@ val migrationDirs = listOf(
 tasks.flywayMigrate {
     dependsOn("flywayClasses")
     migrationDirs.forEach { inputs.dir(it) }
-    outputs.dir("${project.buildDir}/generated/flyway")
+    outputs.dirs("${project.buildDir}/generated/flyway", "${project.buildDir}/db")
     doFirst {
+        logger.info("Deleting old")
         delete(outputs.files)
-        File("$projectDir/build/db").mkdirs()
+        logger.info("Creating directory ${project.buildDir}/db with result ${File("$projectDir/build/db").mkdirs()}")
+
     }
 }
 

@@ -4,7 +4,7 @@
 @param content: String
 @param summary: String
 @param book: BookWithInfo
-@param imageType: String
+@param imageType: String?
 <?xml version="1.0" encoding="UTF-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom" xmlns:dcterms="http://purl.org/dc/terms/">
     <title>${book.book.name}</title>

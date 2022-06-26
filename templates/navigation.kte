@@ -6,6 +6,7 @@
 @param feedUpdated: ZonedDateTime
 @param path:String
 @param entries: List<Entry>
+@param additionalLinks: List<io.github.asm0dey.model.Entry.Link> = listOf()
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog"
       xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
@@ -20,6 +21,9 @@
     <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="start" href="/opds"/>
     <link type="application/opensearchdescription+xml" rel="search" href="/opds/search"/>
     <link type="application/atom+xml" title="Search" href="/opds/search/{searchTerms}" rel="search"/>
+    @for(link in additionalLinks)
+    @template.link( rel=link.rel, href=link.href, type=link.type, count=link.count, title=link.title )
+    @endfor
     @for(entry in entries)
     <entry>
         <title>${entry.title}</title>
@@ -34,7 +38,7 @@
         @endfor
         <id>${entry.id}</id>
         @if(entry.summary != null)
-        <summary>${entry.summary}</summary>
+        <content type="text">${entry.summary}</content>
         @endif
         <updated>${formatDate(entry.updated)}</updated>
     </entry>
