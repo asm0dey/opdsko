@@ -12,6 +12,7 @@ import io.github.asm0dey.model.Entry
 import io.github.asm0dey.opdsko.jooq.Tables.*
 import io.github.asm0dey.opdsko.jooq.tables.Book
 import io.github.asm0dey.opdsko.jooq.tables.interfaces.IAuthor
+import io.github.asm0dey.opdsko.jooq.tables.interfaces.IBook
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
 import io.ktor.http.ContentDisposition.Companion.Attachment
 import io.ktor.http.ContentDisposition.Parameters.FileName
@@ -638,7 +639,7 @@ fun formatDate(x: ZonedDateTime): String = dtf.format(x)
 @Suppress("unused")
 fun formatDate(x: TemporalAccessor): String = dtf.format(x)
 
-fun bookDescriptionsShorter(pathsByIds: List<Pair<Long, io.github.asm0dey.opdsko.jooq.tables.pojos.Book>>): Map<Long, String?> {
+fun bookDescriptionsShorter(pathsByIds: List<Pair<Long, IBook>>): Map<Long, String?> {
     return pathsByIds
         .associate { (id, book) ->
 
@@ -658,7 +659,7 @@ fun bookDescriptionsShorter(pathsByIds: List<Pair<Long, io.github.asm0dey.opdsko
         }
 }
 
-fun bookDescriptionsLonger(pathsByIds: List<Pair<Long, io.github.asm0dey.opdsko.jooq.tables.pojos.Book>>): Map<Long, String?> {
+fun bookDescriptionsLonger(pathsByIds: List<Pair<Long, IBook>>): Map<Long, String?> {
     return pathsByIds
         .associate { (id, book) ->
             val file = File(book.path)
@@ -721,8 +722,8 @@ fun Table<*>.match(text: Typed<String>): Condition {
 
 @Suppress("unused")
 class BookWithInfo(record: Record4<Long, List<BookPojo>, List<Author>, List<String>>) {
-    val book = record.component2()[0]
-    val authors = record.component3()!!
-    val genres = record.component4().map { genreNames[it] ?: it }
+    val book: IBook = record.component2()[0]
+    val authors: List<IAuthor> = record.component3()!!
+    val genres: List<String> = record.component4().map { genreNames[it] ?: it }
     val id = record.get(BOOK.ID)!!
 }

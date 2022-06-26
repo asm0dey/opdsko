@@ -14,6 +14,7 @@ plugins {
     kotlin("plugin.serialization") version "1.7.0"
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("nu.studer.jooq") version "7.1.1"
+    id("org.flywaydb.flyway") version "8.5.13"
     id("gg.jte.gradle") version "2.1.1"
 
 }
@@ -77,6 +78,39 @@ kotlin {
     }
 }
 
+val jooqDb = mapOf("url" to "jdbc:sqlite:$projectDir/build/db/opds.db")
+
+flyway {
+    url = jooqDb["url"]
+    locations = arrayOf("classpath:db/migration")
+}
+
+
+sourceSets {
+    //add a flyway sourceSet
+    val flyway by creating {
+        compileClasspath += sourceSets.main.get().compileClasspath
+        runtimeClasspath += sourceSets.main.get().runtimeClasspath
+    }
+    //main sourceSet depends on the output of flyway sourceSet
+    main {
+        output.dir(flyway.output)
+    }
+}
+val migrationDirs = listOf(
+    "$projectDir/src/flyway/resources/db/migration",
+    // "$projectDir/src/flyway/kotlin/db/migration" // Uncomment if we'll add kotlin migrations
+)
+tasks.flywayMigrate {
+    dependsOn("flywayClasses")
+    migrationDirs.forEach { inputs.dir(it) }
+    outputs.dir("${project.buildDir}/generated/flyway")
+    doFirst {
+        delete(outputs.files)
+        File("$projectDir/build/db").mkdirs()
+    }
+}
+
 jooq {
     configurations {
         create("main") {
@@ -84,7 +118,7 @@ jooq {
 
                 logging = Logging.WARN
                 jdbc.apply {
-                    url = "jdbc:sqlite:referencedb/opds.db"
+                    url = jooqDb["url"]
                 }
                 generator.apply {
                     generate.apply {
@@ -121,13 +155,18 @@ jooq {
                                 },
                             )
                         )
-                        excludes = ".*_fts_.*"
+                        excludes = ".*(_fts_|flyway_).*"
                     }
                 }
             }
         }
     }
 }
+
+val generateJooq by project.tasks
+generateJooq.dependsOn(tasks.flywayMigrate)
+//generateJooq.doLast { File("$projectDir/build/db/opds.db").delete() }
+
 
 jte {
     generate()
