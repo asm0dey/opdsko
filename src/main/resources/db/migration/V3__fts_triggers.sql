@@ -57,14 +57,14 @@ CREATE TRIGGER tbl_ad
     AFTER DELETE
     ON main.author
 BEGIN
-    INSERT INTO authors_fts(books_fts, rowid, nickname, middle_name, last_name, first_name)
+    INSERT INTO authors_fts(authors_fts, rowid, nickname, middle_name, last_name, first_name)
     VALUES ('delete', old.id, old.nickname, old.middle_name, old.last_name, old.first_name);
 END;
 CREATE TRIGGER tbl_au
     AFTER UPDATE
     ON main.author
 BEGIN
-    INSERT INTO authors_fts(books_fts, rowid, nickname, middle_name, last_name, first_name)
+    INSERT INTO authors_fts(authors_fts, rowid, nickname, middle_name, last_name, first_name)
     VALUES ('delete', old.id, old.nickname, old.middle_name, old.last_name, old.first_name);
     INSERT INTO authors_fts(rowid, nickname, middle_name, last_name, first_name)
     VALUES (new.id, new.nickname, new.middle_name, new.last_name, new.first_name);

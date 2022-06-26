@@ -11,6 +11,7 @@
   <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="start" href="/opds"/>
   <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="self" href="/opds"/>
   <link type="application/opensearchdescription+xml" rel="search" href="/opds/search"/>
+  <link type="application/atom+xml" title="Search" href="/opds/search/{searchTerms}" rel="search"/>
   <entry>
     <title>New books</title>
     <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" rel="http://opds-spec.org/sort/new" href="/opds/new"/>

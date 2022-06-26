@@ -7,12 +7,13 @@
 @param title: String
 @param feedId: String
 @param feedUpdated: java.time.temporal.TemporalAccessor
+@param additionalLinks: List<io.github.asm0dey.model.Entry.Link> = listOf()
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog" xmlns:dcterms="http://purl.org/dc/terms/"
       xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
     <id>${feedId}</id>
     <title>${title}</title>
-    <updated>${formatDate(books.maxOf { it.book.added })}</updated>
+    <updated>${formatDate(books.maxOfOrNull { it.book.added }?.z?:ZonedDateTime.now())}</updated>
     <author>
         <name>Pasha Finkelshteyn</name>
         <uri>https://github.com/asm0dey/opdsKo</uri>
@@ -20,6 +21,10 @@
     <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="start" href="/opds"/>
     <link type="application/atom+xml;profile=opds-catalog;kind=acquisition" rel="self" href="${path}"/>
     <link type="application/opensearchdescription+xml" rel="search" href="/opds/search"/>
+    <link type="application/atom+xml" title="Search" href="/opds/search/{searchTerms}" rel="search"/>
+    @for(link in additionalLinks)
+    @template.link( rel=link.rel, href=link.href, type=link.type, count=link.count, title=link.title )
+    @endfor
     @for(book in books)
     <entry>
         <title>${book.book.name}</title>

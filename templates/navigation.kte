@@ -19,6 +19,7 @@
     <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="self" href="${path}"/>
     <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="start" href="/opds"/>
     <link type="application/opensearchdescription+xml" rel="search" href="/opds/search"/>
+    <link type="application/atom+xml" title="Search" href="/opds/search/{searchTerms}" rel="search"/>
     @for(entry in entries)
     <entry>
         <title>${entry.title}</title>
