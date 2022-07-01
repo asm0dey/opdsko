@@ -1,7 +1,35 @@
+<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hello Bulma!</title>
+    <link rel="stylesheet" href="/webjars/bulma/css/bulma.min.css">
+    <link rel="stylesheet" href="/webjars/font-awesome/css/all.min.css"/>
 </head>
 <body>
-<h1>Hello Ktor!</h1>
+<!-- START NAV -->
+<nav class="navbar is-black" hx-boost="true">
+    <div class="container">
+        <div class="navbar-brand">
+            <a class="navbar-item brand-text" hx-get="/api" hx-target="#layout">Asm0dey's library</a>
+        </div>
+    </div>
+</nav>
+<!-- END NAV -->
+
+<div class="container">
+    <nav class="breadcrumb column is-12" aria-label="breadcrumbs">
+        <ul>
+        </ul>
+    </nav>
+
+    <div class="tile is-ancestor column is-12" hx-trigger="load" hx-get="/api" id="layout"></div>
+</div>
+
+<div id="modal-cont"></div>
+
+<script src="/webjars/htmx.org/dist/htmx.min.js"></script>
+<script src="/webjars/hyperscript.org/dist/_hyperscript_web.min.js"></script>
 </body>
 </html>

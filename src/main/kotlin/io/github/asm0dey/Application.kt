@@ -35,18 +35,19 @@ val genreNames = genreNames()
 
 fun main(args: Array<String>) = EngineMain.main(args)
 
+@Suppress("UnusedReceiverParameter")
 fun Application.main() {
-    val dir = environment.config.propertyOrNull("ktor.indexer.path")?.getString()
     initDb()
-    if (dir != null) {
-        thread(start = true, isDaemon = true, name = "Scanner", priority = 1) {
-            scan(dir)
-            val pathsToDelete = create.select(BOOK.ID, BOOK.PATH).from(BOOK).fetchLazy()
-                .mapNotNull { r -> r[BOOK.PATH].takeIf { !File(it).exists() }?.let { r[BOOK.ID] } }
-            create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
-        }
-    }
+}
 
+fun Application.startScanTask() {
+    thread(start = true, isDaemon = true, name = "Scanner", priority = 1) {
+        val dir = environment.config.propertyOrNull("ktor.indexer.path")?.getString() ?: return@thread
+        scan(dir)
+        val pathsToDelete = create.select(BOOK.ID, BOOK.PATH).from(BOOK).fetchLazy()
+            .mapNotNull { r -> r[BOOK.PATH].takeIf { !File(it).exists() }?.let { r[BOOK.ID] } }
+        create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
+    }
 }
 
 private fun initDb() {
@@ -98,6 +99,7 @@ private fun scan(libraryRoot: String) {
         val fb = try {
             FictionBook(file)
         } catch (e: Exception) {
+            Logger.error("Unable to parse fb2 in file $bookPath", e)
             return@forEach
         }
         create.transaction { txConfig ->
@@ -114,8 +116,10 @@ private fun scan(libraryRoot: String) {
                 )
                 .limit(1)
                 .fetchOne { it[BOOK.ID] }
-            if (existingBookId != null)
+            if (existingBookId != null) {
+                Logger.debug { "Already added" }
                 return@transaction
+            }
             transaction.delete(BOOK).where(BOOK.PATH.eq(bookPath)).execute()
             val bookId = transaction
                 .insertInto(BOOK)
@@ -177,7 +181,7 @@ private fun scan(libraryRoot: String) {
             BookGenreDao(txConfig).insert(genreIds.map { BookGenre(bookId, it) })
             transaction.batchInsert(
                 *authorIds.map { BookAuthorRecord(bookId, it) }.toTypedArray(),
-                *genreIds.map { BookGenreRecord(bookId, it) }.toTypedArray()
+                *genreIds.map { BookGenreRecord(bookId, it) }.toTypedArray(),
             )
 
         }

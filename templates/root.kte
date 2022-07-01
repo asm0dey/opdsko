@@ -23,7 +23,7 @@
     <title>Books by authors</title>
     <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="category" href="/opds/author/c/"/>
     <id>authors</id>
-    <summary>Authors categorized</summary>
+    <summary>Authors by first letters</summary>
     <updated>${x.format(java.time.ZonedDateTime.now())}</updated>
   </entry>
   <entry>

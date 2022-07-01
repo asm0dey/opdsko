@@ -54,7 +54,7 @@ dependencies {
     implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.84.2")
     implementation("io.github.pdvrieze.xmlutil:ktor:0.84.2")
     implementation("io.ktor:ktor-serialization-kotlinx-xml:$ktor_version")
-    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+//    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
     implementation("org.flywaydb:flyway-core:8.5.13")
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.jooq:jooq-kotlin:3.16.7")
@@ -62,8 +62,13 @@ dependencies {
     implementation("org.glassfish.jaxb:jaxb-runtime:4.0.0")
     implementation("io.ktor:ktor-server-jte:$ktor_version")
     implementation("gg.jte:jte-kotlin:2.1.1")
-
+    implementation("io.ktor:ktor-server-html-builder:$ktor_version")
     implementation("com.lordcodes.turtle:turtle:0.7.0")
+    implementation("io.ktor:ktor-server-webjars:$ktor_version")
+    implementation("org.webjars.npm:htmx.org:1.7.0")
+    implementation("org.webjars.npm:hyperscript.org:0.9.5")
+    implementation("org.webjars:font-awesome:6.1.1")
+    implementation("org.webjars.npm:bulma:0.9.4")
 }
 
 configure<SourceSetContainer> {
