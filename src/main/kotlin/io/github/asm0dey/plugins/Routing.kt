@@ -73,6 +73,34 @@ fun Application.routes() {
             this@routes.startScanTask()
         }
         route("/api") {
+            get {
+                val x = createHTML().div("tile is-parent columns is-multiline") {
+                    navTile("New books", "Recent publications from this catalog", "/api/new")
+                    navTile("Books by series", "Authors by first letters", "/api/series/browse")
+                    navTile("Books by author", "Series by first letters", "/api/author/c")
+                }
+                call.respondText(x + breadCrumbs("Library" to "/api"), Html)
+
+            }
+            get("/search") {
+                val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 0
+                val searchTerm = URLDecoder.decode(call.request.queryParameters["search"]!!, UTF_8)
+                val (books, hasMore) = searchBookByText(searchTerm, page)
+                val imageTypes = books.imageTypes
+                val shortDescriptions = books.shortDescriptions
+                val x = createHTML().div("tile is-parent columns is-multiline") {
+                    for (book in books) {
+                        bookTile(book, imageTypes, shortDescriptions)
+                    }
+                }
+                val y = breadCrumbs(
+                    listOfNotNull(
+                        "Library" to "/api",
+                        "Search: $searchTerm" to "/api/search?search=$searchTerm",
+                    )
+                )
+                call.respondText(x + y, Html)
+            }
             get("/new") {
                 val books = latestBooks().map { BookWithInfo(it) }
                 val images = books.imageTypes
@@ -89,15 +117,6 @@ fun Application.routes() {
                     )
                 )
                 call.respondText(x + y, Html)
-
-            }
-            get {
-                val x = createHTML().div("tile is-parent columns is-multiline") {
-                    navTile("New books", "Recent publications from this catalog", "/api/new")
-                    navTile("Books by series", "Authors by first letters", "/api/series/browse")
-                    navTile("Books by author", "Series by first letters", "/api/author/c")
-                }
-                call.respondText(x + breadCrumbs("Library" to "/api"), Html)
 
             }
             get("/author/c/{name?}") {
@@ -719,6 +738,7 @@ private fun HTMLTag.layoutUpdateAttributes(href: String) {
     attributes["hx-trigger"] = "click"
     attributes["hx-get"] = href
     attributes["hx-target"] = "#layout"
+    attributes["hx-push-url"] = "true"
 }
 
 
@@ -1174,14 +1194,15 @@ fun Long.humanReadable(): String {
 }
 
 fun searchBookByText(term: String, page: Int, pageSize: Int = 50): Pair<List<BookWithInfo>, Boolean> {
+    val ftsId = BOOKS_FTS.rowid().cast(Long::class.java).`as`("fts_id")
     val ids = create
-        .select(BOOKS_FTS.rowid().cast(Long::class.java))
+        .select(ftsId)
         .from(BOOKS_FTS).where(BOOKS_FTS.match(value(term)))
         .orderBy(field("bm25(books_fts)"))
         .limit(pageSize + 1)
         .offset(page * pageSize)
     val infos = getBookWithInfo()
-        .where(BOOK.ID.`in`(ids))
+        .innerJoin(ids).on(ftsId.eq(BOOK.ID))
         .fetch { BookWithInfo(it) }
     val hasMore = infos.size > pageSize
     return infos.take(pageSize) to hasMore

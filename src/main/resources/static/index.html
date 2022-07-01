@@ -17,8 +17,22 @@
     </div>
 </nav>
 <!-- END NAV -->
-
 <div class="container">
+    <div class="section" data-hx-boost="true">
+        <div class="field has-addons">
+            <div class="control has-icons-left is-expanded">
+                <input class="input" type="text" name="search" placeholder="Search" hx-trigger="keyup[keyCode === 13]"
+                       hx-get="/api/search" hx-target="#layout">
+                <span class="icon is-small is-left">
+                      <i class="fas fa-search"></i>
+                </span>
+            </div>
+            <div class="control">
+                <button class="button" hx-include="[name='search']"
+                        hx-get="/api/search" hx-target="#layout">Search</button>
+            </div>
+        </div>
+    </div>
     <nav class="breadcrumb column is-12" aria-label="breadcrumbs">
         <ul>
         </ul>
