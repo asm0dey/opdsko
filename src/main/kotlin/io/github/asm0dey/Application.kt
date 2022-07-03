@@ -15,11 +15,10 @@ import io.github.asm0dey.opdsko.jooq.tables.records.BookAuthorRecord
 import io.github.asm0dey.opdsko.jooq.tables.records.BookGenreRecord
 import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
 import io.github.asm0dey.plugins.OPDSKO_JDBC
-import io.github.asm0dey.plugins.create
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 import org.flywaydb.core.Flyway
-import org.jooq.impl.DSL.field
+import org.jooq.DSLContext
 import org.jooq.impl.DSL.using
 import org.tinylog.Logger
 import java.io.File
@@ -28,7 +27,6 @@ import javax.xml.namespace.QName
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events.StartElement
 import kotlin.collections.set
-import kotlin.concurrent.thread
 
 
 val genreNames = genreNames()
@@ -38,16 +36,6 @@ fun main(args: Array<String>) = EngineMain.main(args)
 @Suppress("UnusedReceiverParameter")
 fun Application.main() {
     initDb()
-}
-
-fun Application.startScanTask() {
-    thread(start = true, isDaemon = true, name = "Scanner", priority = 1) {
-        val dir = environment.config.propertyOrNull("ktor.indexer.path")?.getString() ?: return@thread
-        scan(dir)
-        val pathsToDelete = create.select(BOOK.ID, BOOK.PATH).from(BOOK).fetchLazy()
-            .mapNotNull { r -> r[BOOK.PATH].takeIf { !File(it).exists() }?.let { r[BOOK.ID] } }
-        create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
-    }
 }
 
 private fun initDb() {
@@ -91,7 +79,7 @@ private fun genreNames(): HashMap<String, String> {
     }
 }
 
-private fun scan(libraryRoot: String) {
+fun scan(libraryRoot: String, create: DSLContext) {
     File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2") }.forEach { file ->
         val bookPath = file.absoluteFile.canonicalPath
         Logger.info { "Processing file $bookPath" }

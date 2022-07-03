@@ -1,5 +1,5 @@
 @import java.time.*
-@import io.github.asm0dey.plugins.*
+@import io.github.asm0dey.service.*
 @import io.github.asm0dey.model.*
 @param feedId: String
 @param feedTitle: String

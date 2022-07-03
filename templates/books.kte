@@ -1,4 +1,4 @@
-@import io.github.asm0dey.plugins.*
+@import io.github.asm0dey.service.*
 @import java.time.*
 @param books: List<BookWithInfo>
 @param bookDescriptions: Map<Long, String?>

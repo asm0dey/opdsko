@@ -20,7 +20,7 @@ plugins {
 }
 
 group = "io.github.asm0dey"
-version = "0.0.7"
+version = "0.0.8"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -65,7 +65,8 @@ dependencies {
     } else {
         implementation("io.netty:netty-tcnative-boringssl-static:$tcnative_version")
     }
-
+    // di
+    implementation("org.kodein.di:kodein-di-framework-ktor-server-controller-jvm:7.12.0")
     // database
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.flywaydb:flyway-core:8.5.13")
