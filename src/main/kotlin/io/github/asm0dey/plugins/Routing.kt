@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import kotlinx.html.*
+import kotlinx.html.InputType.text
 import kotlinx.html.stream.createHTML
 import org.apache.commons.codec.binary.Base64
 import org.jooq.*
@@ -74,12 +75,12 @@ fun Application.routes() {
         }
         route("/api") {
             get {
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     navTile("New books", "Recent publications from this catalog", "/api/new")
                     navTile("Books by series", "Authors by first letters", "/api/series/browse")
                     navTile("Books by author", "Series by first letters", "/api/author/c")
                 }
-                call.respondText(x + breadCrumbs("Library" to "/api"), Html)
+                return@get smartHtml(call, x, breadCrumbs("Library" to "/api"))
 
             }
             get("/search") {
@@ -88,7 +89,7 @@ fun Application.routes() {
                 val (books, hasMore) = searchBookByText(searchTerm, page)
                 val imageTypes = books.imageTypes
                 val shortDescriptions = books.shortDescriptions
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
                         bookTile(book, imageTypes, shortDescriptions)
                     }
@@ -99,13 +100,13 @@ fun Application.routes() {
                         "Search: $searchTerm" to "/api/search?search=$searchTerm",
                     )
                 )
-                call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("/new") {
                 val books = latestBooks().map { BookWithInfo(it) }
                 val images = books.imageTypes
                 val descriptions = books.shortDescriptions
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
                         bookTile(book, images, descriptions)
                     }
@@ -116,14 +117,14 @@ fun Application.routes() {
                         "New" to "/api/new",
                     )
                 )
-                call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
 
             }
             get("/author/c/{name?}") {
                 val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", UTF_8)
                 val trim = nameStart.length < 5
                 val items = authorNameStarts(nameStart, trim)
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, countOrId) in items) {
                         if (trim) navTile(name, "$countOrId items inside", "/api/author/c/$name")
                         else navTile(name, "Books by $name", "/api/author/browse/$countOrId")
@@ -136,13 +137,13 @@ fun Application.routes() {
                         if (trim && nameStart.isNotBlank()) nameStart to "/api/author/c/$nameStart" else null
                     )
                 )
-                call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("/author/browse/{id}") {
                 val authorId = call.parameters["id"]!!.toLong()
                 val (inseries, out) = hasSeries(authorId)
                 val authorName = authorName(authorId)
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     if (inseries > 0)
                         navTile(
                             "By series",
@@ -169,7 +170,7 @@ fun Application.routes() {
                         authorName to "/api/author/browse/$authorId"
                     )
                 )
-                return@get call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("/author/browse/{id}/all") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -181,7 +182,7 @@ fun Application.routes() {
                 val authorName = authorName(authorId)
                 val images = books.imageTypes
                 val descriptions = books.shortDescriptions
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
                         bookTile(book, images, descriptions)
                     }
@@ -194,7 +195,7 @@ fun Application.routes() {
                         "All books" to "/api/author/browse/$authorId/all"
                     )
                 )
-                return@get call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("/author/browse/{id}/out") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -203,7 +204,7 @@ fun Application.routes() {
 
                 val images = books.imageTypes
                 val pathsByIds = books.map { it.id to it.book }
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
                         bookTile(book, images, bookDescriptionsShorter(pathsByIds))
                     }
@@ -216,7 +217,7 @@ fun Application.routes() {
                         "Out of series" to "/api/author/browse/$authorId/out"
                     )
                 )
-                return@get call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("/author/browse/{id}/series") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -224,7 +225,7 @@ fun Application.routes() {
                 val namesWithDates = seriesByAuthorId(authorId)
                 val authorName = authorName(authorId)
 
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, pair) in namesWithDates) {
                         navTile(name, "${pair.second} books", "/api/author/browse/$authorId/series/$name")
                     }
@@ -237,7 +238,7 @@ fun Application.routes() {
                         "Series" to path
                     )
                 )
-                return@get call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("/author/browse/{id}/series/{name}") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -247,7 +248,7 @@ fun Application.routes() {
                 val images = result.imageTypes
                 val descriptions = result.shortDescriptions
                 val authorName = authorName(authorId)
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (bookWithInfo in result) {
                         bookTile(bookWithInfo, images, descriptions)
                     }
@@ -260,13 +261,13 @@ fun Application.routes() {
                         seriesName to path,
                     )
                 )
-                return@get call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("series/browse/{name?}") {
                 val nameStart = (call.parameters["name"] ?: "").decoded
                 val trim = nameStart.length < 5
                 val series = seriesNameStarts(nameStart, trim)
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, countOrId, complete) in series) {
                         if (!complete)
                             navTile(name, "$countOrId items inside", "/api/series/browse/$name")
@@ -281,7 +282,7 @@ fun Application.routes() {
                         if (trim && nameStart.isNotBlank()) nameStart to "/api/series/browse/$nameStart" else null
                     )
                 )
-                call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("series/item/{name}") {
                 val name = call.parameters["name"]!!.decoded
@@ -302,12 +303,12 @@ fun Application.routes() {
                         ?: sorted.toList()
                 val images = filtered.imageTypes
                 val descriptionsShort = filtered.shortDescriptions
-                val x = createHTML().div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (bookWithInfo in filtered) bookTile(bookWithInfo, images, descriptionsShort)
                 }
                 val y =
                     breadCrumbs("Library" to "/api", "Series" to "/api/series/browse", name to "/api/series/item/$name")
-                call.respondText(x + y, Html)
+                return@get smartHtml(call, x, y)
             }
             get("/book/{id}/info") {
                 val bookId = call.parameters["id"]!!.toLong()
@@ -608,54 +609,138 @@ fun Application.routes() {
     }
 }
 
-private fun modalContent(
-    book: BookWithInfo,
-    hasImage: Boolean,
-    descrHtml: String?
-) = createHTML().div("modal") {
-    id = "modal"
-    div("modal-background") {
-        attributes["_"] = "on click take .is-active from #modal wait 200ms then remove #modal"
-    }
-    div("modal-card") {
-        header("modal-card-head") {
-            p("modal-card-title") {
-                +book.book.name
+private suspend fun smartHtml(call: ApplicationCall, content: String, breadcrumbs: String) =
+    if (call.request.headers["HX-Request"] == "true") call.respondText(content + breadcrumbs, Html)
+    else call.respondText(renderFullHtml(content, breadcrumbs), Html)
+
+
+fun renderFullHtml(content: String, breadcrumbs: String): String {
+    return createHTML(false).html {
+        head {
+            meta(charset = "utf-8")
+            meta(name = "viewport", content = "width=device-width, initial-scale=1")
+            title("Asm0dey's library")
+            link(rel = "stylesheet", href = "/webjars/bulma/css/bulma.min.css")
+            link(rel = "stylesheet", href = "/webjars/font-awesome/css/all.min.css")
+            script(src = "/webjars/htmx.org/dist/htmx.min.js") {
+                defer = true
             }
-            button(classes = "delete") {
-                attributes["aria-label"] = "close"
-                attributes["_"] = "on click take .is-active from #modal wait 200ms then remove #modal"
+            script(src = "/webjars/hyperscript.org/dist/_hyperscript_web.min.js") {
+                defer = true
             }
         }
-        section("modal-card-body") {
-            article("media") {
-                if (hasImage) {
-                    figure("media-left") {
-                        p("image") {
-                            img(src = "/opds/image/${book.id}") {
-                                attributes["style"] = "width: 172px"
+        body {
+            nav(classes = "navbar is-black") {
+                div("container") {
+                    div("navbar-brand") {
+                        a("navbar-item brand-text") {
+                            attributes["hx-get"] = "/api"
+                            attributes["hx-target"] = "#layout"
+                        }
+                    }
+                }
+            }
+            div("container") {
+                div("section") {
+                    attributes["hx-boost"] = "true"
+                    div("field has-addons") {
+                        div("control has-icons-left is-expanded") {
+                            input(text, name = "search", classes = "input") {
+                                attributes["placeholder"] = "Search"
+                                attributes["hx-trigger"] = "keyup[keyCode === 13]"
+                                attributes["hx-get"] = "/api/search"
+                                attributes["hx-target"] = "#layout"
+                            }
+                            span("icon is-small is-left") {
+                                i("fas fa-search")
+                            }
+                        }
+                        div("control") {
+                            button(classes = "button") {
+                                attributes["hx-include"] = "[name='search']"
+                                attributes["hx-get"] = "/api/search"
+                                attributes["hx-target"] = "#layout"
+                                +"Search"
                             }
                         }
                     }
                 }
-                div("media-content") {
-                    div("content") {
-                        p {
-                            book.authors
-                                .map { it.buildName() }
-                                .mapIndexed { index, name ->
-                                    strong { +name }
-                                    if (index + 1 != book.authors.size)
-                                        +", "
+                nav("breadcrumb column is-12") {
+                    attributes["aria-label"] = "breadcrumbs"
+                    unsafe {
+                        +breadcrumbs
+                    }
+                }
+                div("tile is-ancestor column is-12") {
+                    id = "layout"
+                    unsafe {
+                        +content
+                    }
+                }
+            }
+            div {
+                id = "modal-cont"
+            }
+        }
+    }
+}
+
+private fun modalContent(
+    book: BookWithInfo,
+    hasImage: Boolean,
+    descrHtml: String?
+): String {
+    val closeModalScript = "on click take .is-active from #modal wait 200ms then remove #modal"
+    return createHTML(false).div("modal") {
+        id = "modal"
+        div("modal-background") {
+            attributes["_"] = closeModalScript
+        }
+        div("modal-card") {
+            header("modal-card-head") {
+                p("modal-card-title") {
+                    +book.book.name
+                }
+                button(classes = "delete") {
+                    attributes["aria-label"] = "close"
+                    attributes["_"] = closeModalScript
+                }
+            }
+            section("modal-card-body") {
+                article("media") {
+                    if (hasImage) {
+                        figure("media-left") {
+                            p("image") {
+                                img(src = "/opds/image/${book.id}") {
+                                    attributes["style"] = "width: 172px"
                                 }
-                            br()
-                            small {
-                                strong { +"Genres: " }
-                                +book.genres.joinToString(", ")
                             }
-                            br()
-                            unsafe {
-                                +(descrHtml ?: "")
+                        }
+                    }
+                    div("media-content") {
+                        div("content") {
+                            p {
+                                div("tags") {
+                                    for (author in book.authors) {
+                                        a {
+                                            attributes["_"] = closeModalScript
+                                            layoutUpdateAttributes("/api/author/browse/${author.id}")
+                                            span("tag is-rounded is-normal is-link is-medium is-light") {
+                                                +author.buildName()
+                                            }
+                                        }
+                                    }
+                                }
+                                div("tags") {
+                                    for (genre in book.genres) {
+                                        span("tag is-rounded is-normal is-info is-light") {
+                                            +genre
+                                        }
+                                    }
+                                }
+                                unsafe {
+                                    +(descrHtml ?: "")
+                                }
                             }
                         }
                     }
@@ -709,7 +794,7 @@ private fun DIV.bookTile(
 
 fun breadCrumbs(vararg items: Pair<String, String>) = breadCrumbs(items.toList())
 
-fun breadCrumbs(items: List<Pair<String, String>>) = createHTML().div {
+fun breadCrumbs(items: List<Pair<String, String>>) = createHTML(false).div {
     attributes["hx-swap-oob"] = "innerHTML:.breadcrumb"
     ul {
         items.forEachIndexed { index, pair ->
@@ -948,9 +1033,9 @@ var ds = run {
     config.poolName = "opdsko pool"
     config.jdbcUrl = OPDSKO_JDBC
     config.connectionTestQuery = "SELECT 1"
-    config.maxLifetime = 60000 // 60 Sec
-    config.idleTimeout = 45000 // 45 Sec
-    config.maximumPoolSize = 3 // 50 Connections (including idle connections)
+    config.maxLifetime = 60000
+    config.idleTimeout = 45000
+    config.maximumPoolSize = 3
     HikariDataSource(config)
 }
 
