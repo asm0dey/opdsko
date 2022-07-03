@@ -1297,10 +1297,15 @@ fun Table<*>.match(text: Typed<String>): Condition {
     return condition("$name MATCH {0}", text)
 }
 
+@JvmInline
 @Suppress("unused")
-class BookWithInfo(record: Record4<Long, List<BookPojo>, List<Author>, List<String>>) {
-    val book: IBook = record.component2()[0]
-    val authors: List<IAuthor> = record.component3()!!
-    val genres: List<String> = record.component4().map { genreNames[it] ?: it }
-    val id = record.get(BOOK.ID)!!
+value class BookWithInfo(val record: Record4<Long, List<BookPojo>, List<Author>, List<String>>) {
+    val book: IBook
+        get() = record.component2()[0]
+    val authors: List<IAuthor>
+        get() = record.component3()!!
+    val genres: List<String>
+        get() = record.component4().map { genreNames[it] ?: it }
+    val id
+        get() = record.get(BOOK.ID)!!
 }

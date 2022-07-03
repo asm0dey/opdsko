@@ -6,6 +6,7 @@ val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val tinylog_version: String by project
+val tcnative_version: String = "2.0.53.Final"
 
 plugins {
     java
@@ -30,6 +31,15 @@ application {
 repositories {
     mavenCentral()
     maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
+    maven { url = uri("https://jitpack.io") }
+
+}
+val osName = System.getProperty("os.name").toLowerCase()
+val tcnative_classifier = when {
+    osName.contains("win") -> "windows-x86_64"
+    osName.contains("linux") -> "linux-x86_64"
+    osName.contains("mac") -> "osx-x86_64"
+    else -> null
 }
 
 dependencies {
@@ -48,6 +58,14 @@ dependencies {
     implementation("io.ktor:ktor-server-resources:$ktor_version")
     implementation("io.ktor:ktor-server-webjars:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
+    // http2
+    implementation("io.netty:netty-tcnative:$tcnative_version")
+    if (tcnative_classifier != null) {
+        implementation("io.netty:netty-tcnative-boringssl-static:$tcnative_version:$tcnative_classifier")
+    } else {
+        implementation("io.netty:netty-tcnative-boringssl-static:$tcnative_version")
+    }
+
     // database
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("org.flywaydb:flyway-core:8.5.13")
@@ -56,7 +74,7 @@ dependencies {
     jooqGenerator("org.xerial:sqlite-jdbc:3.36.0.3")
     // utils
     implementation("commons-codec:commons-codec:1.15")
-    implementation("gg.jte:jte-kotlin:2.1.1")
+    implementation("com.github.casid.jte:jte-kotlin:fa73ea1a9d") // TODO: upgrade to release when https://github.com/casid/jte/issues/163 is released
     // xml
     implementation("org.jsoup:jsoup:1.15.1")
     implementation("org.glassfish.jaxb:jaxb-runtime:4.0.0")
