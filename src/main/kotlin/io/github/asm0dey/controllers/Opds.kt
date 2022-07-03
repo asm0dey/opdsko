@@ -1,7 +1,6 @@
 package io.github.asm0dey.controllers
 
 import io.github.asm0dey.model.Entry
-import io.github.asm0dey.plugins.*
 import io.github.asm0dey.service.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -85,8 +84,8 @@ class Opds(application: Application) : AbstractDIController(application) {
                             "entry.kte",
                             params = mapOf(
                                 "book" to book,
-                                "imageType" to info.imageTypes(listOf(book.id to book.book.path))[book.id],
-                                "summary" to info.bookDescriptionsShorter(listOf(book.id to book.book))[book.id],
+                                "imageType" to info.imageTypes(listOf(book))[book.id],
+                                "summary" to info.shortDescriptions(listOf(book))[book.id],
                                 "content" to bookDescriptionsLonger(listOf(book.id to book.book))[book.id],
                             ),
                             contentType = ContentType.parse("application/atom+xml;type=entry;profile=opds-catalog")
@@ -104,7 +103,6 @@ class Opds(application: Application) : AbstractDIController(application) {
                     )
                     val bytes = info.zippedBook(bookId)
                     call.respondBytes(bytes, ContentType.parse("application/fb+zip"))
-
                 }
             }
             route("/author") {
@@ -221,7 +219,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                                             count.toLong()
                                         )
                                     )
-                                },
+                                }
                             )
                         )
                     )
@@ -313,8 +311,8 @@ class Opds(application: Application) : AbstractDIController(application) {
         additionalLinks: List<Entry.Link> = listOf(),
     ) = mapOf(
         "books" to books,
-        "bookDescriptions" to info.getShortDescriptions(books),
-        "imageTypes" to info.getImageTypes(books),
+        "bookDescriptions" to info.shortDescriptions(books),
+        "imageTypes" to info.imageTypes(books),
         "path" to path,
         "title" to title,
         "feedId" to id,

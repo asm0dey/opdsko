@@ -39,7 +39,6 @@ fun Application.routes() {
         }
         controller { Opds(instance()) }
         controller { Api(instance()) }
-
     }
 }
 

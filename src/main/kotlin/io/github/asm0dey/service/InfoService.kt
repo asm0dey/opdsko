@@ -2,7 +2,6 @@ package io.github.asm0dey.service
 
 import com.kursx.parser.fb2.Binary
 import com.kursx.parser.fb2.FictionBook
-import io.github.asm0dey.opdsko.jooq.tables.interfaces.IBook
 import io.github.asm0dey.repository.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -17,13 +16,9 @@ class InfoService(private val repo: Repository) {
         return repo.searchBookByText(searchTerm, page, page)
     }
 
-    fun getShortDescriptions(bookWithInfos: List<BookWithInfo>) =
-        bookDescriptionsShorter(bookWithInfos.map { it.id to it.book })
-
-    fun bookDescriptionsShorter(pathsByIds: List<Pair<Long, IBook>>): Map<Long, String?> {
-        return pathsByIds
+    fun shortDescriptions(bookWithInfos: List<BookWithInfo>) =
+        bookWithInfos.map { it.id to it.book }
             .associate { (id, book) ->
-
                 val file = File(book.path)
                 val size = file.length().humanReadable()
                 val seq = book.sequence
@@ -38,10 +33,9 @@ class InfoService(private val repo: Repository) {
                 }
                 id to text
             }
-    }
 
-    fun getImageTypes(bookWithInfos: List<BookWithInfo>) = imageTypes(bookWithInfos.map { it.id to it.book.path })
-    fun imageTypes(pathsByIds: List<Pair<Long, String>>) = pathsByIds
+    fun imageTypes(bookWithInfos: List<BookWithInfo>) = bookWithInfos
+        .map { it.id to it.book.path }
         .associate { (id, path) ->
             val fb = FictionBook(File(path))
             val type = fb.description.titleInfo.coverPage.firstOrNull()?.value?.replace("#", "")?.let {
@@ -85,9 +79,7 @@ class InfoService(private val repo: Repository) {
     fun latestAuthorUpdate(authorId: Long) = repo.latestAuthorUpdate(authorId).z
     fun allBooksByAuthor(authorId: Long) = repo.allBooksByAuthor(authorId)
     fun seriesByAuthorId(authorId: Long) = repo.seriesByAuthorId(authorId)
-    fun booksBySeriesAndAuthor(seriesName: String, authorId: Long): List<BookWithInfo> =
-        repo.booksBySeriesAndAuthor(seriesName, authorId)
-
+    fun booksBySeriesAndAuthor(seriesName: String, authorId: Long) = repo.booksBySeriesAndAuthor(seriesName, authorId)
     fun booksWithoutSeriesByAuthorId(authorId: Long) = repo.booksWithoutSeriesByAuthorId(authorId)
     fun booksBySeriesName(name: String) = repo.booksBySeriesName(name)
     fun seriesNameStarts(prefix: String, trim: Boolean = true) = repo.seriesNameStarts(prefix, trim)

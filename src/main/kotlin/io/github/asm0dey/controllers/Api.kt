@@ -12,8 +12,12 @@ import kotlinx.html.stream.createHTML
 import org.kodein.di.instance
 import org.kodein.di.ktor.controller.AbstractDIController
 import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets.UTF_8
 import kotlin.math.min
+
+private val String.encoded get() = URLEncoder.encode(this, UTF_8)
+
 
 class Api(application: Application) : AbstractDIController(application) {
     private val info by instance<InfoService>()
@@ -30,10 +34,10 @@ class Api(application: Application) : AbstractDIController(application) {
             }
             get("/search") {
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 0
-                val searchTerm = URLDecoder.decode(call.request.queryParameters["search"]!!, StandardCharsets.UTF_8)
+                val searchTerm = URLDecoder.decode(call.request.queryParameters["search"]!!, UTF_8)
                 val (books, hasMore) = info.searchBookByText(searchTerm, page)
-                val imageTypes = info.getImageTypes(books)
-                val shortDescriptions = info.getShortDescriptions(books)
+                val imageTypes = info.imageTypes(books)
+                val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
                         bookTile(book, imageTypes, shortDescriptions)
@@ -42,15 +46,15 @@ class Api(application: Application) : AbstractDIController(application) {
                 val y = breadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
-                        "Search: $searchTerm" to "/api/search?search=$searchTerm",
+                        "Search: $searchTerm" to "/api/search?search=${searchTerm.encoded}",
                     )
                 )
                 return@get smartHtml(call, x, y)
             }
             get("/new") {
                 val books = info.latestBooks().map { BookWithInfo(it) }
-                val imageTypes = info.getImageTypes(books)
-                val shortDescriptions = info.getShortDescriptions(books)
+                val imageTypes = info.imageTypes(books)
+                val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
                         bookTile(book, imageTypes, shortDescriptions)
@@ -66,12 +70,12 @@ class Api(application: Application) : AbstractDIController(application) {
 
             }
             get("/author/c/{name?}") {
-                val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", StandardCharsets.UTF_8)
+                val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", UTF_8)
                 val trim = nameStart.length < 5
                 val items = info.authorNameStarts(nameStart, trim)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, countOrId) in items) {
-                        if (trim) navTile(name, "$countOrId items inside", "/api/author/c/$name")
+                        if (trim) navTile(name, "$countOrId items inside", "/api/author/c/${name.encoded}")
                         else navTile(name, "Books by $name", "/api/author/browse/$countOrId")
                     }
                 }
@@ -79,7 +83,7 @@ class Api(application: Application) : AbstractDIController(application) {
                     listOfNotNull(
                         "Library" to "/api",
                         "By Authors" to "/api/author/c",
-                        if (trim && nameStart.isNotBlank()) nameStart to "/api/author/c/$nameStart" else null
+                        if (trim && nameStart.isNotBlank()) nameStart to "/api/author/c/${nameStart.encoded}" else null
                     )
                 )
                 return@get smartHtml(call, x, y)
@@ -121,8 +125,8 @@ class Api(application: Application) : AbstractDIController(application) {
                 val authorId = call.parameters["id"]!!.toLong()
                 val books = info.allBooksByAuthor(authorId)
                 val authorName = info.authorName(authorId)
-                val imageTypes = info.getImageTypes(books)
-                val shortDescriptions = info.getShortDescriptions(books)
+                val imageTypes = info.imageTypes(books)
+                val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
                         bookTile(book, imageTypes, shortDescriptions)
@@ -143,8 +147,8 @@ class Api(application: Application) : AbstractDIController(application) {
                 val books = info.booksWithoutSeriesByAuthorId(authorId)
                 val authorName = info.authorName(authorId)
 
-                val imageTypes = info.getImageTypes(books)
-                val shortDescriptions = info.getShortDescriptions(books)
+                val imageTypes = info.imageTypes(books)
+                val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
                         bookTile(book, imageTypes, shortDescriptions)
@@ -168,7 +172,7 @@ class Api(application: Application) : AbstractDIController(application) {
 
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, pair) in namesWithDates) {
-                        navTile(name, "${pair.second} books", "/api/author/browse/$authorId/series/$name")
+                        navTile(name, "${pair.second} books", "/api/author/browse/$authorId/series/${name.encoded}")
                     }
                 }
                 val y = breadCrumbs(
@@ -183,11 +187,11 @@ class Api(application: Application) : AbstractDIController(application) {
             }
             get("/author/browse/{id}/series/{name}") {
                 val authorId = call.parameters["id"]!!.toLong()
-                val seriesName = URLDecoder.decode(call.parameters["name"]!!, StandardCharsets.UTF_8)
+                val seriesName = URLDecoder.decode(call.parameters["name"]!!, UTF_8)
                 val books = info.booksBySeriesAndAuthor(seriesName, authorId)
                 val path = call.request.path()
-                val imageTypes = info.getImageTypes(books)
-                val shortDescriptions = info.getShortDescriptions(books)
+                val imageTypes = info.imageTypes(books)
+                val shortDescriptions = info.shortDescriptions(books)
                 val authorName = info.authorName(authorId)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (bookWithInfo in books) {
@@ -211,16 +215,16 @@ class Api(application: Application) : AbstractDIController(application) {
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, countOrId, complete) in series) {
                         if (!complete)
-                            navTile(name, "$countOrId items inside", "/api/series/browse/$name")
+                            navTile(name, "$countOrId items inside", "/api/series/browse/${name.encoded}")
                         else
-                            navTile(name, "$countOrId items inside", "/api/series/item/$name")
+                            navTile(name, "$countOrId items inside", "/api/series/item/${name.encoded}")
                     }
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "By Series" to "/api/series/browse",
-                        if (trim && nameStart.isNotBlank()) nameStart to "/api/series/browse/$nameStart" else null
+                        if (trim && nameStart.isNotBlank()) nameStart to "/api/series/browse/${nameStart.encoded}" else null
                     )
                 )
                 return@get smartHtml(call, x, y)
@@ -239,20 +243,20 @@ class Api(application: Application) : AbstractDIController(application) {
                 val filtered =
                     authorFilter?.let { aId -> sorted.filter { it.authors.any { it.id == aId } } }?.toList()
                         ?: sorted.toList()
-                val imageTypes = info.getImageTypes(filtered)
-                val shortDescriptions = info.getShortDescriptions(filtered)
+                val imageTypes = info.imageTypes(filtered)
+                val shortDescriptions = info.shortDescriptions(filtered)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (bookWithInfo in filtered) bookTile(bookWithInfo, imageTypes, shortDescriptions)
                 }
                 val y =
-                    breadCrumbs("Library" to "/api", "Series" to "/api/series/browse", name to "/api/series/item/$name")
+                    breadCrumbs("Library" to "/api", "Series" to "/api/series/browse", name to "/api/series/item/${name.encoded}")
                 return@get smartHtml(call, x, y)
             }
             get("/book/{id}/info") {
                 val bookId = call.parameters["id"]!!.toLong()
                 val book = info.bookInfo(bookId)
                 val descrHtml = bookDescriptionsLonger(listOf(bookId to book.book))[bookId]
-                val hasImage = info.imageTypes(listOf(bookId to book.book.path))[bookId] != null
+                val hasImage = info.imageTypes(listOf(book))[bookId] != null
                 val x = modalContent(book, hasImage, descrHtml)
                 call.respondText(x, ContentType.Text.Html)
             }
@@ -272,9 +276,7 @@ class Api(application: Application) : AbstractDIController(application) {
 
     private suspend fun smartHtml(call: ApplicationCall, content: String, breadcrumbs: String) =
         if (call.request.headers["HX-Request"] == "true") call.respondText(content + breadcrumbs, ContentType.Text.Html)
-        else call.respondHtml {
-            fullHtml(breadcrumbs, content)
-        }
+        else call.respondHtml { fullHtml(breadcrumbs, content) }
 
     private fun DIV.bookTile(
         bookWithInfo: BookWithInfo,
