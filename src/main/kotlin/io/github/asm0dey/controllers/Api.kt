@@ -2,6 +2,7 @@ package io.github.asm0dey.controllers
 
 import io.github.asm0dey.service.*
 import io.ktor.http.*
+import io.ktor.http.ContentType.Text.Html
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.request.*
@@ -249,7 +250,11 @@ class Api(application: Application) : AbstractDIController(application) {
                     for (bookWithInfo in filtered) bookTile(bookWithInfo, imageTypes, shortDescriptions)
                 }
                 val y =
-                    breadCrumbs("Library" to "/api", "Series" to "/api/series/browse", name to "/api/series/item/${name.encoded}")
+                    breadCrumbs(
+                        "Library" to "/api",
+                        "Series" to "/api/series/browse",
+                        name to "/api/series/item/${name.encoded}"
+                    )
                 return@get smartHtml(call, x, y)
             }
             get("/book/{id}/info") {
@@ -258,10 +263,34 @@ class Api(application: Application) : AbstractDIController(application) {
                 val descrHtml = bookDescriptionsLonger(listOf(bookId to book.book))[bookId]
                 val hasImage = info.imageTypes(listOf(book))[bookId] != null
                 val x = modalContent(book, hasImage, descrHtml)
-                call.respondText(x, ContentType.Text.Html)
+                call.respondText(x, Html)
+            }
+            get("/book/{id}/image") {
+                val bookId = call.parameters["id"]!!.toLong()
+                val x = modalImageContent("/opds/image/$bookId")
+                call.respondText(x, Html)
             }
         }
 
+    }
+
+    private fun modalImageContent(imageUrl: String): String {
+        val closeModalScript = "on click take .is-active from #modal wait 200ms then remove #modal"
+        return createHTML(false).div("modal") {
+            id = "modal"
+            div("modal-background") {
+                attributes["_"] = closeModalScript
+            }
+            div("modal-content is-clipped") {
+                p("image") {
+                    img(src = imageUrl)
+                }
+            }
+            button(classes = "modal-close is-large") {
+                attributes["aria-label"] = "close"
+                attributes["_"] = closeModalScript
+            }
+        }
     }
 
     private fun DIV.navTile(title: String, subtitle: String, href: String) {
@@ -275,7 +304,7 @@ class Api(application: Application) : AbstractDIController(application) {
     }
 
     private suspend fun smartHtml(call: ApplicationCall, content: String, breadcrumbs: String) =
-        if (call.request.headers["HX-Request"] == "true") call.respondText(content + breadcrumbs, ContentType.Text.Html)
+        if (call.request.headers["HX-Request"] == "true") call.respondText(content + breadcrumbs, Html)
         else call.respondHtml { fullHtml(breadcrumbs, content) }
 
     private fun DIV.bookTile(
@@ -293,8 +322,13 @@ class Api(application: Application) : AbstractDIController(application) {
                     }
                     if (images[bookWithInfo.id] != null) {
                         div("card-image") {
-                            figure("image is-2by3") {
-                                img(src = "/opds/image/${bookWithInfo.id}")
+                            figure("image") {
+                                a {
+                                    attributes["hx-get"] = "/api/book/${bookWithInfo.id}/image"
+                                    attributes["hx-target"] = "#modal-cont"
+                                    attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
+                                    img(src = "/opds/image/${bookWithInfo.id}")
+                                }
                             }
                         }
                     }
