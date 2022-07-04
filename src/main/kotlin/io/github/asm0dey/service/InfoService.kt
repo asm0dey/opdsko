@@ -12,8 +12,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class InfoService(private val repo: Repository) {
-    fun searchBookByText(searchTerm: String, page: Int = 50): Pair<List<BookWithInfo>, Boolean> {
-        return repo.searchBookByText(searchTerm, page, page)
+    fun searchBookByText(searchTerm: String, page: Int, pageSize: Int = 50): Pair<List<BookWithInfo>, Boolean> {
+        return repo.searchBookByText(searchTerm, page, pageSize)
     }
 
     fun shortDescriptions(bookWithInfos: List<BookWithInfo>) =
