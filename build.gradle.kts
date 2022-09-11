@@ -16,7 +16,6 @@ plugins {
     id("nu.studer.jooq") version "7.1.1"
     id("org.flywaydb.flyway") version "8.5.13"
     id("gg.jte.gradle") version "2.1.2"
-
 }
 
 group = "io.github.asm0dey"

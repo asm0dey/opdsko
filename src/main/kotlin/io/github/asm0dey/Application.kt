@@ -80,7 +80,7 @@ private fun genreNames(): HashMap<String, String> {
 }
 
 fun scan(libraryRoot: String, create: DSLContext) {
-    File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2") }.forEach { file ->
+    File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2", true) }.forEach { file ->
         val bookPath = file.absoluteFile.canonicalPath
         Logger.info { "Processing file $bookPath" }
         if (file.length() < 20) return@forEach

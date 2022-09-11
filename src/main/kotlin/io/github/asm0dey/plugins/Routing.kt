@@ -9,6 +9,7 @@ import io.github.asm0dey.opdsko.jooq.Tables.BOOK
 import io.github.asm0dey.scan
 import io.ktor.server.application.*
 import io.ktor.server.http.content.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jooq.DSLContext
 import org.kodein.di.instance
@@ -37,6 +38,7 @@ fun Application.routes() {
                     .mapNotNull { r -> r[BOOK.PATH].takeIf { !File(it).exists() }?.let { r[BOOK.ID] } }
                 create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
             }
+            call.respondText("Scan started")
         }
         controller { Opds(instance()) }
         controller { Api(instance()) }
