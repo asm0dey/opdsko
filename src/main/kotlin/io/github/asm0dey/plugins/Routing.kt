@@ -4,6 +4,7 @@ package io.github.asm0dey.plugins
 
 import io.github.asm0dey.controllers.Api
 import io.github.asm0dey.controllers.Opds
+import io.github.asm0dey.controllers.OpdsBuilder
 import io.github.asm0dey.opdsko.jooq.Tables.BOOK
 import io.github.asm0dey.scan
 import io.ktor.server.application.*
@@ -39,6 +40,7 @@ fun Application.routes() {
         }
         controller { Opds(instance()) }
         controller { Api(instance()) }
+        controller { OpdsBuilder(instance()) }
     }
 }
 

@@ -15,7 +15,7 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("nu.studer.jooq") version "7.1.1"
     id("org.flywaydb.flyway") version "8.5.13"
-    id("gg.jte.gradle") version "2.1.1"
+    id("gg.jte.gradle") version "2.1.2"
 
 }
 
@@ -75,12 +75,13 @@ dependencies {
     jooqGenerator("org.xerial:sqlite-jdbc:3.36.0.3")
     // utils
     implementation("commons-codec:commons-codec:1.15")
-    implementation("com.github.casid.jte:jte-kotlin:fa73ea1a9d") // TODO: upgrade to release when https://github.com/casid/jte/issues/163 is released
+    implementation("gg.jte:jte-kotlin:2.1.2")
     // xml
     implementation("org.jsoup:jsoup:1.15.1")
     implementation("org.glassfish.jaxb:jaxb-runtime:4.0.0")
     implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.84.2")
     implementation("io.github.pdvrieze.xmlutil:ktor:0.84.2")
+    implementation("com.github.redundent.kotlin-xml-builder:kotlin-xml-builder:2f90727de8")
     // logging
     implementation("org.tinylog:tinylog-api-kotlin:$tinylog_version")
     implementation("org.tinylog:slf4j-tinylog:$tinylog_version")
