@@ -2,23 +2,49 @@
 
 [plugins]
 
-org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.7.0" }
+org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
 com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version = "7.1.2" }
 
-nu-studer-jooq = { id = "nu.studer.jooq", version = "7.1.1" }
+nu-studer-jooq = { id = "nu.studer.jooq", version = "8.1" }
 
-org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "8.5.13" }
+org-flywaydb-flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 
-gg-jte-gradle = { id = "gg.jte.gradle", version = "2.1.2" }
+gg-jte-gradle = { id = "gg.jte.gradle", version.ref = "jte" }
 
 [versions]
 
-kotlin = "1.7.0"
+kotlin = "1.8.0"
 
-ktor = "2.0.2"
+ktor = "2.2.2"
+##⬆ = "2.2.3-eap-584"
+##⬆ = "2.2.3-eap-586"
+##⬆ = "2.2.3-eap-587"
+##⬆ = "2.2.3-eap-589"
+##⬆ = "2.2.3-eap-590"
+##⬆ = "2.2.3-eap-592"
+##⬆ = "2.2.3-eap-595"
+##⬆ = "2.2.3-eap-596"
+##⬆ = "2.2.3-eap-597"
+##⬆ = "2.2.3-eap-598"
+##⬆ = "2.2.3-eap-599"
+##⬆ = "2.3.0-eap-591"
+##⬆ = "2.3.0-eap-593"
+##⬆ = "2.3.0-eap-594"
 
-kodein-di = "7.12.0"
+kodein-di = "7.18.0"
+
+kotlinx-coroutines = "1.6.4"
+
+netty-tcnative = "2.0.56.Final"
+
+tinylog = "2.6.0"
+
+xmlutil = "0.84.3"
+
+jte = "2.2.4"
+
+flyway = "9.12.0"
 
 [libraries]
 
@@ -36,47 +62,47 @@ ktor-server-metrics-jvm = { group = "io.ktor", name = "ktor-server-metrics-jvm",
 
 ktor-server-netty-jvm = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
 
-netty-tcnative = "io.netty:netty-tcnative:_"
+netty-tcnative = { group = "io.netty", name = "netty-tcnative", version.ref = "netty-tcnative" }
 
-netty-tcnative-boringssl-static = "io.netty:netty-tcnative-boringssl-static:_"
+netty-tcnative-boringssl-static = { group = "io.netty", name = "netty-tcnative-boringssl-static", version.ref = "netty-tcnative" }
 
 kodein-di-framework-ktor-server-controller-jvm = { group = "org.kodein.di", name = "kodein-di-framework-ktor-server-controller-jvm", version.ref = "kodein-di" }
 
-hikaricp = "com.zaxxer:HikariCP:_"
+hikaricp = "com.zaxxer:HikariCP:5.0.1"
 
-flyway-core = "org.flywaydb:flyway-core:_"
+flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
 
-jooq-kotlin = "org.jooq:jooq-kotlin:_"
+jooq-kotlin = "org.jooq:jooq-kotlin:3.17.7"
 
-sqlite-jdbc = "org.xerial:sqlite-jdbc:_"
+sqlite-jdbc = "org.xerial:sqlite-jdbc:3.40.0.0"
 
-commons-codec = "commons-codec:commons-codec:_"
+commons-codec = "commons-codec:commons-codec:1.15"
 
-jte-kotlin = "gg.jte:jte-kotlin:_"
+jte-kotlin = { group = "gg.jte", name = "jte-kotlin", version.ref = "jte" }
 
-jsoup = "org.jsoup:jsoup:_"
+jsoup = "org.jsoup:jsoup:1.15.3"
 
-jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:_"
+jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.1"
 
-serialization-jvm = "io.github.pdvrieze.xmlutil:serialization-jvm:_"
+serialization-jvm = { group = "io.github.pdvrieze.xmlutil", name = "serialization-jvm", version.ref = "xmlutil" }
 
-ktor = "io.github.pdvrieze.xmlutil:ktor:_"
+ktor = { group = "io.github.pdvrieze.xmlutil", name = "ktor", version.ref = "xmlutil" }
 
-kotlin-xml-builder = "com.github.redundent.kotlin-xml-builder:kotlin-xml-builder:_"
+kotlin-xml-builder = "com.github.redundent.kotlin-xml-builder:kotlin-xml-builder:2f90727de8"
 
-tinylog-api-kotlin = "org.tinylog:tinylog-api-kotlin:_"
+tinylog-api-kotlin = { group = "org.tinylog", name = "tinylog-api-kotlin", version.ref = "tinylog" }
 
-slf4j-tinylog = "org.tinylog:slf4j-tinylog:_"
+slf4j-tinylog = { group = "org.tinylog", name = "slf4j-tinylog", version.ref = "tinylog" }
 
-tinylog-impl = "org.tinylog:tinylog-impl:_"
+tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }
 
-htmx-org = "org.webjars.npm:htmx.org:_"
+htmx-org = "org.webjars.npm:htmx.org:1.8.5"
 
-hyperscript-org = "org.webjars.npm:hyperscript.org:_"
+hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.7"
 
-font-awesome = "org.webjars:font-awesome:_"
+font-awesome = "org.webjars:font-awesome:6.2.1"
 
-bulma = "org.webjars.npm:bulma:_"
+bulma = "org.webjars.npm:bulma:0.9.4"
 
 jooq = { module = "org.jooq:jooq" }
 
@@ -85,3 +111,15 @@ jooq-codegen = { module = "org.jooq:jooq-codegen" }
 kotlin-scripting-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
 
 ktor-server-tests-jvm = { group = "io.ktor", name = "ktor-server-tests-jvm", version.ref = "ktor" }
+
+kotlinx-coroutines-reactor = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
+
+ktor-serialization-kotlinx-xml = { group = "io.ktor", name = "ktor-serialization-kotlinx-xml", version.ref = "ktor" }
+
+ktor-server-html-builder = { group = "io.ktor", name = "ktor-server-html-builder", version.ref = "ktor" }
+
+ktor-server-jte = { group = "io.ktor", name = "ktor-server-jte", version.ref = "ktor" }
+
+ktor-server-resources = { group = "io.ktor", name = "ktor-server-resources", version.ref = "ktor" }
+
+ktor-server-webjars = { group = "io.ktor", name = "ktor-server-webjars", version.ref = "ktor" }

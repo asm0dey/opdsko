@@ -2,24 +2,18 @@ import org.jooq.meta.jaxb.ForcedType
 import org.jooq.meta.jaxb.Logging
 import java.nio.file.Paths
 
-val ktor_version: String by project
-val kotlin_version: String by project
-val logback_version: String by project
-val tinylog_version: String by project
-val tcnative_version: String = "2.0.53.Final"
-
 plugins {
     java
     application
-    kotlin("jvm")
-    id("com.github.johnrengelman.shadow")
-    id("nu.studer.jooq")
-    id("org.flywaydb.flyway")
-    id("gg.jte.gradle")
+    alias(libs.plugins.org.jetbrains.kotlin.jvm)
+    alias(libs.plugins.com.github.johnrengelman.shadow)
+    alias(libs.plugins.nu.studer.jooq)
+    alias(libs.plugins.org.flywaydb.flyway)
+    alias(libs.plugins.gg.jte.gradle)
 }
 
 group = "io.github.asm0dey"
-version = "0.0.10"
+version = "0.0.11"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -60,7 +54,7 @@ dependencies {
     // http2
     implementation(libs.netty.tcnative)
     if (tcnative_classifier != null) {
-        implementation("io.netty:netty-tcnative-boringssl-static:$tcnative_version:$tcnative_classifier")
+        implementation("io.netty:netty-tcnative-boringssl-static:2.0.53.Final:$tcnative_classifier")
     } else {
         implementation(libs.netty.tcnative.boringssl.static)
     }
@@ -100,7 +94,7 @@ configure<SourceSetContainer> {
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
