@@ -11,11 +11,11 @@ val tcnative_version: String = "2.0.53.Final"
 plugins {
     java
     application
-    kotlin("jvm") version "1.7.0"
-    id("com.github.johnrengelman.shadow") version "7.1.2"
-    id("nu.studer.jooq") version "7.1.1"
-    id("org.flywaydb.flyway") version "8.5.13"
-    id("gg.jte.gradle") version "2.1.2"
+    kotlin("jvm")
+    id("com.github.johnrengelman.shadow")
+    id("nu.studer.jooq")
+    id("org.flywaydb.flyway")
+    id("gg.jte.gradle")
 }
 
 group = "io.github.asm0dey"
@@ -42,54 +42,54 @@ val tcnative_classifier = when {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.2")
+    implementation(KotlinX.coroutines.reactor)
     // ktor deps
-    implementation("io.ktor:ktor-serialization-kotlinx-xml:$ktor_version")
-    implementation("io.ktor:ktor-server-call-id-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-call-logging-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-compression-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-host-common-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-html-builder:$ktor_version")
-    implementation("io.ktor:ktor-server-jte:$ktor_version")
-    implementation("io.ktor:ktor-server-metrics-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-resources:$ktor_version")
-    implementation("io.ktor:ktor-server-webjars:$ktor_version")
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
+    implementation(Ktor.plugins.serialization.kotlinx.xml)
+    implementation(libs.ktor.server.call.id.jvm)
+    implementation(libs.ktor.server.call.logging.jvm)
+    implementation(libs.ktor.server.compression.jvm)
+    implementation(libs.ktor.server.core.jvm)
+    implementation(libs.ktor.server.host.common.jvm)
+    implementation(Ktor.server.htmlBuilder)
+    implementation(Ktor.server.jte)
+    implementation(libs.ktor.server.metrics.jvm)
+    implementation(libs.ktor.server.netty.jvm)
+    implementation(Ktor.server.resources)
+    implementation(Ktor.server.webjars)
+    testImplementation(libs.ktor.server.tests.jvm)
     // http2
-    implementation("io.netty:netty-tcnative:$tcnative_version")
+    implementation(libs.netty.tcnative)
     if (tcnative_classifier != null) {
         implementation("io.netty:netty-tcnative-boringssl-static:$tcnative_version:$tcnative_classifier")
     } else {
-        implementation("io.netty:netty-tcnative-boringssl-static:$tcnative_version")
+        implementation(libs.netty.tcnative.boringssl.static)
     }
     // di
-    implementation("org.kodein.di:kodein-di-framework-ktor-server-controller-jvm:7.12.0")
+    implementation(libs.kodein.di.framework.ktor.server.controller.jvm)
     // database
-    implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("org.flywaydb:flyway-core:8.5.13")
-    implementation("org.jooq:jooq-kotlin:3.16.7")
-    implementation("org.xerial:sqlite-jdbc:3.36.0.3")
-    jooqGenerator("org.xerial:sqlite-jdbc:3.36.0.3")
+    implementation(libs.hikaricp)
+    implementation(libs.flyway.core)
+    implementation(libs.jooq.kotlin)
+    implementation(libs.sqlite.jdbc)
+    jooqGenerator(libs.sqlite.jdbc)
     // utils
-    implementation("commons-codec:commons-codec:1.15")
-    implementation("gg.jte:jte-kotlin:2.1.2")
+    implementation(libs.commons.codec)
+    implementation(libs.jte.kotlin)
     // xml
-    implementation("org.jsoup:jsoup:1.15.1")
-    implementation("org.glassfish.jaxb:jaxb-runtime:4.0.0")
-    implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.84.2")
-    implementation("io.github.pdvrieze.xmlutil:ktor:0.84.2")
-    implementation("com.github.redundent.kotlin-xml-builder:kotlin-xml-builder:2f90727de8")
+    implementation(libs.jsoup)
+    implementation(libs.jaxb.runtime)
+    implementation(libs.serialization.jvm)
+    implementation(libs.ktor)
+    implementation(libs.kotlin.xml.builder)
     // logging
-    implementation("org.tinylog:tinylog-api-kotlin:$tinylog_version")
-    implementation("org.tinylog:slf4j-tinylog:$tinylog_version")
-    implementation("org.tinylog:tinylog-impl:$tinylog_version")
+    implementation(libs.tinylog.api.kotlin)
+    implementation(libs.slf4j.tinylog)
+    implementation(libs.tinylog.impl)
     // webjars
-    implementation("org.webjars.npm:htmx.org:1.7.0")
-    implementation("org.webjars.npm:hyperscript.org:0.9.5")
-    implementation("org.webjars:font-awesome:6.1.1")
-    implementation("org.webjars.npm:bulma:0.9.4")
+    implementation(libs.htmx.org)
+    implementation(libs.hyperscript.org)
+    implementation(libs.font.awesome)
+    implementation(libs.bulma)
 }
 
 configure<SourceSetContainer> {
