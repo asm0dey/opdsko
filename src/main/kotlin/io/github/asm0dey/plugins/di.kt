@@ -23,10 +23,10 @@ import io.github.asm0dey.repository.Repository
 import io.github.asm0dey.service.InfoService
 import io.ktor.server.application.*
 import org.jooq.ExecuteContext
+import org.jooq.ExecuteListener
 import org.jooq.SQLDialect
 import org.jooq.conf.Settings
 import org.jooq.impl.DSL
-import org.jooq.impl.DefaultExecuteListener
 import org.jooq.impl.DefaultExecuteListenerProvider
 import org.kodein.di.bindSingleton
 import org.kodein.di.instance
@@ -59,7 +59,7 @@ fun Application.ioc() {
     }
 }
 
-class CustomLogger : DefaultExecuteListener() {
+class CustomLogger : ExecuteListener {
     override fun executeStart(ctx: ExecuteContext) {
         val create =
             DSL.using(ctx.dialect(), Settings().withRenderFormatted(false))

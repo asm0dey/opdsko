@@ -53,7 +53,7 @@ class Api(application: Application) : AbstractDIController(application) {
             get("/search") {
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 0
                 val searchTerm = URLDecoder.decode(call.request.queryParameters["search"]!!, UTF_8)
-                val (books, hasMore) = info.searchBookByText(searchTerm, page)
+                val (books, _) = info.searchBookByText(searchTerm, page)
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
@@ -252,7 +252,6 @@ class Api(application: Application) : AbstractDIController(application) {
                 val authorFilter = call.parameters["author"]?.toLongOrNull()
                 val sorting = call.request.queryParameters["sort"] ?: "num"
                 val books = info.booksBySeriesName(name)
-                val allAuthors = books.flatMap { it.authors.map { it.buildName() to it.id } }.toSet()
                 val sorted = when (sorting) {
                     "num" -> books.sortedBy { it.book.sequenceNumber ?: Int.MAX_VALUE }
                     "name" -> books.sortedBy { it.book.name!! }
