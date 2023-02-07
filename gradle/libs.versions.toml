@@ -14,29 +14,20 @@ gg-jte-gradle = { id = "gg.jte.gradle", version.ref = "jte" }
 
 [versions]
 
-kotlin = "1.8.0"
+kotlin = "1.8.10"
 
-ktor = "2.2.2"
-##⬆ = "2.2.3-eap-584"
-##⬆ = "2.2.3-eap-586"
-##⬆ = "2.2.3-eap-587"
-##⬆ = "2.2.3-eap-589"
-##⬆ = "2.2.3-eap-590"
-##⬆ = "2.2.3-eap-592"
-##⬆ = "2.2.3-eap-595"
-##⬆ = "2.2.3-eap-596"
-##⬆ = "2.2.3-eap-597"
-##⬆ = "2.2.3-eap-598"
-##⬆ = "2.2.3-eap-599"
+ktor = "2.2.3"
+##⬆ = "2.2.4-eap-601"
 ##⬆ = "2.3.0-eap-591"
 ##⬆ = "2.3.0-eap-593"
 ##⬆ = "2.3.0-eap-594"
+##⬆ = "2.3.0-eap-602"
 
 kodein-di = "7.18.0"
 
 kotlinx-coroutines = "1.6.4"
 
-netty-tcnative = "2.0.56.Final"
+netty-tcnative = "2.0.57.Final"
 
 tinylog = "2.6.0"
 
@@ -44,23 +35,9 @@ xmlutil = "0.84.3"
 
 jte = "2.2.4"
 
-flyway = "9.12.0"
+flyway = "9.14.1"
 
 [libraries]
-
-ktor-server-call-id-jvm = { group = "io.ktor", name = "ktor-server-call-id-jvm", version.ref = "ktor" }
-
-ktor-server-call-logging-jvm = { group = "io.ktor", name = "ktor-server-call-logging-jvm", version.ref = "ktor" }
-
-ktor-server-compression-jvm = { group = "io.ktor", name = "ktor-server-compression-jvm", version.ref = "ktor" }
-
-ktor-server-core-jvm = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
-
-ktor-server-host-common-jvm = { group = "io.ktor", name = "ktor-server-host-common-jvm", version.ref = "ktor" }
-
-ktor-server-metrics-jvm = { group = "io.ktor", name = "ktor-server-metrics-jvm", version.ref = "ktor" }
-
-ktor-server-netty-jvm = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
 
 netty-tcnative = { group = "io.netty", name = "netty-tcnative", version.ref = "netty-tcnative" }
 
@@ -74,7 +51,7 @@ flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "fly
 
 jooq-kotlin = "org.jooq:jooq-kotlin:3.17.7"
 
-sqlite-jdbc = "org.xerial:sqlite-jdbc:3.40.0.0"
+sqlite-jdbc = "org.xerial:sqlite-jdbc:3.40.1.0"
 
 commons-codec = "commons-codec:commons-codec:1.15"
 
@@ -82,11 +59,11 @@ jte-kotlin = { group = "gg.jte", name = "jte-kotlin", version.ref = "jte" }
 
 jsoup = "org.jsoup:jsoup:1.15.3"
 
-jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.1"
+jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.2"
 
-serialization-jvm = { group = "io.github.pdvrieze.xmlutil", name = "serialization-jvm", version.ref = "xmlutil" }
+xmlutil-serialization-jvm = { group = "io.github.pdvrieze.xmlutil", name = "serialization-jvm", version.ref = "xmlutil" }
 
-ktor = { group = "io.github.pdvrieze.xmlutil", name = "ktor", version.ref = "xmlutil" }
+xmlutil-ktor = { group = "io.github.pdvrieze.xmlutil", name = "ktor", version.ref = "xmlutil" }
 
 kotlin-xml-builder = "com.github.redundent.kotlin-xml-builder:kotlin-xml-builder:2f90727de8"
 
@@ -110,9 +87,9 @@ jooq-codegen = { module = "org.jooq:jooq-codegen" }
 
 kotlin-scripting-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
 
-ktor-server-tests-jvm = { group = "io.ktor", name = "ktor-server-tests-jvm", version.ref = "ktor" }
-
 kotlinx-coroutines-reactor = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
+
+ktor-server-tests-jvm = { group = "io.ktor", name = "ktor-server-tests-jvm", version.ref = "ktor" }
 
 ktor-serialization-kotlinx-xml = { group = "io.ktor", name = "ktor-serialization-kotlinx-xml", version.ref = "ktor" }
 
@@ -123,3 +100,17 @@ ktor-server-jte = { group = "io.ktor", name = "ktor-server-jte", version.ref = "
 ktor-server-resources = { group = "io.ktor", name = "ktor-server-resources", version.ref = "ktor" }
 
 ktor-server-webjars = { group = "io.ktor", name = "ktor-server-webjars", version.ref = "ktor" }
+
+ktor-server-call-id-jvm = { group = "io.ktor", name = "ktor-server-call-id-jvm", version.ref = "ktor" }
+
+ktor-server-call-logging-jvm = { group = "io.ktor", name = "ktor-server-call-logging-jvm", version.ref = "ktor" }
+
+ktor-server-compression-jvm = { group = "io.ktor", name = "ktor-server-compression-jvm", version.ref = "ktor" }
+
+ktor-server-core-jvm = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
+
+ktor-server-host-common-jvm = { group = "io.ktor", name = "ktor-server-host-common-jvm", version.ref = "ktor" }
+
+ktor-server-metrics-jvm = { group = "io.ktor", name = "ktor-server-metrics-jvm", version.ref = "ktor" }
+
+ktor-server-netty-jvm = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }

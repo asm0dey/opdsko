@@ -54,7 +54,7 @@ dependencies {
     // http2
     implementation(libs.netty.tcnative)
     if (tcnative_classifier != null) {
-        implementation("io.netty:netty-tcnative-boringssl-static:2.0.53.Final:$tcnative_classifier")
+        implementation("io.netty:netty-tcnative-boringssl-static:${libs.versions.netty.tcnative.get()}:$tcnative_classifier")
     } else {
         implementation(libs.netty.tcnative.boringssl.static)
     }
@@ -72,8 +72,8 @@ dependencies {
     // xml
     implementation(libs.jsoup)
     implementation(libs.jaxb.runtime)
-    implementation(libs.serialization.jvm)
-    implementation(libs.ktor)
+    implementation(libs.xmlutil.serialization.jvm)
+    implementation(libs.xmlutil.ktor)
     implementation(libs.kotlin.xml.builder)
     // logging
     implementation(libs.tinylog.api.kotlin)
