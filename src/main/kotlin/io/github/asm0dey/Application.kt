@@ -39,16 +39,95 @@ import org.jooq.DSLContext
 import org.jooq.impl.DSL.using
 import org.tinylog.Logger
 import java.io.File
+import java.io.FileOutputStream
+import java.net.URL
+import java.nio.channels.Channels
+import java.nio.file.attribute.PosixFilePermission.*
 import java.time.LocalDateTime
+import java.util.*
+import java.util.zip.ZipFile
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events.StartElement
 import kotlin.collections.set
+import kotlin.io.path.Path
+import kotlin.io.path.setPosixFilePermissions
 
+const val FB2C_VERSION = "v1.69.0"
 
 val genreNames = genreNames()
+var epubConverterAccessible = true
+fun downloadFile(url: URL, outputFileName: String) {
+    url.openStream().use {
+        Channels.newChannel(it).use { rbc ->
+            FileOutputStream(outputFileName).use { fos ->
+                fos.channel.transferFrom(rbc, 0, Long.MAX_VALUE)
+            }
+        }
+    }
+}
+fun main(args: Array<String>) {
+    Flyway.configure().dataSource(OPDSKO_JDBC, null, null).load().migrate()
+    val osName = System.getProperty("os.name").lowercase()
+    val osArch = System.getProperty("os.arch").lowercase()
+    val osClassifier = when {
+        osName.contains("win") -> "win"
+        osName.contains("linux") -> "linux"
+        osName.contains("mac") -> "darwin"
+        else -> {
+            epubConverterAccessible = false
+            null
+        }
+    }
+    val arch = if (osClassifier != null) {
+         when {
+            osArch.contains("64") -> when (osClassifier) {
+                "linux" -> "_amd64"
+                "win" -> "64"
+                "darwin" -> "amd64"
+                else -> error("Unsupported platform")
+            }
 
-fun main(args: Array<String>) = EngineMain.main(args)
+            osArch.contains("86") -> when (osClassifier) {
+                "linux" -> "_i386"
+                "win" -> "32"
+                else -> error("Unsupported platform")
+            }
+
+            else -> {
+                epubConverterAccessible = false
+                null
+            }
+        }
+    }else null
+    if (arch!=null){
+        val targetFile = "fb2c_$FB2C_VERSION.zip"
+        if (!File(targetFile).exists()) {
+            println("It seems that there is no archive of fb2c next to the executable,\n" +
+                    "downloading it…")
+            downloadFile(URL("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$osClassifier$arch.zip"),
+                targetFile
+            )
+            println("""Downloaded db2c archive.
+                |Unpacking…
+            """.trimMargin())
+            ZipFile(targetFile).use {
+                val myEntry = it.entries().asIterator().asSequence().first { it.name.startsWith("fb2c") }
+                it.getInputStream(myEntry).use { inp->
+                    FileOutputStream(myEntry.name).use { out->
+                        inp.buffered().copyTo(out.buffered())
+                    }
+                    try{
+                        Path(myEntry.name).setPosixFilePermissions(setOf(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE))
+                    }catch (_:Exception){}
+                }
+            }
+            println("Unpacked. Resuming application launch.")
+        }
+
+    }
+    EngineMain.main(args)
+}
 
 @Suppress("UnusedReceiverParameter")
 fun Application.main() {
@@ -56,7 +135,6 @@ fun Application.main() {
 }
 
 private fun initDb() {
-    Flyway.configure().dataSource(OPDSKO_JDBC, null, null).load().migrate()
 }
 
 private fun genreNames(): HashMap<String, String> {

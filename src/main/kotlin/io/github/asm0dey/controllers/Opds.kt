@@ -17,6 +17,7 @@
  */
 package io.github.asm0dey.controllers
 
+import io.github.asm0dey.epubConverterAccessible
 import io.github.asm0dey.model.Entry
 import io.github.asm0dey.service.*
 import io.ktor.http.*
@@ -104,6 +105,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                                 "imageType" to info.imageTypes(listOf(book))[book.id],
                                 "summary" to info.shortDescriptions(listOf(book))[book.id],
                                 "content" to bookDescriptionsLonger(listOf(book.id to book.book))[book.id],
+                                "hasEpub" to epubConverterAccessible,
                             ),
                             contentType = ContentType.parse("application/atom+xml;type=entry;profile=opds-catalog")
                         )
@@ -120,6 +122,22 @@ class Opds(application: Application) : AbstractDIController(application) {
                     )
                     val bytes = info.zippedBook(bookId)
                     call.respondBytes(bytes, ContentType.parse("application/fb+zip"))
+                }
+                get("/{id}/download/epub") {
+                    if (!epubConverterAccessible) {
+                        call.respond(HttpStatusCode.FailedDependency, "Platform is not supported for converting files")
+                        return@get
+                    }
+                    val bookId = call.parameters["id"]!!.toLong()
+                    call.response.header(
+                        HttpHeaders.ContentDisposition,
+                        ContentDisposition.Attachment.withParameter(
+                            ContentDisposition.Parameters.FileName,
+                            "$bookId.epub.zip"
+                        ).toString()
+                    )
+                    val bytes = info.packedBytes(info.toEpub(bookId), "$bookId.epub")
+                    call.respondBytes(bytes, ContentType.parse("application/epub+zip"))
                 }
             }
             route("/author") {
@@ -334,7 +352,8 @@ class Opds(application: Application) : AbstractDIController(application) {
         "title" to title,
         "feedId" to id,
         "feedUpdated" to updated,
-        "additionalLinks" to additionalLinks
+        "additionalLinks" to additionalLinks,
+        "hasEpub" to epubConverterAccessible,
     )
 
     private fun navJte(params: Map<String, Any>) = JteContent(

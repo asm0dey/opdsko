@@ -8,6 +8,8 @@
 @param feedId: String
 @param feedUpdated: java.time.temporal.TemporalAccessor
 @param additionalLinks: List<io.github.asm0dey.model.Entry.Link> = listOf()
+@param hasEpub: Boolean
+
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:thr="http://purl.org/syndication/thread/1.0" xmlns:opds="http://opds-spec.org/2010/catalog" xmlns:dcterms="http://purl.org/dc/terms/"
       xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
@@ -51,6 +53,9 @@
         @endif
         <link type="application/atom+xml;type=entry;profile=opds-catalog" rel="alternate" href="/opds/book/${book.id}/info" title="Full entry for ${book.book.name}"/>
         <link type="application/fb2+zip" rel="http://opds-spec.org/acquisition/open-access" href="/opds/book/${book.id}/download"/>
+        @if(hasEpub)
+            <link type="application/epub+zip" rel="http://opds-spec.org/acquisition/open-access" href="/opds/book/${book.id}/download/epub"/>
+        @endif
         @if(bookDescriptions[book.id] != null)
         <summary type="text">${bookDescriptions[book.id]}</summary>
         @endif

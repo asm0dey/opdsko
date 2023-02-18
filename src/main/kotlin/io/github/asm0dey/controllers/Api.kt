@@ -17,8 +17,8 @@
  */
 package io.github.asm0dey.controllers
 
+import io.github.asm0dey.epubConverterAccessible
 import io.github.asm0dey.service.*
-import io.ktor.http.*
 import io.ktor.http.ContentType.Text.Html
 import io.ktor.server.application.*
 import io.ktor.server.html.*
@@ -32,6 +32,9 @@ import org.kodein.di.ktor.controller.AbstractDIController
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 import kotlin.math.min
 
 private val String.encoded get() = URLEncoder.encode(this, UTF_8)
@@ -362,7 +365,12 @@ class Api(application: Application) : AbstractDIController(application) {
                             attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
                             +"Info"
                         }
-                        a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"Download" }
+                        if (!epubConverterAccessible)
+                            a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"Download" }
+                        else {
+                            a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"fb2" }
+                            a("/opds/book/${bookWithInfo.id}/download/epub", classes = "card-footer-item") { +"epub" }
+                        }
                     }
                 }
 
@@ -469,7 +477,7 @@ class Api(application: Application) : AbstractDIController(application) {
             script(src = "/webjars/htmx.org/dist/htmx.min.js") {
                 defer = true
             }
-            script(src = "/webjars/hyperscript.org/dist/_hyperscript_web.min.js") {
+            script(src = "/webjars/hyperscript.org/dist/_hyperscript.min.js") {
                 defer = true
             }
         }

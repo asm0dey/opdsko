@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "io.github.asm0dey"
-version = "0.0.11"
+version = "0.0.12"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -69,6 +69,7 @@ dependencies {
     // utils
     implementation(libs.commons.codec)
     implementation(libs.jte.kotlin)
+    implementation(libs.kotlin.process)
     // xml
     implementation(libs.jsoup)
     implementation(libs.jaxb.runtime)

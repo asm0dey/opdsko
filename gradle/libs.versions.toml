@@ -15,27 +15,35 @@ gg-jte-gradle = { id = "gg.jte.gradle", version.ref = "jte" }
 [versions]
 
 kotlin = "1.8.10"
+##  ⬆ = "1.8.20-Beta"
 
 ktor = "2.2.3"
 ##⬆ = "2.2.4-eap-601"
+##⬆ = "2.2.4-eap-604"
+##⬆ = "2.2.4-eap-605"
+##⬆ = "2.2.4-eap-608"
 ##⬆ = "2.3.0-eap-591"
 ##⬆ = "2.3.0-eap-593"
 ##⬆ = "2.3.0-eap-594"
 ##⬆ = "2.3.0-eap-602"
+##⬆ = "2.3.0-eap-603"
+##⬆ = "2.3.0-eap-606"
+##⬆ = "2.3.0-eap-607"
+##⬆ = "2.3.0-eap-609"
 
 kodein-di = "7.18.0"
 
 kotlinx-coroutines = "1.6.4"
 
-netty-tcnative = "2.0.57.Final"
+netty-tcnative = "2.0.59.Final"
 
 tinylog = "2.6.0"
 
 xmlutil = "0.84.3"
 
-jte = "2.2.4"
+jte = "2.2.6"
 
-flyway = "9.14.1"
+flyway = "9.15.0"
 
 [libraries]
 
@@ -49,7 +57,7 @@ hikaricp = "com.zaxxer:HikariCP:5.0.1"
 
 flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
 
-jooq-kotlin = "org.jooq:jooq-kotlin:3.17.7"
+jooq-kotlin = "org.jooq:jooq-kotlin:3.17.8"
 
 sqlite-jdbc = "org.xerial:sqlite-jdbc:3.40.1.0"
 
@@ -57,7 +65,7 @@ commons-codec = "commons-codec:commons-codec:1.15"
 
 jte-kotlin = { group = "gg.jte", name = "jte-kotlin", version.ref = "jte" }
 
-jsoup = "org.jsoup:jsoup:1.15.3"
+jsoup = "org.jsoup:jsoup:1.15.4"
 
 jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.2"
 
@@ -77,7 +85,7 @@ htmx-org = "org.webjars.npm:htmx.org:1.8.5"
 
 hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.7"
 
-font-awesome = "org.webjars:font-awesome:6.2.1"
+font-awesome = "org.webjars:font-awesome:6.3.0"
 
 bulma = "org.webjars.npm:bulma:0.9.4"
 
@@ -114,3 +122,5 @@ ktor-server-host-common-jvm = { group = "io.ktor", name = "ktor-server-host-comm
 ktor-server-metrics-jvm = { group = "io.ktor", name = "ktor-server-metrics-jvm", version.ref = "ktor" }
 
 ktor-server-netty-jvm = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
+
+kotlin-process = "com.github.pgreze:kotlin-process:1.4.1"

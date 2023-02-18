@@ -17,6 +17,7 @@
  */
 package io.github.asm0dey.service
 
+import com.github.pgreze.process.process
 import com.kursx.parser.fb2.Binary
 import com.kursx.parser.fb2.FictionBook
 import io.github.asm0dey.repository.Repository
@@ -25,8 +26,11 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.codec.binary.Base64
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.nio.file.Files
+import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.io.path.*
 
 class InfoService(private val repo: Repository) {
     fun searchBookByText(searchTerm: String, page: Int, pageSize: Int = 50): Pair<List<BookWithInfo>, Boolean> {
@@ -74,20 +78,38 @@ class InfoService(private val repo: Repository) {
 
     fun bookInfo(bookId: Long) = BookWithInfo(repo.bookInfo(bookId))
 
+    @OptIn(ExperimentalPathApi::class)
+    suspend fun toEpub(bookId: Long): ByteArray {
+        val path = repo.bookPath(bookId)
+        val tmp = withContext(Dispatchers.IO) {
+            Files.createTempDirectory("fb2c")
+        }
+        process("./fb2c", "convert", "--to", "epub", path, tmp.absolutePathString())
+        try {
+            return tmp.toFile().listFiles()!!.first().readBytes()
+        } finally {
+            tmp.deleteRecursively()
+        }
+    }
+
     suspend fun zippedBook(bookId: Long): ByteArray {
+        return packedBytes(File(repo.bookPath(bookId)).readBytes(), "$bookId.fb2")
+    }
+
+    suspend fun packedBytes(bytes: ByteArray, name: String = UUID.randomUUID().toString()): ByteArray {
         return ByteArrayOutputStream().use { baos ->
             ZipOutputStream(baos).use {
                 it.apply {
-                    val path = repo.bookPath(bookId)
-                    putNextEntry(ZipEntry("$bookId.fb2"))
+                    putNextEntry(ZipEntry(name))
                     withContext(Dispatchers.IO) {
-                        write(File(path).readBytes())
+                        write(bytes)
                     }
                     closeEntry()
                 }
             }
             baos.toByteArray()
         }
+
     }
 
     fun authorNameStarts(prefix: String, trim: Boolean = true) = repo.authorNameStarts(prefix, trim)
