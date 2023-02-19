@@ -66,11 +66,10 @@ fun downloadFile(url: URL, outputFileName: String) {
         }
     }
 }
-fun main(args: Array<String>) {
-    Flyway.configure().dataSource(OPDSKO_JDBC, null, null).load().migrate()
+
+val os by lazy {
     val osName = System.getProperty("os.name").lowercase()
-    val osArch = System.getProperty("os.arch").lowercase()
-    val osClassifier = when {
+    when {
         osName.contains("win") -> "win"
         osName.contains("linux") -> "linux"
         osName.contains("mac") -> "darwin"
@@ -79,16 +78,20 @@ fun main(args: Array<String>) {
             null
         }
     }
-    val arch = if (osClassifier != null) {
+}
+fun main(args: Array<String>) {
+    Flyway.configure().dataSource(OPDSKO_JDBC, null, null).load().migrate()
+    val osArch = System.getProperty("os.arch").lowercase()
+    val arch = if (os != null) {
          when {
-            osArch.contains("64") -> when (osClassifier) {
+            osArch.contains("64") -> when (os) {
                 "linux" -> "_amd64"
                 "win" -> "64"
                 "darwin" -> "amd64"
                 else -> error("Unsupported platform")
             }
 
-            osArch.contains("86") -> when (osClassifier) {
+            osArch.contains("86") -> when (os) {
                 "linux" -> "_i386"
                 "win" -> "32"
                 else -> error("Unsupported platform")
@@ -105,7 +108,7 @@ fun main(args: Array<String>) {
         if (!File(targetFile).exists()) {
             println("It seems that there is no archive of fb2c next to the executable,\n" +
                     "downloading it…")
-            downloadFile(URL("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$osClassifier$arch.zip"),
+            downloadFile(URL("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$os$arch.zip"),
                 targetFile
             )
             println("""Downloaded db2c archive.

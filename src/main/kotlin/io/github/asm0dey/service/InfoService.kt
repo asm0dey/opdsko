@@ -84,7 +84,8 @@ class InfoService(private val repo: Repository) {
         val tmp = withContext(Dispatchers.IO) {
             Files.createTempDirectory("fb2c")
         }
-        process("./fb2c", "convert", "--to", "epub", path, tmp.absolutePathString())
+        val executable = "./fb2c".takeIf { File(it).exists() } ?: "fb2c.exe"
+        process(executable, "convert", "--to", "epub", path, tmp.absolutePathString())
         try {
             return tmp.toFile().listFiles()!!.first().readBytes()
         } finally {
@@ -96,7 +97,7 @@ class InfoService(private val repo: Repository) {
         return packedBytes(File(repo.bookPath(bookId)).readBytes(), "$bookId.fb2")
     }
 
-    suspend fun packedBytes(bytes: ByteArray, name: String = UUID.randomUUID().toString()): ByteArray {
+    private suspend fun packedBytes(bytes: ByteArray, name: String = UUID.randomUUID().toString()): ByteArray {
         return ByteArrayOutputStream().use { baos ->
             ZipOutputStream(baos).use {
                 it.apply {

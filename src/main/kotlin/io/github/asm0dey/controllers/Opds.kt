@@ -133,10 +133,10 @@ class Opds(application: Application) : AbstractDIController(application) {
                         HttpHeaders.ContentDisposition,
                         ContentDisposition.Attachment.withParameter(
                             ContentDisposition.Parameters.FileName,
-                            "$bookId.epub.zip"
+                            "$bookId.epub"
                         ).toString()
                     )
-                    val bytes = info.packedBytes(info.toEpub(bookId), "$bookId.epub")
+                    val bytes = info.toEpub(bookId)
                     call.respondBytes(bytes, ContentType.parse("application/epub+zip"))
                 }
             }

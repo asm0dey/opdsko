@@ -3,7 +3,6 @@
 
 @param content: String
 @param summary: String
-@param hasEpub: Boolean
 @param book: BookWithInfo
 @param imageType: String?
 <?xml version="1.0" encoding="UTF-8"?>
@@ -30,9 +29,9 @@
     @if(imageType != null)
     <link type="${imageType}" rel="http://opds-spec.org/image" href="/opds/image/${book.id}"/>
     @endif
-    <link type="application/fb2+zip" rel="http://opds-spec.org/acquisition/open-access" href="/opds/book/${book.id}/download"/>
-    @if(hasEpub)
-        <link type="application/epub+zip" rel="http://opds-spec.org/acquisition/open-access" href="/opds/book/${book.id}/download/epub"/>
+    <link type="application/fb2+zip" rel="http://opds-spec.org/acquisition/open-access" href="/opds/book/${book.id}/download" title="fb2" />
+    @if(io.github.asm0dey.epubConverterAccessible)
+    <link type="application/epub+zip" rel="http://opds-spec.org/acquisition/open-access" href="/opds/book/${book.id}/download/epub" title="epub" />
     @endif
     @if(summary != null)
     <summary type="text">${summary}</summary>

@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "io.github.asm0dey"
-version = "0.0.12"
+version = "0.0.13"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
