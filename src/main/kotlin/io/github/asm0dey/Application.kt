@@ -33,6 +33,7 @@ import io.github.asm0dey.opdsko.jooq.tables.records.BookGenreRecord
 import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
 import io.github.asm0dey.plugins.OPDSKO_JDBC
 import io.ktor.server.application.*
+import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import org.flywaydb.core.Flyway
 import org.jooq.DSLContext
@@ -79,11 +80,12 @@ val os by lazy {
         }
     }
 }
+
 fun main(args: Array<String>) {
     Flyway.configure().dataSource(OPDSKO_JDBC, null, null).load().migrate()
     val osArch = System.getProperty("os.arch").lowercase()
     val arch = if (os != null) {
-         when {
+        when {
             osArch.contains("64") -> when (os) {
                 "linux" -> "_amd64"
                 "win" -> "64"
@@ -102,34 +104,51 @@ fun main(args: Array<String>) {
                 null
             }
         }
-    }else null
-    if (arch!=null){
+    } else null
+    if (arch != null) {
         val targetFile = "fb2c_$FB2C_VERSION.zip"
         if (!File(targetFile).exists()) {
-            println("It seems that there is no archive of fb2c next to the executable,\n" +
-                    "downloading it…")
-            downloadFile(URL("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$os$arch.zip"),
+            println(
+                "It seems that there is no archive of fb2c next to the executable,\n" +
+                        "downloading it…"
+            )
+            downloadFile(
+                URL("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$os$arch.zip"),
                 targetFile
             )
-            println("""Downloaded db2c archive.
+            println(
+                """Downloaded db2c archive.
                 |Unpacking…
-            """.trimMargin())
-            ZipFile(targetFile).use {
-                val myEntry = it.entries().asIterator().asSequence().first { it.name.startsWith("fb2c") }
-                it.getInputStream(myEntry).use { inp->
-                    FileOutputStream(myEntry.name).use { out->
-                        inp.buffered().copyTo(out.buffered())
-                    }
-                    try{
-                        Path(myEntry.name).setPosixFilePermissions(setOf(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE))
-                    }catch (_:Exception){}
-                }
-            }
-            println("Unpacked. Resuming application launch.")
+            """.trimMargin()
+            )
         }
+        ZipFile(targetFile).use {
+            val myEntry = it.entries().asIterator().asSequence().first { it.name.startsWith("fb2c") }
+            it.getInputStream(myEntry).use { inp ->
+                FileOutputStream(myEntry.name).use { out ->
+                    inp.buffered().copyTo(out.buffered())
+                }
+                posixSetAccessible(myEntry.name)
+            }
+        }
+        if (!File("fb2c.conf.toml").exists())
+            Application::class.java.classLoader.getResourceAsStream("fb2c.conf.toml").buffered().use { inp ->
+                FileOutputStream("fb2c.conf.toml").buffered().use { out ->
+                    inp.copyTo(out)
+                }
+                posixSetAccessible("fb2c.conf.toml")
+
+            }
+        println("Unpacked. Resuming application launch.")
+
 
     }
     EngineMain.main(args)
+}
+
+private fun posixSetAccessible(fileName: String) = try {
+    Path(fileName).setPosixFilePermissions(setOf(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE))
+} catch (_: Exception) {
 }
 
 @Suppress("UnusedReceiverParameter")

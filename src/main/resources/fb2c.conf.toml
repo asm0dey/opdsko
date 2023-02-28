@@ -1,0 +1,36 @@
+[document]
+remove_png_transparency = false
+title_format = "{(#series{ - #padnumber}) }#title"
+open_from_cover = true
+
+[document.dropcaps]
+create = true
+ignore_symbols = "'\"-.…0123456789‒–—«»“”<>"
+
+[document.annotation]
+create = true
+title = "Annotation"
+add_to_toc = true
+
+[document.notes]
+mode = "float-new"
+body_names = [ "notes", "comments" ]
+renumber = true
+link_format = "[{#body_number.}#number]"
+
+[document.cover]
+width = 1264
+height = 1680
+stamp_placement = "bottom"
+
+[document.vignettes]
+create = true
+
+[document.vignettes.images.default]
+before_title = "profiles/vignettes/title_before.png"
+after_title = "profiles/vignettes/title_after.png"
+
+[document.vignettes.images.h0]
+before_title = "none"
+after_title = "none"
+chapter_end = "none"

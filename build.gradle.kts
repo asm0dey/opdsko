@@ -10,10 +10,11 @@ plugins {
     alias(libs.plugins.nu.studer.jooq)
     alias(libs.plugins.org.flywaydb.flyway)
     alias(libs.plugins.gg.jte.gradle)
+    alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
 }
 
 group = "io.github.asm0dey"
-version = "0.0.13"
+version = "0.0.14"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -76,6 +77,7 @@ dependencies {
     implementation(libs.xmlutil.serialization.jvm)
     implementation(libs.xmlutil.ktor)
     implementation(libs.kotlin.xml.builder)
+    implementation(libs.kotlinx.serialization.json)
     // logging
     implementation(libs.tinylog.api.kotlin)
     implementation(libs.slf4j.tinylog)

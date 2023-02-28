@@ -36,3 +36,7 @@ out/
 .vscode/
 log_*
 opds.db
+conversion.log
+fb2c
+fb2c.conf.toml
+fb2c_*.zip

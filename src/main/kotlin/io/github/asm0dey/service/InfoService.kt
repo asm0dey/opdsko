@@ -17,7 +17,9 @@
  */
 package io.github.asm0dey.service
 
+import com.github.pgreze.process.Redirect
 import com.github.pgreze.process.process
+import com.github.pgreze.process.unwrap
 import com.kursx.parser.fb2.Binary
 import com.kursx.parser.fb2.FictionBook
 import io.github.asm0dey.repository.Repository
@@ -85,7 +87,18 @@ class InfoService(private val repo: Repository) {
             Files.createTempDirectory("fb2c")
         }
         val executable = "./fb2c".takeIf { File(it).exists() } ?: "fb2c.exe"
-        process(executable, "convert", "--to", "epub", path, tmp.absolutePathString())
+        process(
+            executable,
+            "-c",
+            "fb2c.conf.toml",
+            "convert",
+            "--to",
+            "epub",
+            path,
+            tmp.absolutePathString(),
+            stdout = Redirect.SILENT,
+            stderr = Redirect.SILENT,
+        ).unwrap()
         try {
             return tmp.toFile().listFiles()!!.first().readBytes()
         } finally {
