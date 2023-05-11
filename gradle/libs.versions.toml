@@ -61,7 +61,7 @@ flyway-core = "org.flywaydb:flyway-core:9.15.1"
 
 jooq-kotlin = "org.jooq:jooq-kotlin:3.17.8"
 
-sqlite-jdbc = "org.xerial:sqlite-jdbc:3.41.0.0"
+sqlite-jdbc = "org.xerial:sqlite-jdbc:3.41.2.1"
 
 commons-codec = "commons-codec:commons-codec:1.15"
 
