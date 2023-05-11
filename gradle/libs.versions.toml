@@ -67,7 +67,7 @@ commons-codec = "commons-codec:commons-codec:1.15"
 
 jte-kotlin = { group = "gg.jte", name = "jte-kotlin", version.ref = "jte" }
 
-jsoup = "org.jsoup:jsoup:1.15.4"
+jsoup = "org.jsoup:jsoup:1.16.1"
 
 jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.2"
 
