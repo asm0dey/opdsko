@@ -49,9 +49,9 @@ kotlinx-serialization = "1.5.0"
 
 [libraries]
 
-netty-tcnative = "io.netty:netty-tcnative:2.0.59.Final"
+netty-tcnative = "io.netty:netty-tcnative:2.0.61.Final"
 
-netty-tcnative-boringssl-static = "io.netty:netty-tcnative-boringssl-static:2.0.59.Final"
+netty-tcnative-boringssl-static = "io.netty:netty-tcnative-boringssl-static:2.0.61.Final"
 
 kodein-di-framework-ktor-server-controller-jvm = { group = "org.kodein.di", name = "kodein-di-framework-ktor-server-controller-jvm", version.ref = "kodein-di" }
 
