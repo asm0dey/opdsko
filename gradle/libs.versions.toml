@@ -18,7 +18,7 @@ org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.
 
 kotlin = "1.8.10"
 
-ktor = "2.2.4"
+ktor = "2.3.1-eap-672"
 ##⬆ = "2.3.0-eap-591"
 ##⬆ = "2.3.0-eap-593"
 ##⬆ = "2.3.0-eap-594"
