@@ -2,34 +2,39 @@
 
 [plugins]
 
-org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.8.21" }
+org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
-com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
+com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "kotlin" }
 
 nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2" }
 
 org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "9.17.0" }
 
-gg-jte-gradle = { id = "gg.jte.gradle", version = "2.3.2" }
+gg-jte-gradle = { id = "gg.jte.gradle", version.ref = "jte" }
 
-org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.8.21" }
+org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [versions]
 
 kotlin = "1.8.21"
 
-ktor = "2.2.4"
-##⬆ = "2.3.0-eap-591"
-##⬆ = "2.3.0-eap-593"
-##⬆ = "2.3.0-eap-594"
-##⬆ = "2.3.0-eap-602"
-##⬆ = "2.3.0-eap-603"
-##⬆ = "2.3.0-eap-606"
-##⬆ = "2.3.0-eap-607"
-##⬆ = "2.3.0-eap-609"
-##⬆ = "2.3.0-eap-610"
-##⬆ = "2.3.0-eap-612"
-##⬆ = "2.3.0-eap-614"
+ktor = "2.3.0"
+##⬆ = "2.3.1-eap-657"
+##⬆ = "2.3.1-eap-658"
+##⬆ = "2.3.1-eap-659"
+##⬆ = "2.3.1-eap-660"
+##⬆ = "2.3.1-eap-661"
+##⬆ = "2.3.1-eap-662"
+##⬆ = "2.3.1-eap-663"
+##⬆ = "2.3.1-eap-664"
+##⬆ = "2.3.1-eap-665"
+##⬆ = "2.3.1-eap-666"
+##⬆ = "2.3.1-eap-667"
+##⬆ = "2.3.1-eap-668"
+##⬆ = "2.3.1-eap-669"
+##⬆ = "2.3.1-eap-670"
+##⬆ = "2.3.1-eap-671"
+##⬆ = "2.3.1-eap-672"
 
 kodein-di = "7.20.1"
 
@@ -87,7 +92,8 @@ htmx-org = "org.webjars.npm:htmx.org:1.9.2"
 
 hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.8"
 
-font-awesome = "org.webjars:font-awesome:6.3.0"
+font-awesome = "org.webjars:font-awesome:6.4.0"
+##                                   ⬆ :6.4.0"
 
 bulma = "org.webjars.npm:bulma:0.9.4"
 
