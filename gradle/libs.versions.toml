@@ -10,7 +10,7 @@ nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2" }
 
 org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "9.17.0" }
 
-gg-jte-gradle = { id = "gg.jte.gradle", version = "2.2.6" }
+gg-jte-gradle = { id = "gg.jte.gradle", version = "2.3.2" }
 
 org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.8.21" }
 
