@@ -12,7 +12,7 @@ org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "9.15.1" }
 
 gg-jte-gradle = { id = "gg.jte.gradle", version = "2.2.6" }
 
-org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.8.0" }
+org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.8.21" }
 
 [versions]
 
