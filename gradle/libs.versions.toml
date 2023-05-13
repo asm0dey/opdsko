@@ -42,7 +42,7 @@ kotlinx-coroutines = "1.7.0"
 
 netty-tcnative = "2.0.59.Final"
 
-tinylog = "2.6.1"
+tinylog = "2.6.2"
 
 xmlutil = "0.86.0"
 
