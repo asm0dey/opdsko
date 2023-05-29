@@ -6,7 +6,7 @@ org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kot
 
 com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 
-nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2" }
+nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2.1" }
 
 org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "9.17.0" }
 
