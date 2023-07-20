@@ -8,7 +8,7 @@ com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", vers
 
 nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2" }
 
-org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "9.17.0" }
+org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "9.21.0" }
 
 gg-jte-gradle = { id = "gg.jte.gradle", version.ref = "jte" }
 
