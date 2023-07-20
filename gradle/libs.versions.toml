@@ -62,7 +62,7 @@ kodein-di-framework-ktor-server-controller-jvm = { group = "org.kodein.di", name
 
 hikaricp = "com.zaxxer:HikariCP:5.0.1"
 
-flyway-core = "org.flywaydb:flyway-core:9.17.0"
+flyway-core = "org.flywaydb:flyway-core:9.21.0"
 
 jooq-kotlin = "org.jooq:jooq-kotlin:3.18.4"
 
