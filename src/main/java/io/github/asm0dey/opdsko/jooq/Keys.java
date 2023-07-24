@@ -35,7 +35,6 @@ public class Keys {
 
     public static final UniqueKey<AuthorRecord> AUTHOR__PK_AUTHOR = Internal.createUniqueKey(Author.AUTHOR, DSL.name("pk_author"), new TableField[] { Author.AUTHOR.ID }, true);
     public static final UniqueKey<BookRecord> BOOK__PK_BOOK = Internal.createUniqueKey(Book.BOOK, DSL.name("pk_book"), new TableField[] { Book.BOOK.ID }, true);
-    public static final UniqueKey<BookRecord> BOOK__UK_BOOK_10985490 = Internal.createUniqueKey(Book.BOOK, DSL.name("uk_book_10985490"), new TableField[] { Book.BOOK.PATH }, true);
     public static final UniqueKey<BookAuthorRecord> BOOK_AUTHOR__PK_BOOK_AUTHOR = Internal.createUniqueKey(BookAuthor.BOOK_AUTHOR, DSL.name("pk_book_author"), new TableField[] { BookAuthor.BOOK_AUTHOR.BOOK_ID, BookAuthor.BOOK_AUTHOR.AUTHOR_ID }, true);
     public static final UniqueKey<BookGenreRecord> BOOK_GENRE__PK_BOOK_GENRE = Internal.createUniqueKey(BookGenre.BOOK_GENRE, DSL.name("pk_book_genre"), new TableField[] { BookGenre.BOOK_GENRE.BOOK_ID, BookGenre.BOOK_GENRE.GENRE_ID }, true);
     public static final UniqueKey<GenreRecord> GENRE__PK_GENRE = Internal.createUniqueKey(Genre.GENRE, DSL.name("pk_genre"), new TableField[] { Genre.GENRE.ID }, true);

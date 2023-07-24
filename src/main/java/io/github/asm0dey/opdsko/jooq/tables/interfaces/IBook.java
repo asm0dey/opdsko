@@ -53,4 +53,9 @@ public interface IBook extends Serializable {
      * Getter for <code>book.lang</code>.
      */
     public String getLang();
+
+    /**
+     * Getter for <code>book.zip_file</code>.
+     */
+    public String getZipFile();
 }

@@ -11,7 +11,6 @@ import io.github.asm0dey.opdsko.jooq.tables.BookAuthor;
 import io.github.asm0dey.opdsko.jooq.tables.BookGenre;
 import io.github.asm0dey.opdsko.jooq.tables.BooksFts;
 import io.github.asm0dey.opdsko.jooq.tables.Genre;
-import io.github.asm0dey.opdsko.jooq.tables.SqliteSequence;
 
 import java.util.Arrays;
 import java.util.List;
@@ -70,11 +69,6 @@ public class DefaultSchema extends SchemaImpl {
     public final Genre GENRE = Genre.GENRE;
 
     /**
-     * The table <code>sqlite_sequence</code>.
-     */
-    public final SqliteSequence SQLITE_SEQUENCE = SqliteSequence.SQLITE_SEQUENCE;
-
-    /**
      * No further instances allowed
      */
     private DefaultSchema() {
@@ -96,8 +90,7 @@ public class DefaultSchema extends SchemaImpl {
             BookAuthor.BOOK_AUTHOR,
             BookGenre.BOOK_GENRE,
             BooksFts.BOOKS_FTS,
-            Genre.GENRE,
-            SqliteSequence.SQLITE_SEQUENCE
+            Genre.GENRE
         );
     }
 }

@@ -26,6 +26,7 @@ import io.github.asm0dey.opdsko.jooq.tables.interfaces.IBook
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
 import io.github.asm0dey.plugins.dtf
+import net.lingala.zip4j.ZipFile
 import org.jooq.Record4
 import java.io.File
 import java.net.URLDecoder
@@ -102,10 +103,15 @@ fun bookDescriptionsLonger(pathsByIds: List<Pair<Long, IBook>>): Map<Long, Strin
     return pathsByIds
         .associate { (id, book) ->
             val file = File(book.path)
-            val size = file.length().humanReadable()
             val seq = book.sequence
             val seqNo = book.sequenceNumber
-            val elements = FictionBook(file).description.titleInfo.annotation?.elements
+            val (size, fb) = if (book.zipFile == null) file.length().humanReadable() to FictionBook(file)
+            else {
+                val zip = ZipFile(book.zipFile)
+                val header = zip.getFileHeader(book.path)
+                header.uncompressedSize.humanReadable() to FictionBook(zip, header)
+            }
+            val elements = fb.description?.titleInfo?.annotation?.elements
             val descr = elements?.let { Element.getText(elements, "<br>") } ?: ""
             val text = buildString {
                 append("<p><b>Size</b>: $size</p>")

@@ -201,6 +201,7 @@ public class AuthorsFtsRecord extends TableRecordImpl<AuthorsFtsRecord> implemen
         setFirstName(from.getFirstName());
         setMiddleName(from.getMiddleName());
         setNickname(from.getNickname());
+        resetChangedOnNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -224,6 +225,7 @@ public class AuthorsFtsRecord extends TableRecordImpl<AuthorsFtsRecord> implemen
         setFirstName(firstName);
         setMiddleName(middleName);
         setNickname(nickname);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -237,6 +239,7 @@ public class AuthorsFtsRecord extends TableRecordImpl<AuthorsFtsRecord> implemen
             setFirstName(value.getFirstName());
             setMiddleName(value.getMiddleName());
             setNickname(value.getNickname());
+            resetChangedOnNotNull();
         }
     }
 }

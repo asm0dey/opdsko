@@ -25,6 +25,7 @@ public class Book implements IBook {
     private final String sequence;
     private final Integer sequenceNumber;
     private final String lang;
+    private final String zipFile;
 
     public Book(IBook value) {
         this.id = value.getId();
@@ -35,6 +36,7 @@ public class Book implements IBook {
         this.sequence = value.getSequence();
         this.sequenceNumber = value.getSequenceNumber();
         this.lang = value.getLang();
+        this.zipFile = value.getZipFile();
     }
 
     public Book(
@@ -45,7 +47,8 @@ public class Book implements IBook {
         LocalDateTime added,
         String sequence,
         Integer sequenceNumber,
-        String lang
+        String lang,
+        String zipFile
     ) {
         this.id = id;
         this.path = path;
@@ -55,6 +58,7 @@ public class Book implements IBook {
         this.sequence = sequence;
         this.sequenceNumber = sequenceNumber;
         this.lang = lang;
+        this.zipFile = zipFile;
     }
 
     /**
@@ -121,6 +125,14 @@ public class Book implements IBook {
         return this.lang;
     }
 
+    /**
+     * Getter for <code>book.zip_file</code>.
+     */
+    @Override
+    public String getZipFile() {
+        return this.zipFile;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -178,6 +190,12 @@ public class Book implements IBook {
         }
         else if (!this.lang.equals(other.lang))
             return false;
+        if (this.zipFile == null) {
+            if (other.zipFile != null)
+                return false;
+        }
+        else if (!this.zipFile.equals(other.zipFile))
+            return false;
         return true;
     }
 
@@ -193,6 +211,7 @@ public class Book implements IBook {
         result = prime * result + ((this.sequence == null) ? 0 : this.sequence.hashCode());
         result = prime * result + ((this.sequenceNumber == null) ? 0 : this.sequenceNumber.hashCode());
         result = prime * result + ((this.lang == null) ? 0 : this.lang.hashCode());
+        result = prime * result + ((this.zipFile == null) ? 0 : this.zipFile.hashCode());
         return result;
     }
 
@@ -208,6 +227,7 @@ public class Book implements IBook {
         sb.append(", ").append(sequence);
         sb.append(", ").append(sequenceNumber);
         sb.append(", ").append(lang);
+        sb.append(", ").append(zipFile);
 
         sb.append(")");
         return sb.toString();

@@ -11,7 +11,6 @@ import io.github.asm0dey.opdsko.jooq.tables.BookAuthor;
 import io.github.asm0dey.opdsko.jooq.tables.BookGenre;
 import io.github.asm0dey.opdsko.jooq.tables.BooksFts;
 import io.github.asm0dey.opdsko.jooq.tables.Genre;
-import io.github.asm0dey.opdsko.jooq.tables.SqliteSequence;
 
 
 /**
@@ -54,9 +53,4 @@ public class Tables {
      * The table <code>genre</code>.
      */
     public static final Genre GENRE = Genre.GENRE;
-
-    /**
-     * The table <code>sqlite_sequence</code>.
-     */
-    public static final SqliteSequence SQLITE_SEQUENCE = SqliteSequence.SQLITE_SEQUENCE;
 }

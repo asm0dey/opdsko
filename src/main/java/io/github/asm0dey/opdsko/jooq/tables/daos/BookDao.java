@@ -85,20 +85,6 @@ public class BookDao extends DAOImpl<BookRecord, io.github.asm0dey.opdsko.jooq.t
     }
 
     /**
-     * Fetch a unique record that has <code>path = value</code>
-     */
-    public io.github.asm0dey.opdsko.jooq.tables.pojos.Book fetchOneByPath(String value) {
-        return fetchOne(Book.BOOK.PATH, value);
-    }
-
-    /**
-     * Fetch a unique record that has <code>path = value</code>
-     */
-    public Optional<io.github.asm0dey.opdsko.jooq.tables.pojos.Book> fetchOptionalByPath(String value) {
-        return fetchOptional(Book.BOOK.PATH, value);
-    }
-
-    /**
      * Fetch records that have <code>name BETWEEN lowerInclusive AND
      * upperInclusive</code>
      */
@@ -186,5 +172,20 @@ public class BookDao extends DAOImpl<BookRecord, io.github.asm0dey.opdsko.jooq.t
      */
     public List<io.github.asm0dey.opdsko.jooq.tables.pojos.Book> fetchByLang(String... values) {
         return fetch(Book.BOOK.LANG, values);
+    }
+
+    /**
+     * Fetch records that have <code>zip_file BETWEEN lowerInclusive AND
+     * upperInclusive</code>
+     */
+    public List<io.github.asm0dey.opdsko.jooq.tables.pojos.Book> fetchRangeOfZipFile(String lowerInclusive, String upperInclusive) {
+        return fetchRange(Book.BOOK.ZIP_FILE, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>zip_file IN (values)</code>
+     */
+    public List<io.github.asm0dey.opdsko.jooq.tables.pojos.Book> fetchByZipFile(String... values) {
+        return fetch(Book.BOOK.ZIP_FILE, values);
     }
 }

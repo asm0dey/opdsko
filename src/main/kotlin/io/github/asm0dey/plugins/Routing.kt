@@ -28,6 +28,7 @@ import io.ktor.server.application.*
 import io.ktor.server.http.content.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import net.lingala.zip4j.ZipFile
 import org.jooq.DSLContext
 import org.kodein.di.instance
 import org.kodein.di.ktor.closestDI
@@ -40,19 +41,29 @@ val dtf: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
 fun Application.routes() {
     routing {
-        static("/") {
-            staticBasePackage = "static"
-            resources(".")
-            defaultResource("index.html")
-        }
+//        static("/") {
+//            staticBasePackage = "static"
+//            resources(".")
+//            defaultResource("index.html")
+//        }
+        staticResources("/", "static")
         post("/scan") {
             thread(start = true, isDaemon = true, name = "Scanner", priority = 1) {
                 val dir =
                     this@routes.environment.config.propertyOrNull("ktor.indexer.path")?.getString() ?: return@thread
                 val create by closestDI().instance<DSLContext>()
                 scan(dir, create)
-                val pathsToDelete = create.select(BOOK.ID, BOOK.PATH).from(BOOK)
-                    .mapNotNull { r -> r[BOOK.PATH].takeIf { !File(it).exists() }?.let { r[BOOK.ID] } }
+                val pathsToDelete = create.select(BOOK.ID, BOOK.PATH, BOOK.ZIP_FILE).from(BOOK)
+                    .mapNotNull {
+                        val zipFile = it[BOOK.ZIP_FILE]
+                        val path = it[BOOK.PATH]
+                        val id = it[BOOK.ID]
+                        if (zipFile == null && !File(path).exists() ||
+                            zipFile != null && !File(zipFile).exists() ||
+                            zipFile != null && ZipFile(zipFile).getFileHeader(path) == null
+                        ) id
+                        else null
+                    }
                 create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
             }
             call.respondText("Scan started")

@@ -58,7 +58,7 @@ public class Author extends TableImpl<AuthorRecord> {
     /**
      * The column <code>author.id</code>.
      */
-    public final TableField<AuthorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<AuthorRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.identity(true), this, "");
 
     /**
      * The column <code>author.fb2id</code>.

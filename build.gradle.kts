@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "io.github.asm0dey"
-version = "0.0.15"
+version = "0.0.16"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -24,7 +24,6 @@ application {
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
     maven { url = uri("https://jitpack.io") }
 
 }
@@ -37,21 +36,22 @@ val tcnative_classifier = when {
 }
 
 dependencies {
-    implementation(KotlinX.coroutines.reactor)
+    implementation(libs.kotlinx.coroutines.reactor)
     // ktor deps
-    implementation(Ktor.plugins.serialization.kotlinx.xml)
+    implementation(libs.ktor.serialization.kotlinx.xml)
     implementation(libs.ktor.server.call.id.jvm)
     implementation(libs.ktor.server.call.logging.jvm)
     implementation(libs.ktor.server.compression.jvm)
     implementation(libs.ktor.server.core.jvm)
     implementation(libs.ktor.server.host.common.jvm)
-    implementation(Ktor.server.htmlBuilder)
-    implementation(Ktor.server.jte)
+    implementation(libs.ktor.server.html.builder)
+    implementation(libs.ktor.server.jte)
     implementation(libs.ktor.server.metrics.jvm)
     implementation(libs.ktor.server.netty.jvm)
-    implementation(Ktor.server.resources)
-    implementation(Ktor.server.webjars)
+    implementation(libs.ktor.server.resources)
+    implementation(libs.ktor.server.webjars)
     testImplementation(libs.ktor.server.tests.jvm)
+    implementation(libs.zip4j)
     // http2
     implementation(libs.netty.tcnative)
     if (tcnative_classifier != null) {
@@ -106,6 +106,7 @@ val jooqDb = mapOf("url" to "jdbc:sqlite:$projectDir/build/db/opds.db")
 flyway {
     url = jooqDb["url"]
     locations = arrayOf("classpath:db/migration")
+    mixed = true
 }
 
 
@@ -196,7 +197,7 @@ generateJooq.dependsOn(tasks.flywayMigrate)
 jte {
     generate()
     sourceDirectory.set(Paths.get("templates"))
-    contentType.set(gg.jte.ContentType.Html)
+    contentType.set(gg.jte.ContentType.Plain)
     binaryStaticContent.set(true)
     trimControlStructures.set(true)
 }

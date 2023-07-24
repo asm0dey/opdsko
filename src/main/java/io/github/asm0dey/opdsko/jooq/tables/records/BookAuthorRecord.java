@@ -132,6 +132,7 @@ public class BookAuthorRecord extends UpdatableRecordImpl<BookAuthorRecord> impl
     public void from(IBookAuthor from) {
         setBookId(from.getBookId());
         setAuthorId(from.getAuthorId());
+        resetChangedOnNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -153,6 +154,7 @@ public class BookAuthorRecord extends UpdatableRecordImpl<BookAuthorRecord> impl
 
         setBookId(bookId);
         setAuthorId(authorId);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -164,6 +166,7 @@ public class BookAuthorRecord extends UpdatableRecordImpl<BookAuthorRecord> impl
         if (value != null) {
             setBookId(value.getBookId());
             setAuthorId(value.getAuthorId());
+            resetChangedOnNotNull();
         }
     }
 }

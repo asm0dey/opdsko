@@ -133,6 +133,7 @@ public class GenreRecord extends UpdatableRecordImpl<GenreRecord> implements Rec
     public void from(IGenre from) {
         setId(from.getId());
         setName(from.getName());
+        resetChangedOnNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -154,6 +155,7 @@ public class GenreRecord extends UpdatableRecordImpl<GenreRecord> implements Rec
 
         setId(id);
         setName(name);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -165,6 +167,7 @@ public class GenreRecord extends UpdatableRecordImpl<GenreRecord> implements Rec
         if (value != null) {
             setId(value.getId());
             setName(value.getName());
+            resetChangedOnNotNull();
         }
     }
 }

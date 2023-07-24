@@ -330,6 +330,7 @@ public class AuthorRecord extends UpdatableRecordImpl<AuthorRecord> implements R
         setLastName(from.getLastName());
         setNickname(from.getNickname());
         setAdded(from.getAdded());
+        resetChangedOnNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -356,6 +357,7 @@ public class AuthorRecord extends UpdatableRecordImpl<AuthorRecord> implements R
         setLastName(lastName);
         setNickname(nickname);
         setAdded(added);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -372,6 +374,7 @@ public class AuthorRecord extends UpdatableRecordImpl<AuthorRecord> implements R
             setLastName(value.getLastName());
             setNickname(value.getNickname());
             setAdded(value.getAdded());
+            resetChangedOnNotNull();
         }
     }
 }

@@ -123,6 +123,7 @@ public class BooksFtsRecord extends TableRecordImpl<BooksFtsRecord> implements R
     public void from(IBooksFts from) {
         setName(from.getName());
         setSequence(from.getSequence());
+        resetChangedOnNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -144,6 +145,7 @@ public class BooksFtsRecord extends TableRecordImpl<BooksFtsRecord> implements R
 
         setName(name);
         setSequence(sequence);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -155,6 +157,7 @@ public class BooksFtsRecord extends TableRecordImpl<BooksFtsRecord> implements R
         if (value != null) {
             setName(value.getName());
             setSequence(value.getSequence());
+            resetChangedOnNotNull();
         }
     }
 }

@@ -6,9 +6,9 @@ org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kot
 
 com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 
-nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2" }
+nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2.1" }
 
-org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "9.17.0" }
+org-flywaydb-flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 
 gg-jte-gradle = { id = "gg.jte.gradle", version.ref = "jte" }
 
@@ -16,71 +16,54 @@ org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.
 
 [versions]
 
-kotlin = "1.8.21"
+kotlin = "1.9.0"
 
-ktor = "2.3.0"
-##⬆ = "2.3.1-eap-657"
-##⬆ = "2.3.1-eap-658"
-##⬆ = "2.3.1-eap-659"
-##⬆ = "2.3.1-eap-660"
-##⬆ = "2.3.1-eap-661"
-##⬆ = "2.3.1-eap-662"
-##⬆ = "2.3.1-eap-663"
-##⬆ = "2.3.1-eap-664"
-##⬆ = "2.3.1-eap-665"
-##⬆ = "2.3.1-eap-666"
-##⬆ = "2.3.1-eap-667"
-##⬆ = "2.3.1-eap-668"
-##⬆ = "2.3.1-eap-669"
-##⬆ = "2.3.1-eap-670"
-##⬆ = "2.3.1-eap-671"
-##⬆ = "2.3.1-eap-672"
+ktor = "2.3.2"
 
-kodein-di = "7.20.1"
+kodein-di = "7.20.2"
 
-kotlinx-coroutines = "1.7.0"
+kotlinx-coroutines = "1.7.2"
 
-netty-tcnative = "2.0.59.Final"
+netty-tcnative = "2.0.61.Final"
 
-tinylog = "2.6.1"
+tinylog = "2.6.2"
 
-xmlutil = "0.86.0"
+xmlutil = "0.86.1"
 
-jte = "2.3.2"
+jte = "3.0.1"
 
-flyway = "9.15.1"
+flyway = "9.21.0"
 
 kotlinx-serialization = "1.5.1"
 
 [libraries]
 
-netty-tcnative = "io.netty:netty-tcnative:2.0.61.Final"
-
-netty-tcnative-boringssl-static = "io.netty:netty-tcnative-boringssl-static:2.0.61.Final"
+netty-tcnative = { group = "io.netty", name = "netty-tcnative", version.ref = "netty-tcnative" }
+netty-tcnative-boringssl-static = { group = "io.netty", name = "netty-tcnative-boringssl-static", version.ref = "netty-tcnative" }
 
 kodein-di-framework-ktor-server-controller-jvm = { group = "org.kodein.di", name = "kodein-di-framework-ktor-server-controller-jvm", version.ref = "kodein-di" }
 
 hikaricp = "com.zaxxer:HikariCP:5.0.1"
 
-flyway-core = "org.flywaydb:flyway-core:9.17.0"
+flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
 
-jooq-kotlin = "org.jooq:jooq-kotlin:3.18.4"
+jooq-kotlin = "org.jooq:jooq-kotlin:3.18.5"
 
-sqlite-jdbc = "org.xerial:sqlite-jdbc:3.41.2.1"
+sqlite-jdbc = "org.xerial:sqlite-jdbc:3.42.0.0"
 
-commons-codec = "commons-codec:commons-codec:1.15"
+commons-codec = "commons-codec:commons-codec:1.16.0"
 
 jte-kotlin = { group = "gg.jte", name = "jte-kotlin", version.ref = "jte" }
 
 jsoup = "org.jsoup:jsoup:1.16.1"
 
-jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.2"
+jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.3"
 
 xmlutil-serialization-jvm = { group = "io.github.pdvrieze.xmlutil", name = "serialization-jvm", version.ref = "xmlutil" }
 
 xmlutil-ktor = { group = "io.github.pdvrieze.xmlutil", name = "ktor", version.ref = "xmlutil" }
 
-kotlin-xml-builder = "com.github.redundent.kotlin-xml-builder:kotlin-xml-builder:2f90727de8"
+kotlin-xml-builder = "org.redundent:kotlin-xml-builder:1.9.0"
 
 tinylog-api-kotlin = { group = "org.tinylog", name = "tinylog-api-kotlin", version.ref = "tinylog" }
 
@@ -88,12 +71,11 @@ slf4j-tinylog = { group = "org.tinylog", name = "slf4j-tinylog", version.ref = "
 
 tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }
 
-htmx-org = "org.webjars.npm:htmx.org:1.9.2"
+htmx-org = "org.webjars.npm:htmx.org:1.9.3"
 
-hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.8"
+hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.9"
 
 font-awesome = "org.webjars:font-awesome:6.4.0"
-##                                   ⬆ :6.4.0"
 
 bulma = "org.webjars.npm:bulma:0.9.4"
 
@@ -136,3 +118,5 @@ kotlin-process = "com.github.pgreze:kotlin-process:1.4.1"
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 kotlin-serialization = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
+
+zip4j = { group = "net.lingala.zip4j", name = "zip4j", version = "2.11.5" }

@@ -28,6 +28,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.kodein.di.instance
 import org.kodein.di.ktor.controller.AbstractDIController
+import org.redundent.kotlin.xml.*
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -69,24 +70,29 @@ class Opds(application: Application) : AbstractDIController(application) {
                     val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 0
                     val searchTerm = URLDecoder.decode(call.parameters["searchTerm"]!!, StandardCharsets.UTF_8)
                     val (books, hasMore) = info.searchBookByText(searchTerm, page)
-                    call.respond(
-                        bookJte(
-                            books(
-                                books,
-                                call.request.uri,
-                                "Search results for \"$searchTerm\"",
-                                "search:$searchTerm",
-                                ZonedDateTime.now(),
-                                searchPaginationLinks(hasMore, searchTerm, page)
-                            )
-                        )
+                    val xml = bookXml(
+                        books,
+                        call.request.uri,
+                        "Search results for \"$searchTerm\"",
+                        "search:$searchTerm",
+                        ZonedDateTime.now(),
+                        searchPaginationLinks(hasMore, searchTerm, page)
                     )
+                    call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
                 }
             }
             get("/new") {
                 val books = info.latestBooks().map { BookWithInfo(it) }
-                call.respond(
-                    bookJte(books(books, call.request.path(), "Latest books", "new"))
+
+                call.respondText(
+                    bookXml(
+                        books,
+                        call.request.path(),
+                        "Latest books",
+                        "new",
+                        books.maxOfOrNull { it.book.added }?.z ?: ZonedDateTime.now()
+                    ),
+                    ContentType.parse(ACQUISITION_TYPE)
                 )
             }
             get("/image/{id}") {
@@ -97,18 +103,15 @@ class Opds(application: Application) : AbstractDIController(application) {
                 get("/{id}/info") {
                     val bookId = call.parameters["id"]!!.toLong()
                     val book = info.bookInfo(bookId)
-                    call.respond(
-                        JteContent(
-                            "entry.kte",
-                            params = mapOf(
-                                "book" to book,
-                                "imageType" to info.imageTypes(listOf(book))[book.id],
-                                "summary" to info.shortDescriptions(listOf(book))[book.id],
-                                "content" to bookDescriptionsLonger(listOf(book.id to book.book))[book.id],
-                                "hasEpub" to epubConverterAccessible,
-                            ),
-                            contentType = ContentType.parse("application/atom+xml;type=entry;profile=opds-catalog")
-                        )
+                    call.respondText(
+                        entryXml(
+                            book,
+                            info.imageTypes(listOf(book))[book.id],
+                            bookDescriptionsLonger(listOf(book.id to book.book))[book.id],
+                            info.shortDescriptions(listOf(book))[book.id],
+                            call.request.path()
+                        ),
+                        ContentType.parse("application/atom+xml;type=entry;profile=opds-catalog")
                     )
                 }
                 get("/{id}/download") {
@@ -178,9 +181,8 @@ class Opds(application: Application) : AbstractDIController(application) {
                         val path = call.request.path()
                         val books = info.allBooksByAuthor(authorId)
                         val authorName = info.authorName(authorId)
-                        call.respond(
-                            bookJte(books(books, path, "All books by $authorName", "author:$authorId:all"))
-                        )
+                        val xml = bookXml(books, path, "All books by $authorName", "author:$authorId:all")
+                        call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
                     }
                     get("/{id}/series") {
                         val authorId = call.parameters["id"]!!.toLong()
@@ -204,27 +206,27 @@ class Opds(application: Application) : AbstractDIController(application) {
                         val seriesName = URLDecoder.decode(call.parameters["name"]!!, StandardCharsets.UTF_8)
                         val result = info.booksBySeriesAndAuthor(seriesName, authorId)
                         val path = call.request.path()
-                        call.respond(
-                            bookJte(
-                                books(result, path, seriesName, "author:$authorId:series:$seriesName")
-                            )
+                        val xml = bookXml(
+                            result,
+                            path,
+                            seriesName,
+                            "author:$authorId:series:$seriesName"
                         )
+                        call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
+
                     }
                     get("/{id}/out") {
                         val authorId = call.parameters["id"]!!.toLong()
                         val path = call.request.path()
                         val books = info.booksWithoutSeriesByAuthorId(authorId)
                         val authorName = info.authorName(authorId)
-                        call.respond(
-                            bookJte(
-                                books(
-                                    books,
-                                    path,
-                                    "Books without series by $authorName",
-                                    "author:$authorId:series:out"
-                                )
-                            )
+                        val xml = bookXml(
+                            books,
+                            path,
+                            "Books without series by $authorName",
+                            "author:$authorId:series:out"
                         )
+                        call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
                     }
                 }
             }
@@ -274,49 +276,269 @@ class Opds(application: Application) : AbstractDIController(application) {
                     val filtered =
                         authorFilter?.let { aId -> sorted.filter { it.authors.any { it.id == aId } } }?.toList()
                             ?: sorted.toList()
-                    call.respond(
-                        bookJte(
-                            books(
-                                filtered,
-                                path,
-                                name,
-                                "series:$name",
-                                sorted.maxOf { it.book.added }.z,
-                                listOfNotNull(
-                                    Entry.Link(
-                                        "http://opds-spec.org/facet",
-                                        "$path?sort=num" + if (authorFilter != null) "&author=$authorFilter" else "",
-                                        ACQUISITION_TYPE,
-                                        title = "Order by number in series",
-                                        facetGroup = "Sorting",
-                                        activeFacet = sorting == "num"
-                                    ),
-                                    Entry.Link(
-                                        "http://opds-spec.org/facet",
-                                        "$path?sort=name" + if (authorFilter != null) "&author=$authorFilter" else "",
-                                        ACQUISITION_TYPE,
-                                        title = "Order by name of book",
-                                        facetGroup = "Sorting",
-                                        activeFacet = sorting == "name"
-                                    )
-                                ) + if (allAuthors.size > 1) {
-                                    allAuthors.map { (authorName, id) ->
-                                        Entry.Link(
-                                            "http://opds-spec.org/facet",
-                                            "$path?sort=$sorting&author=$id",
-                                            ACQUISITION_TYPE,
-                                            title = "Only books in $name by $authorName",
-                                            facetGroup = "Author",
-                                            activeFacet = id == authorFilter
-                                        )
-
-                                    }
-                                } else listOf()
+                    val xml = bookXml(
+                        filtered,
+                        path,
+                        name,
+                        "series:$name",
+                        sorted.maxOf { it.book.added }.z,
+                        listOfNotNull(
+                            Entry.Link(
+                                "http://opds-spec.org/facet",
+                                "$path?sort=num${if (authorFilter != null) "&author=$authorFilter" else ""}",
+                                ACQUISITION_TYPE,
+                                title = "Order by number in series",
+                                facetGroup = "Sorting",
+                                activeFacet = sorting == "num"
+                            ),
+                            Entry.Link(
+                                "http://opds-spec.org/facet",
+                                "$path?sort=name" + if (authorFilter != null) "&author=$authorFilter" else "",
+                                ACQUISITION_TYPE,
+                                title = "Order by name of book",
+                                facetGroup = "Sorting",
+                                activeFacet = sorting == "name"
                             )
-                        )
+                        ) + if (allAuthors.size > 1) {
+                            allAuthors.map { (authorName, id) ->
+                                Entry.Link(
+                                    "http://opds-spec.org/facet",
+                                    "$path?sort=$sorting&author=$id",
+                                    ACQUISITION_TYPE,
+                                    title = "Only books in $name by $authorName",
+                                    facetGroup = "Author",
+                                    activeFacet = id == authorFilter
+                                )
+
+                            }
+                        } else listOf()
+
+                    )
+                    call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
+                }
+            }
+        }
+    }
+
+    val root = Namespace("http://www.w3.org/2005/Atom")
+    val dcterms = Namespace("dcterms", "http://purl.org/dc/terms/")
+    val thr = Namespace("thr", "http://purl.org/syndication/thread/1.0")
+    val opds = Namespace("opds", "http://opds-spec.org/2010/catalog")
+    val opensearch = Namespace("opensearch", "http://a9.com/-/spec/opensearch/1.1/")
+
+    private fun entryXml(book: BookWithInfo, imageType: String?, content: String?, summary: String?, path: String): String {
+        return xml("entry", version = XmlVersion.V10, namespace = root) {
+            namespace(dcterms)
+//            namespace(thr)
+//            namespace(opds)
+//            namespace(opensearch)
+            "title"(root) { -book.book.name }
+            "id"(root) { -"book:info:${book.id}" }
+            "link"(root){
+                attributes("rel" to "self", "type" to "application/atom+xml;type=entry;profile=opds-catalog", "href" to path)
+            }
+            for (author in book.authors) {
+                "author"(root) {
+                    "name"(root) { -author.buildName() }
+                    "uri"(root) { -"/opds/author/browse/${author.id}" }
+                }
+            }
+            "published"(root) { -formatDate(ZonedDateTime.now()) }
+            "updated"(root) { -formatDate(book.book.added) }
+            if (!book.book.lang.isNullOrBlank()) "language"(dcterms) { -book.book.lang }
+            if (!book.book.date.isNullOrBlank()) "language"(dcterms) { -book.book.date }
+            for (genre in book.genres) {
+                "category"(root, Attribute("term", genre), Attribute("label", genre))
+            }
+            if (imageType != null) {
+                "link"(
+                    root,
+                    Attribute("type", imageType),
+                    Attribute("rel", "http://opds-spec.org/image"),
+                    Attribute("href", "/opds/image/${book.id}")
+                )
+            }
+            "link"(root) {
+                attributes(
+                    "type" to "application/fb2+zip",
+                    "rel" to "http://opds-spec.org/acquisition/open-access",
+                    "href" to "/opds/book/${book.id}/download",
+                    "title" to "fb2"
+                )
+            }
+            if (epubConverterAccessible)
+                "link"(root) {
+                    attributes(
+                        "type" to "application/epub+zip",
+                        "rel" to "http://opds-spec.org/acquisition/open-access",
+                        "href" to "/opds/book/${book.id}/download/epub",
+                        "title" to "epub"
+                    )
+                }
+            if (summary != null) {
+                "summary"(root, Attribute("type", "text")) { -summary }
+                "content"(root, Attribute("type", "html")) {
+                    if (content != null) cdata(content)
+                }
+            }
+        }
+            .toString(PrintOptions(singleLineTextElements = true))
+    }
+
+    private fun bookXml(
+        books: List<BookWithInfo>,
+        path: String,
+        title: String,
+        id: String,
+        updated: ZonedDateTime = books.maxOf { it.book.added }.z,
+        additionalLinks: List<Entry.Link> = listOf()
+    ): String {
+        val shortDescriptions = info.shortDescriptions(books)
+        val imageTypes = info.imageTypes(books)
+        return xml("feed", version = XmlVersion.V10, namespace = root) {
+            namespace(dcterms)
+            namespace(thr)
+            namespace(opds)
+            namespace(opensearch)
+            "id"(root) { -id }
+            "title"(root) { -title }
+            "updated"(root) {
+                -formatDate(updated)
+            }
+            "author"(root) {
+                "name"(root) { -"Pasha Finkelshteyn" }
+                "uri"(root) { -"https://github.com/asm0dey/opdsKo" }
+            }
+            "link"(root) {
+                attributes(
+                    "type" to "application/atom+xml;profile=opds-catalog;kind=navigation",
+                    "rel" to "start",
+                    "href" to "/opds"
+                )
+            }
+            "link"(root) {
+                attributes(
+                    "type" to "application/atom+xml;profile=opds-catalog;kind=acquisition",
+                    "rel" to "self",
+                    "href" to path
+                )
+            }
+            "link"(root) {
+                attributes(
+                    "type" to "application/opensearchdescription+xml",
+                    "rel" to "search",
+                    "href" to "/opds/search"
+                )
+            }
+            "link"(root) {
+                attributes(
+                    "type" to "application/atom+xml",
+                    "title" to "Search",
+                    "href" to "/opds/search/{searchTerms}",
+                    "rel" to "search"
+                )
+            }
+            additionalLinks.forEach { additionalLink(it) }
+            for (book in books) {
+                renderBook(
+                    book,
+                    imageTypes,
+                    shortDescriptions,
+                    formatDate(books.maxOf { it.book.added }.z)
+                )
+            }
+        }
+            .toString(
+                PrintOptions(
+                    pretty = true,
+                    singleLineTextElements = true,
+                )
+            )
+    }
+
+    private fun Node.renderBook(
+        book: BookWithInfo,
+        imageTypes: Map<Long, String?>,
+        shortDescriptions: Map<Long, String>,
+        updated: String
+    ) {
+        "entry"(root) {
+            "title"(root) { -book.book.name }
+            "id"(root) { -"book:${book.id}" }
+            for (author in book.authors) {
+                "author"(root){
+                    "name"(root) { -author.buildName() }
+                    "uri"(root) { -"/opds/author/browse/${author.id}" }
+                }
+            }
+            "published"(root) { -formatDate(ZonedDateTime.now()) }
+            "updated"(root) { -updated }
+            if (!book.book.lang.isNullOrBlank()) {
+                "language"(dcterms) { -book.book.lang }
+            }
+            if (!book.book.date.isNullOrBlank()) {
+                "date"(dcterms) { -book.book.date }
+            }
+            for (genre in book.genres) {
+                "category"(root) {
+                    attributes("term" to genre, "label" to genre)
+                }
+            }
+            val imageType = imageTypes[book.id]
+            if (imageType != null) {
+                "link"(root) {
+                    attributes(
+                        "type" to imageType,
+                        "rel" to "http://opds-spec.org/image",
+                        "href" to "/opds/image/${book.id}"
                     )
                 }
             }
+            "link"(root) {
+                attributes(
+                    "type" to "application/atom+xml;type=entry;profile=opds-catalog",
+                    "rel" to "alternate",
+                    "href" to "/opds/book/${book.id}/info",
+                    "title" to "Full entry for ${book.book.name}",
+                )
+            }
+            "link"(root) {
+                attributes(
+                    "type" to "application/fb2+zip",
+                    "rel" to "http://opds-spec.org/acquisition/open-access",
+                    "href" to "/opds/book/${book.id}/download",
+                    "title" to "fb2"
+                )
+            }
+            if (epubConverterAccessible)
+                "link"(root) {
+                    attributes(
+                        "type" to "application/epub+zip",
+                        "rel" to "http://opds-spec.org/acquisition/open-access",
+                        "href" to "/opds/book/${book.id}/download/epub",
+                        "title" to "epub"
+                    )
+                }
+            val desc = shortDescriptions[book.id]
+            if (desc != null) {
+                "summary"(root) {
+                    attribute("type", "text")
+                    -desc
+                }
+            }
+        }
+
+    }
+
+    private fun Node.additionalLink(link: Entry.Link) {
+        "link"(root) {
+            attribute("type", link.type)
+            attribute("rel", link.rel)
+            attribute("href", link.href)
+            link.count?.let { attribute("count", it, thr) }
+            link.title?.let { attribute("title", it) }
+            link.facetGroup?.let { attribute("facetGroupe", it, opds) }
+            link.activeFacet?.let { attribute("activeFacet", it, opds) }
         }
     }
 
@@ -337,31 +559,9 @@ class Opds(application: Application) : AbstractDIController(application) {
     )
 
     private val String.encoded: String get() = URLEncoder.encode(this, StandardCharsets.UTF_8)
-    private fun books(
-        books: List<BookWithInfo>,
-        path: String,
-        title: String,
-        id: String,
-        updated: ZonedDateTime = books.maxOf { it.book.added }.z,
-        additionalLinks: List<Entry.Link> = listOf(),
-    ) = mapOf(
-        "books" to books,
-        "bookDescriptions" to info.shortDescriptions(books),
-        "imageTypes" to info.imageTypes(books),
-        "path" to path,
-        "title" to title,
-        "feedId" to id,
-        "feedUpdated" to updated,
-        "additionalLinks" to additionalLinks,
-        "hasEpub" to epubConverterAccessible,
-    )
 
     private fun navJte(params: Map<String, Any>) = JteContent(
         "navigation.kte", params, contentType = ContentType.parse(NAVIGATION_TYPE)
-    )
-
-    private fun bookJte(params: Map<String, Any>): JteContent = JteContent(
-        "books.kte", params, contentType = ContentType.parse(ACQUISITION_TYPE)
     )
 
     private fun navigation(

@@ -103,8 +103,8 @@ class Repository(val create: DSLContext) {
             .fetchSingle { it[BOOK.ADDED] }
     }
 
-    fun bookPath(bookId: Long) =
-        create.select(BOOK.PATH).from(BOOK).where(BOOK.ID.eq(bookId)).fetchSingle { it[BOOK.PATH] }
+    fun bookPath(bookId: Long): Pair<String, String?> =
+        create.select(BOOK.PATH, BOOK.ZIP_FILE).from(BOOK).where(BOOK.ID.eq(bookId)).fetchSingle { it[BOOK.PATH] to it[BOOK.ZIP_FILE] }
 
 
     fun authorName(authorId: Long): String {

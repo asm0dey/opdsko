@@ -57,7 +57,7 @@ public class Genre extends TableImpl<GenreRecord> {
     /**
      * The column <code>genre.id</code>.
      */
-    public final TableField<GenreRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<GenreRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.identity(true), this, "");
 
     /**
      * The column <code>genre.name</code>.

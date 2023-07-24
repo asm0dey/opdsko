@@ -16,13 +16,13 @@ import java.util.function.Function;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function8;
+import org.jooq.Function9;
 import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Records;
-import org.jooq.Row8;
+import org.jooq.Row9;
 import org.jooq.Schema;
 import org.jooq.SelectField;
 import org.jooq.Table;
@@ -58,7 +58,7 @@ public class Book extends TableImpl<BookRecord> {
     /**
      * The column <code>book.id</code>.
      */
-    public final TableField<BookRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
+    public final TableField<BookRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.identity(true), this, "");
 
     /**
      * The column <code>book.path</code>.
@@ -78,7 +78,7 @@ public class Book extends TableImpl<BookRecord> {
     /**
      * The column <code>book.added</code>.
      */
-    public final TableField<BookRecord, LocalDateTime> ADDED = createField(DSL.name("added"), SQLDataType.LOCALDATETIME(0).nullable(false).defaultValue(DSL.field("CURRENT_TIMESTAMP", SQLDataType.LOCALDATETIME)), this, "");
+    public final TableField<BookRecord, LocalDateTime> ADDED = createField(DSL.name("added"), SQLDataType.LOCALDATETIME(0).nullable(false).defaultValue(DSL.field(DSL.raw("CURRENT_TIMESTAMP"), SQLDataType.LOCALDATETIME)), this, "");
 
     /**
      * The column <code>book.sequence</code>.
@@ -94,6 +94,11 @@ public class Book extends TableImpl<BookRecord> {
      * The column <code>book.lang</code>.
      */
     public final TableField<BookRecord, String> LANG = createField(DSL.name("lang"), SQLDataType.CLOB, this, "");
+
+    /**
+     * The column <code>book.zip_file</code>.
+     */
+    public final TableField<BookRecord, String> ZIP_FILE = createField(DSL.name("zip_file"), SQLDataType.CLOB, this, "");
 
     private Book(Name alias, Table<BookRecord> aliased) {
         this(alias, aliased, null);
@@ -135,7 +140,7 @@ public class Book extends TableImpl<BookRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.BOOK_ADDED, Indexes.BOOK_PATH, Indexes.BOOK_PATH_NAME, Indexes.BOOK_SEQ);
+        return Arrays.asList(Indexes.BOOK_ADDED, Indexes.BOOK_SEQ);
     }
 
     @Override
@@ -146,11 +151,6 @@ public class Book extends TableImpl<BookRecord> {
     @Override
     public UniqueKey<BookRecord> getPrimaryKey() {
         return Keys.BOOK__PK_BOOK;
-    }
-
-    @Override
-    public List<UniqueKey<BookRecord>> getUniqueKeys() {
-        return Arrays.asList(Keys.BOOK__UK_BOOK_10985490);
     }
 
     @Override
@@ -193,18 +193,18 @@ public class Book extends TableImpl<BookRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row8 type methods
+    // Row9 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row8<Long, String, String, String, LocalDateTime, String, Integer, String> fieldsRow() {
-        return (Row8) super.fieldsRow();
+    public Row9<Long, String, String, String, LocalDateTime, String, Integer, String, String> fieldsRow() {
+        return (Row9) super.fieldsRow();
     }
 
     /**
      * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
      */
-    public <U> SelectField<U> mapping(Function8<? super Long, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super String, ? super Integer, ? super String, ? extends U> from) {
+    public <U> SelectField<U> mapping(Function9<? super Long, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super String, ? super Integer, ? super String, ? super String, ? extends U> from) {
         return convertFrom(Records.mapping(from));
     }
 
@@ -212,7 +212,7 @@ public class Book extends TableImpl<BookRecord> {
      * Convenience mapping calling {@link SelectField#convertFrom(Class,
      * Function)}.
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function8<? super Long, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super String, ? super Integer, ? super String, ? extends U> from) {
+    public <U> SelectField<U> mapping(Class<U> toType, Function9<? super Long, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super String, ? super Integer, ? super String, ? super String, ? extends U> from) {
         return convertFrom(toType, Records.mapping(from));
     }
 }

@@ -25,6 +25,7 @@ import com.kursx.parser.fb2.FictionBook
 import io.github.asm0dey.repository.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.lingala.zip4j.ZipFile
 import org.apache.commons.codec.binary.Base64
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -42,11 +43,18 @@ class InfoService(private val repo: Repository) {
     fun shortDescriptions(bookWithInfos: List<BookWithInfo>) =
         bookWithInfos.map { it.id to it.book }
             .associate { (id, book) ->
-                val file = File(book.path)
-                val size = file.length().humanReadable()
+                val path = File(book.path)
+                var size = path.length().humanReadable()
                 val seq = book.sequence
                 val seqNo = book.sequenceNumber
-                val descr = FictionBook(file).description.titleInfo.annotation?.text ?: ""
+                val fb = if (book.zipFile == null) FictionBook(path) else {
+                    val zip = ZipFile(book.zipFile)
+                    val header = zip.getFileHeader(book.path)
+                    size = header.uncompressedSize.humanReadable()
+                    FictionBook(zip, header)
+
+                }
+                val descr = fb.description?.titleInfo?.annotation?.text ?: ""
                 val text = buildString {
                     append("Size: $size.\n ")
                     seq?.let { append("Series: $it") }
@@ -58,10 +66,13 @@ class InfoService(private val repo: Repository) {
             }
 
     fun imageTypes(bookWithInfos: List<BookWithInfo>) = bookWithInfos
-        .map { it.id to it.book.path }
-        .associate { (id, path) ->
-            val fb = FictionBook(File(path))
-            val type = fb.description.titleInfo.coverPage.firstOrNull()?.value?.replace("#", "")?.let {
+        .map { Triple(it.id, it.book.path, it.book.zipFile) }
+        .associate { (id, path, zipFile) ->
+            val fb = if (zipFile == null) FictionBook(File(path)) else {
+                val zip = ZipFile(zipFile)
+                FictionBook(zip, zip.getFileHeader(path))
+            }
+            val type = fb.description?.titleInfo?.coverPage?.firstOrNull()?.value?.replace("#", "")?.let {
                 fb.binaries[it]?.contentType
             }
             id to type
@@ -70,9 +81,12 @@ class InfoService(private val repo: Repository) {
     fun latestBooks() = repo.latestBooks()
 
     fun imageByBookId(bookId: Long): Pair<Binary, ByteArray> {
-        val path = repo.bookPath(bookId)
-        val fb = FictionBook(File(path))
-        val id = fb.description.titleInfo.coverPage.first().value.replace("#", "")
+        val (path, archive) = repo.bookPath(bookId)
+        val fb = if (archive == null) FictionBook(File(path)) else {
+            val zipFile = ZipFile(archive)
+            FictionBook(zipFile, zipFile.getFileHeader(path))
+        }
+        val id = fb.description?.titleInfo?.coverPage?.first()?.value?.replace("#", "")
         val binary = fb.binaries[id]!!
         val data = Base64().decode(binary.binary)
         return Pair(binary, data)
@@ -82,9 +96,18 @@ class InfoService(private val repo: Repository) {
 
     @OptIn(ExperimentalPathApi::class)
     suspend fun toEpub(bookId: Long): ByteArray {
-        val path = repo.bookPath(bookId)
+        val (path, archive) = repo.bookPath(bookId)
         val tmp = withContext(Dispatchers.IO) {
             Files.createTempDirectory("fb2c")
+        }
+        val source = if (archive == null) path
+        else {
+            val zip = ZipFile(archive)
+            val header = zip.getFileHeader(path)
+            val tmpFile = File.createTempFile("conv", ".fb2")
+            tmpFile.delete()
+            zip.extractFile(header, tmpFile.parent, tmpFile.name)
+            tmpFile.absolutePath
         }
         val executable = "./fb2c".takeIf { File(it).exists() } ?: "fb2c.exe"
         process(
@@ -94,7 +117,7 @@ class InfoService(private val repo: Repository) {
             "convert",
             "--to",
             "epub",
-            path,
+            source,
             tmp.absolutePathString(),
             stdout = Redirect.SILENT,
             stderr = Redirect.SILENT,
@@ -103,11 +126,18 @@ class InfoService(private val repo: Repository) {
             return tmp.toFile().listFiles()!!.first().readBytes()
         } finally {
             tmp.deleteRecursively()
+            File(source).delete()
         }
     }
 
     suspend fun zippedBook(bookId: Long): ByteArray {
-        return packedBytes(File(repo.bookPath(bookId)).readBytes(), "$bookId.fb2")
+        val (path, archive) = repo.bookPath(bookId)
+        val bytes = if (archive == null) File(path).readBytes() else {
+            val zip = ZipFile(archive)
+            val header = zip.getFileHeader(path)
+            zip.getInputStream(header).use { it.readAllBytes() }
+        }
+        return packedBytes(bytes, "$bookId.fb2")
     }
 
     private suspend fun packedBytes(bytes: ByteArray, name: String = UUID.randomUUID().toString()): ByteArray {

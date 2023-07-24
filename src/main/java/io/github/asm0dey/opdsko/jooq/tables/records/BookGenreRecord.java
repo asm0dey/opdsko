@@ -132,6 +132,7 @@ public class BookGenreRecord extends UpdatableRecordImpl<BookGenreRecord> implem
     public void from(IBookGenre from) {
         setBookId(from.getBookId());
         setGenreId(from.getGenreId());
+        resetChangedOnNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -153,6 +154,7 @@ public class BookGenreRecord extends UpdatableRecordImpl<BookGenreRecord> implem
 
         setBookId(bookId);
         setGenreId(genreId);
+        resetChangedOnNotNull();
     }
 
     /**
@@ -164,6 +166,7 @@ public class BookGenreRecord extends UpdatableRecordImpl<BookGenreRecord> implem
         if (value != null) {
             setBookId(value.getBookId());
             setGenreId(value.getGenreId());
+            resetChangedOnNotNull();
         }
     }
 }
