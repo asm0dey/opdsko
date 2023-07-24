@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.com.github.johnrengelman.shadow)
     alias(libs.plugins.nu.studer.jooq)
     alias(libs.plugins.org.flywaydb.flyway)
-    alias(libs.plugins.gg.jte.gradle)
     alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
 }
 
@@ -45,7 +44,6 @@ dependencies {
     implementation(libs.ktor.server.core.jvm)
     implementation(libs.ktor.server.host.common.jvm)
     implementation(libs.ktor.server.html.builder)
-    implementation(libs.ktor.server.jte)
     implementation(libs.ktor.server.metrics.jvm)
     implementation(libs.ktor.server.netty.jvm)
     implementation(libs.ktor.server.resources)
@@ -69,7 +67,6 @@ dependencies {
     jooqGenerator(libs.sqlite.jdbc)
     // utils
     implementation(libs.commons.codec)
-    implementation(libs.jte.kotlin)
     implementation(libs.kotlin.process)
     // xml
     implementation(libs.jsoup)
@@ -192,12 +189,3 @@ jooq {
 val generateJooq by project.tasks
 generateJooq.dependsOn(tasks.flywayMigrate)
 //generateJooq.doLast { File("$projectDir/build/db/opds.db").delete() }
-
-
-jte {
-    generate()
-    sourceDirectory.set(Paths.get("templates"))
-    contentType.set(gg.jte.ContentType.Plain)
-    binaryStaticContent.set(true)
-    trimControlStructures.set(true)
-}

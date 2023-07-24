@@ -21,7 +21,6 @@ package io.github.asm0dey.plugins
 
 import io.github.asm0dey.controllers.Api
 import io.github.asm0dey.controllers.Opds
-import io.github.asm0dey.controllers.OpdsBuilder
 import io.github.asm0dey.opdsko.jooq.Tables.BOOK
 import io.github.asm0dey.scan
 import io.ktor.server.application.*
@@ -52,25 +51,28 @@ fun Application.routes() {
                 val dir =
                     this@routes.environment.config.propertyOrNull("ktor.indexer.path")?.getString() ?: return@thread
                 val create by closestDI().instance<DSLContext>()
-                scan(dir, create)
-                val pathsToDelete = create.select(BOOK.ID, BOOK.PATH, BOOK.ZIP_FILE).from(BOOK)
-                    .mapNotNull {
-                        val zipFile = it[BOOK.ZIP_FILE]
-                        val path = it[BOOK.PATH]
-                        val id = it[BOOK.ID]
-                        if (zipFile == null && !File(path).exists() ||
-                            zipFile != null && !File(zipFile).exists() ||
-                            zipFile != null && ZipFile(zipFile).getFileHeader(path) == null
-                        ) id
-                        else null
-                    }
-                create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
+                val ext = call.request.queryParameters["ext"]
+                val cleanup = call.request.queryParameters["cleanup"]
+                scan(dir, create, ext)
+                if (cleanup == "true") {
+                    val pathsToDelete = create.select(BOOK.ID, BOOK.PATH, BOOK.ZIP_FILE).from(BOOK)
+                        .mapNotNull {
+                            val zipFile = it[BOOK.ZIP_FILE]
+                            val path = it[BOOK.PATH]
+                            val id = it[BOOK.ID]
+                            if (zipFile == null && !File(path).exists() ||
+                                zipFile != null && !File(zipFile).exists() ||
+                                zipFile != null && ZipFile(zipFile).getFileHeader(path) == null
+                            ) id
+                            else null
+                        }
+                    create.deleteFrom(BOOK).where(BOOK.ID.`in`(pathsToDelete)).execute()
+                }
             }
             call.respondText("Scan started")
         }
         controller { Opds(instance()) }
         controller { Api(instance()) }
-        controller { OpdsBuilder(instance()) }
     }
 }
 

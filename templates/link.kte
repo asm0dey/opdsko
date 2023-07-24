@@ -1,8 +1,0 @@
-@param rel: String
-@param href: String
-@param type: String
-@param count: Long? = null
-@param title: String? = null
-@param facetGroup: String? = null
-@param activeFacet: String? = null
-<link type="${type}" rel="${rel}" href="${href}" thr:count="${count}" title="${title}" opds:facetGroup="${facetGroup}" opds:activeFacet="${activeFacet}"/>

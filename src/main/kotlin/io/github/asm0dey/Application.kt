@@ -194,36 +194,38 @@ private fun genreNames(): HashMap<String, String> {
     }
 }
 
-fun scan(libraryRoot: String, create: DSLContext) {
-    for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2", true) }) {
-        val bookPath = file.absoluteFile.canonicalPath
-        Logger.info { "Processing file $bookPath" }
-        if (file.length() < 20) continue
-        val fb = try {
-            FictionBook(file)
-        } catch (e: Exception) {
-            Logger.error("Unable to parse fb2 in file $bookPath", e)
-            continue
-        }
-        create.saveBook(fb, bookPath)
-    }
-    for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip", true) }) {
-        val bookPath = file.absoluteFile.canonicalPath
-        Logger.info { "Processing file $bookPath" }
-        if (file.length() < 20) continue
-        val zipFile = ZipFile(file)
-        for (fileHeader in zipFile.fileHeaders) {
-            if (!fileHeader.fileName.endsWith(".fb2")) continue
+fun scan(libraryRoot: String, create: DSLContext, ext: String?) {
+    if (ext == null || ext == "fb2")
+        for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2", true) }) {
+            val bookPath = file.absoluteFile.canonicalPath
+            Logger.info { "Processing file $bookPath" }
+            if (file.length() < 20) continue
             val fb = try {
-                Logger.info { "\tProcessing entry $fileHeader" }
-                FictionBook(zipFile, fileHeader)
+                FictionBook(file)
             } catch (e: Exception) {
                 Logger.error("Unable to parse fb2 in file $bookPath", e)
                 continue
             }
-            create.saveBook(fb, fileHeader.fileName, zipFile.file.absoluteFile.canonicalPath)
+            create.saveBook(fb, bookPath)
         }
-    }
+    if (ext == null || ext == "zip")
+        for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip", true) }) {
+            val bookPath = file.absoluteFile.canonicalPath
+            Logger.info { "Processing file $bookPath" }
+            if (file.length() < 20) continue
+            val zipFile = ZipFile(file)
+            for (fileHeader in zipFile.fileHeaders) {
+                if (!fileHeader.fileName.endsWith(".fb2")) continue
+                val fb = try {
+                    Logger.info { "\tProcessing entry $fileHeader" }
+                    FictionBook(zipFile, fileHeader)
+                } catch (e: Exception) {
+                    Logger.error("Unable to parse fb2 in file $bookPath", e)
+                    continue
+                }
+                create.saveBook(fb, fileHeader.fileName, zipFile.file.absoluteFile.canonicalPath)
+            }
+        }
 }
 
 private fun DSLContext.saveBook(fb: FictionBook, bookPath: String, archive: String? = null) {

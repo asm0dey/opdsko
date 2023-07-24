@@ -22,7 +22,6 @@ import io.github.asm0dey.model.Entry
 import io.github.asm0dey.service.*
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.jte.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -34,6 +33,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
 const val NAVIGATION_TYPE = "application/atom+xml;profile=opds-catalog;kind=navigation;charset=utf-8"
 const val ACQUISITION_TYPE = "application/atom+xml;profile=opds-catalog;kind=acquisition;charset=utf-8"
@@ -43,13 +43,7 @@ class Opds(application: Application) : AbstractDIController(application) {
     override fun Route.getRoutes() {
         route("/opds") {
             get {
-                call.respond(
-                    JteContent(
-                        "root.kte",
-                        params = mapOf(),
-                        contentType = ContentType.parse(NAVIGATION_TYPE)
-                    )
-                )
+                call.respondText(rootXml(), ContentType.parse(NAVIGATION_TYPE))
             }
             route("/search") {
                 get {
@@ -149,15 +143,13 @@ class Opds(application: Application) : AbstractDIController(application) {
                     val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", StandardCharsets.UTF_8)
                     val trim = nameStart.length < 5
                     val items = info.authorNameStarts(nameStart, trim)
-                    call.respond(
-                        navJte(
-                            navigation(
-                                path,
-                                "authors:start_with:$nameStart",
-                                if (nameStart.isBlank()) "First character of all authors" else "Authors starting with $nameStart",
-                                entries = authorStartEntries(items, trim, nameStart)
-                            )
-                        )
+                    call.respondText(
+                        navXml(
+                            path,
+                            "authors:start_with:$nameStart",
+                            if (nameStart.isBlank()) "First character of all authors" else "Authors starting with $nameStart",
+                            entries = authorStartEntries(items, trim, nameStart)
+                        ), ContentType.parse(NAVIGATION_TYPE)
                     )
                 }
                 route("/browse") {
@@ -167,13 +159,11 @@ class Opds(application: Application) : AbstractDIController(application) {
                         val authorName = info.authorName(authorId)
                         val (inseries, out) = info.seriesNumberByAuthor(authorId)
                         val latestAuthorUpdate = info.latestAuthorUpdate(authorId)
-                        call.respond(
-                            navJte(
-                                navigation(
-                                    path, "author:$authorId", authorName, latestAuthorUpdate,
-                                    authorEntries(inseries, authorId, authorName, out, latestAuthorUpdate)
-                                )
-                            )
+                        call.respondText(
+                            navXml(
+                                path, "author:$authorId", authorName, latestAuthorUpdate,
+                                authorEntries(inseries, authorId, authorName, out, latestAuthorUpdate)
+                            ), ContentType.parse(NAVIGATION_TYPE)
                         )
                     }
                     get("/{id}/all") {
@@ -189,16 +179,14 @@ class Opds(application: Application) : AbstractDIController(application) {
                         val path = call.request.path()
                         val namesWithDates = info.seriesByAuthorId(authorId)
                         val authorName = info.authorName(authorId)
-                        call.respond(
-                            navJte(
-                                navigation(
-                                    path,
-                                    "author:$authorId:series",
-                                    "Series of $authorName",
-                                    namesWithDates.values.maxOf { it.first }.z,
-                                    authorSeries(namesWithDates, authorId)
-                                )
-                            )
+                        call.respondText(
+                            navXml(
+                                path,
+                                "author:$authorId:series",
+                                "Series of $authorName",
+                                namesWithDates.values.maxOf { it.first }.z,
+                                authorSeries(namesWithDates, authorId)
+                            ), ContentType.parse(NAVIGATION_TYPE)
                         )
                     }
                     get("/{id}/series/{name}") {
@@ -236,30 +224,26 @@ class Opds(application: Application) : AbstractDIController(application) {
                     val nameStart = (call.parameters["name"] ?: "").decoded
                     val trim = nameStart.length < 5
                     val series = info.seriesNameStarts(nameStart, trim)
-                    call.respond(
-                        navJte(
-                            navigation(
-                                path,
-                                "series:start:$nameStart",
-                                if (nameStart.isEmpty()) "First letter of all series"
-                                else "Series starting with $nameStart",
-                                entries = series.map { (name, count, complete) ->
-                                    Entry(
-                                        name,
-                                        "series:start:$nameStart:$name",
-                                        "${if (!complete) "Series starting with $name: " else ""}$count books",
-                                        ZonedDateTime.now(),
-                                        Entry.Link(
-                                            "subsection",
-                                            if (complete) "/opds/series/item/${name.encoded}" else "/opds/series/browse/${name.encoded}",
-                                            NAVIGATION_TYPE,
-                                            count.toLong()
-                                        )
-                                    )
-                                }
+                    call.respondText(navXml(
+                        path,
+                        "series:start:$nameStart",
+                        if (nameStart.isEmpty()) "First letter of all series"
+                        else "Series starting with $nameStart",
+                        entries = series.map { (name, count, complete) ->
+                            Entry(
+                                name,
+                                "series:start:$nameStart:$name",
+                                "${if (!complete) "Series starting with $name: " else ""}$count books",
+                                ZonedDateTime.now(),
+                                Entry.Link(
+                                    "subsection",
+                                    if (complete) "/opds/series/item/${name.encoded}" else "/opds/series/browse/${name.encoded}",
+                                    NAVIGATION_TYPE,
+                                    count.toLong()
+                                )
                             )
-                        )
-                    )
+                        }
+                    ), ContentType.parse(NAVIGATION_TYPE))
                 }
                 get("/item/{name}") {
                     val path = call.request.path()
@@ -320,70 +304,102 @@ class Opds(application: Application) : AbstractDIController(application) {
         }
     }
 
-    val root = Namespace("http://www.w3.org/2005/Atom")
-    val dcterms = Namespace("dcterms", "http://purl.org/dc/terms/")
-    val thr = Namespace("thr", "http://purl.org/syndication/thread/1.0")
-    val opds = Namespace("opds", "http://opds-spec.org/2010/catalog")
-    val opensearch = Namespace("opensearch", "http://a9.com/-/spec/opensearch/1.1/")
-
-    private fun entryXml(book: BookWithInfo, imageType: String?, content: String?, summary: String?, path: String): String {
-        return xml("entry", version = XmlVersion.V10, namespace = root) {
-            namespace(dcterms)
-//            namespace(thr)
-//            namespace(opds)
-//            namespace(opensearch)
-            "title"(root) { -book.book.name }
-            "id"(root) { -"book:info:${book.id}" }
-            "link"(root){
-                attributes("rel" to "self", "type" to "application/atom+xml;type=entry;profile=opds-catalog", "href" to path)
-            }
-            for (author in book.authors) {
-                "author"(root) {
-                    "name"(root) { -author.buildName() }
-                    "uri"(root) { -"/opds/author/browse/${author.id}" }
-                }
-            }
-            "published"(root) { -formatDate(ZonedDateTime.now()) }
-            "updated"(root) { -formatDate(book.book.added) }
-            if (!book.book.lang.isNullOrBlank()) "language"(dcterms) { -book.book.lang }
-            if (!book.book.date.isNullOrBlank()) "language"(dcterms) { -book.book.date }
-            for (genre in book.genres) {
-                "category"(root, Attribute("term", genre), Attribute("label", genre))
-            }
-            if (imageType != null) {
-                "link"(
-                    root,
-                    Attribute("type", imageType),
-                    Attribute("rel", "http://opds-spec.org/image"),
-                    Attribute("href", "/opds/image/${book.id}")
-                )
-            }
+    private fun rootXml() = xml("feed", version = XmlVersion.V10, namespace = root) {
+        "id"(root) { -"root" }
+        "title"(root) { -"Asm0dey's books" }
+        "updated"(root) { -"2022-06-21T12:14:28.209+03:00" }
+        "author"(root) {
+            "name"(root) { -"Pasha Finkelshteyn" }
+            "uri"(root) { -"https://github.com/asm0dey/opdsKo" }
+        }
+        commonLinks("/opds")
+        "entry"(root) {
+            "title"(root) { -"New books" }
             "link"(root) {
                 attributes(
-                    "type" to "application/fb2+zip",
-                    "rel" to "http://opds-spec.org/acquisition/open-access",
-                    "href" to "/opds/book/${book.id}/download",
-                    "title" to "fb2"
+                    "type" to "application/atom+xml;profile=opds-catalog;kind=acquisition",
+                    "rel" to "http://opds-spec.org/sort/new",
+                    "href" to "/opds/new"
                 )
             }
-            if (epubConverterAccessible)
-                "link"(root) {
-                    attributes(
-                        "type" to "application/epub+zip",
-                        "rel" to "http://opds-spec.org/acquisition/open-access",
-                        "href" to "/opds/book/${book.id}/download/epub",
-                        "title" to "epub"
-                    )
-                }
-            if (summary != null) {
-                "summary"(root, Attribute("type", "text")) { -summary }
-                "content"(root, Attribute("type", "html")) {
-                    if (content != null) cdata(content)
+            "id"(root) { -"new" }
+            "summary"(root) { -"Recent publications from this catalog" }
+            "updated"(root) { -ISO_OFFSET_DATE_TIME.format(ZonedDateTime.now()) }
+        }
+        "entry"(root) {
+            "title"(root) { -"Books by authors" }
+            "link"(root) {
+                attributes(
+                    "type" to "application/atom+xml;profile=opds-catalog;kind=navigation",
+                    "rel" to "category",
+                    "href" to "/opds/author/c/"
+                )
+            }
+            "id"(root) { -"authors" }
+            "summary"(root) { -"Authors by first letters" }
+            "updated"(root) { -ISO_OFFSET_DATE_TIME.format(ZonedDateTime.now()) }
+        }
+        "entry"(root) {
+            "title"(root) { -"Books by series" }
+            "link"(root) {
+                attributes(
+                    "type" to "application/atom+xml;profile=opds-catalog;kind=navigation",
+                    "rel" to "category",
+                    "href" to "/opds/series/browse/"
+                )
+            }
+            "id"(root) { -"series" }
+            "summary"(root) { -"Series by first letters" }
+            "updated"(root) { -ISO_OFFSET_DATE_TIME.format(ZonedDateTime.now()) }
+        }
+    }.toString(PrintOptions(singleLineTextElements = true))
+
+    private fun navXml(
+        path: String,
+        id: String,
+        title: String,
+        updated: ZonedDateTime = ZonedDateTime.now(),
+        entries: List<Entry>,
+        additionalLinks: List<Entry.Link> = listOf(),
+    ): String {
+        return xml("feed", version = XmlVersion.V10, namespace = root) {
+            namespace(thr)
+            namespace(opds)
+            namespace(opensearch)
+            "id"(root) { -id }
+            "title"(root) { -title }
+            "updated"(root) { -formatDate(updated) }
+            "author"(root) {
+                "name"(root) { -"Pasha Finkelshteyn" }
+                "uri"(root) { -"https://github.com/asm0dey/opdsKo" }
+            }
+            commonLinks(path)
+            for (additionalLink in additionalLinks) {
+                additionalLink(additionalLink)
+            }
+            for (entry in entries) {
+                "entry"(root) {
+                    "title"(root) { -entry.title }
+                    for (link in entry.links) {
+                        additionalLink(link)
+                    }
+                    "id"(root) { -entry.id }
+                    if (entry.summary != null) {
+                        "content"(root, Attribute("type", "text")) { -entry.summary }
+                    }
+                    "updated"(root) { -formatDate(entry.updated) }
                 }
             }
-        }
-            .toString(PrintOptions(singleLineTextElements = true))
+
+        }.toString(PrintOptions(singleLineTextElements = true))
     }
+
+    private val root = Namespace("http://www.w3.org/2005/Atom")
+    private val dcterms = Namespace("dcterms", "http://purl.org/dc/terms/")
+    private val thr = Namespace("thr", "http://purl.org/syndication/thread/1.0")
+    private val opds = Namespace("opds", "http://opds-spec.org/2010/catalog")
+    private val opensearch = Namespace("opensearch", "http://a9.com/-/spec/opensearch/1.1/")
+
 
     private fun bookXml(
         books: List<BookWithInfo>,
@@ -409,35 +425,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                 "name"(root) { -"Pasha Finkelshteyn" }
                 "uri"(root) { -"https://github.com/asm0dey/opdsKo" }
             }
-            "link"(root) {
-                attributes(
-                    "type" to "application/atom+xml;profile=opds-catalog;kind=navigation",
-                    "rel" to "start",
-                    "href" to "/opds"
-                )
-            }
-            "link"(root) {
-                attributes(
-                    "type" to "application/atom+xml;profile=opds-catalog;kind=acquisition",
-                    "rel" to "self",
-                    "href" to path
-                )
-            }
-            "link"(root) {
-                attributes(
-                    "type" to "application/opensearchdescription+xml",
-                    "rel" to "search",
-                    "href" to "/opds/search"
-                )
-            }
-            "link"(root) {
-                attributes(
-                    "type" to "application/atom+xml",
-                    "title" to "Search",
-                    "href" to "/opds/search/{searchTerms}",
-                    "rel" to "search"
-                )
-            }
+            commonLinks(path)
             additionalLinks.forEach { additionalLink(it) }
             for (book in books) {
                 renderBook(
@@ -456,6 +444,38 @@ class Opds(application: Application) : AbstractDIController(application) {
             )
     }
 
+    private fun Node.commonLinks(path: String) {
+        "link"(root) {
+            attributes(
+                "type" to "application/atom+xml;profile=opds-catalog;kind=navigation",
+                "rel" to "start",
+                "href" to "/opds"
+            )
+        }
+        "link"(root) {
+            attributes(
+                "type" to "application/atom+xml;profile=opds-catalog;kind=acquisition",
+                "rel" to "self",
+                "href" to path
+            )
+        }
+        "link"(root) {
+            attributes(
+                "type" to "application/opensearchdescription+xml",
+                "rel" to "search",
+                "href" to "/opds/search"
+            )
+        }
+        "link"(root) {
+            attributes(
+                "type" to "application/atom+xml",
+                "title" to "Search",
+                "href" to "/opds/search/{searchTerms}",
+                "rel" to "search"
+            )
+        }
+    }
+
     private fun Node.renderBook(
         book: BookWithInfo,
         imageTypes: Map<Long, String?>,
@@ -466,7 +486,7 @@ class Opds(application: Application) : AbstractDIController(application) {
             "title"(root) { -book.book.name }
             "id"(root) { -"book:${book.id}" }
             for (author in book.authors) {
-                "author"(root){
+                "author"(root) {
                     "name"(root) { -author.buildName() }
                     "uri"(root) { -"/opds/author/browse/${author.id}" }
                 }
@@ -521,10 +541,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                 }
             val desc = shortDescriptions[book.id]
             if (desc != null) {
-                "summary"(root) {
-                    attribute("type", "text")
-                    -desc
-                }
+                "summary"(root, Attribute("type", "text")) { -desc }
             }
         }
 
@@ -559,26 +576,6 @@ class Opds(application: Application) : AbstractDIController(application) {
     )
 
     private val String.encoded: String get() = URLEncoder.encode(this, StandardCharsets.UTF_8)
-
-    private fun navJte(params: Map<String, Any>) = JteContent(
-        "navigation.kte", params, contentType = ContentType.parse(NAVIGATION_TYPE)
-    )
-
-    private fun navigation(
-        path: String,
-        id: String,
-        title: String,
-        updated: ZonedDateTime = ZonedDateTime.now(),
-        entries: List<Entry>,
-        additionalLinks: List<Entry.Link> = listOf(),
-    ) = mapOf(
-        "feedId" to id,
-        "feedTitle" to title,
-        "feedUpdated" to updated,
-        "path" to path,
-        "entries" to entries,
-        "additionalLinks" to additionalLinks
-    )
 
     private fun authorStartEntries(items: List<Pair<String, Long>>, trim: Boolean, nameStart: String?) =
         items.map { (name, countOrId) ->
@@ -637,5 +634,74 @@ class Opds(application: Application) : AbstractDIController(application) {
                 dateAndCount.first.z
             )
         }
+
+    private fun entryXml(
+        book: BookWithInfo,
+        imageType: String?,
+        content: String?,
+        summary: String?,
+        path: String
+    ): String {
+        return xml("entry", version = XmlVersion.V10, namespace = root) {
+            namespace(dcterms)
+//            namespace(thr)
+//            namespace(opds)
+//            namespace(opensearch)
+            "title"(root) { -book.book.name }
+            "id"(root) { -"book:info:${book.id}" }
+            "link"(root) {
+                attributes(
+                    "rel" to "self",
+                    "type" to "application/atom+xml;type=entry;profile=opds-catalog",
+                    "href" to path
+                )
+            }
+            for (author in book.authors) {
+                "author"(root) {
+                    "name"(root) { -author.buildName() }
+                    "uri"(root) { -"/opds/author/browse/${author.id}" }
+                }
+            }
+            "published"(root) { -formatDate(ZonedDateTime.now()) }
+            "updated"(root) { -formatDate(book.book.added) }
+            if (!book.book.lang.isNullOrBlank()) "language"(dcterms) { -book.book.lang }
+            if (!book.book.date.isNullOrBlank()) "language"(dcterms) { -book.book.date }
+            for (genre in book.genres) {
+                "category"(root, Attribute("term", genre), Attribute("label", genre))
+            }
+            if (imageType != null) {
+                "link"(
+                    root,
+                    Attribute("type", imageType),
+                    Attribute("rel", "http://opds-spec.org/image"),
+                    Attribute("href", "/opds/image/${book.id}")
+                )
+            }
+            "link"(root) {
+                attributes(
+                    "type" to "application/fb2+zip",
+                    "rel" to "http://opds-spec.org/acquisition/open-access",
+                    "href" to "/opds/book/${book.id}/download",
+                    "title" to "fb2"
+                )
+            }
+            if (epubConverterAccessible)
+                "link"(root) {
+                    attributes(
+                        "type" to "application/epub+zip",
+                        "rel" to "http://opds-spec.org/acquisition/open-access",
+                        "href" to "/opds/book/${book.id}/download/epub",
+                        "title" to "epub"
+                    )
+                }
+            if (summary != null) {
+                "summary"(root, Attribute("type", "text")) { -summary }
+                "content"(root, Attribute("type", "html")) {
+                    if (content != null) cdata(content)
+                }
+            }
+        }
+            .toString(PrintOptions(singleLineTextElements = true))
+    }
 
 }
