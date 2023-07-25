@@ -22,11 +22,16 @@ import com.github.pgreze.process.process
 import com.github.pgreze.process.unwrap
 import com.kursx.parser.fb2.Binary
 import com.kursx.parser.fb2.FictionBook
+import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
+import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
 import io.github.asm0dey.repository.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.lingala.zip4j.ZipFile
 import org.apache.commons.codec.binary.Base64
+import org.jooq.Record2
+import org.jooq.Record4
+import org.jooq.Result
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
@@ -36,7 +41,7 @@ import java.util.zip.ZipOutputStream
 import kotlin.io.path.*
 
 class InfoService(private val repo: Repository) {
-    fun searchBookByText(searchTerm: String, page: Int, pageSize: Int = 50): Pair<List<BookWithInfo>, Boolean> {
+    fun searchBookByText(searchTerm: String, page: Int, pageSize: Int = 50): Triple<List<BookWithInfo>, Boolean, Int> {
         return repo.searchBookByText(searchTerm, page, pageSize)
     }
 
@@ -78,7 +83,7 @@ class InfoService(private val repo: Repository) {
             id to type
         }
 
-    fun latestBooks() = repo.latestBooks()
+    fun latestBooks(): Result<Record4<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>>> = repo.latestBooks()
 
     fun imageByBookId(bookId: Long): Pair<Binary, ByteArray> {
         val (path, archive) = repo.bookPath(bookId)
@@ -166,5 +171,24 @@ class InfoService(private val repo: Repository) {
     fun booksWithoutSeriesByAuthorId(authorId: Long) = repo.booksWithoutSeriesByAuthorId(authorId)
     fun booksBySeriesName(name: String) = repo.booksBySeriesName(name)
     fun seriesNameStarts(prefix: String, trim: Boolean = true) = repo.seriesNameStarts(prefix, trim)
+    fun genres(): List<Triple<Long, String, Int>> {
+        return repo.genres()
+    }
+
+    fun genreName(genreId: Long): String? {
+        return repo.genreName(genreId)
+    }
+
+    fun genreAuthors(genreId: Long): List<Pair<Long, String>> {
+        return repo.genreAuthors(genreId)
+    }
+
+    fun booksByGenreAndAuthor(genreId: Long, authorId: Long): Pair<String, List<BookWithInfo>> {
+        return repo.booksByGenreAndAuthor(genreId, authorId)
+    }
+
+    fun booksInGenre(genreId: Long, page: Int, pageSize: Int = 50): Pair<Int, List<BookWithInfo>> {
+        return repo.booksInGenre(genreId, page, pageSize)
+    }
 }
 

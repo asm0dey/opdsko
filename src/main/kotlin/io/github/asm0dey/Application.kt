@@ -158,7 +158,7 @@ fun Application.main() {
 private fun initDb() {
 }
 
-private fun genreNames(): HashMap<String, String> {
+fun genreNames(): Map<String, String> {
     fun StartElement.getAttributeValue(attribute: String) = getAttributeByName(QName.valueOf(attribute)).value
 
     Entry::class.java.classLoader.getResourceAsStream("genres.xml")?.buffered().use {
@@ -201,20 +201,22 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
         val inpx = File(libraryRoot).listFiles { it -> it.name.endsWith(".inpx") }?.first()
         require(inpx != null) { ".inpx should be located in the scan root" }
         val inpxData = InpxParser.scan(inpx.absolutePath)
-        val files = File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip") }.flatMap {
-            val zip = ZipFile(it)
-            zip.fileHeaders.map {
-                Triple(
-                    zip.file.absolutePath,
-                    it.fileName,
-                    it.fileName.substringAfterLast('/').substringBeforeLast(".fb2")
-                )
+        val files = File(libraryRoot)
+            .walkTopDown()
+            .filter { it.name.endsWith(".zip") }
+            .flatMap {
+                val zip = ZipFile(it)
+                zip.fileHeaders.map {
+                    Triple(
+                        zip.file.absolutePath,
+                        it.fileName,
+                        it.fileName.substringAfterLast('/').substringBeforeLast(".fb2").toIntOrNull()
+                    )
+                }
             }
-        }
+            .filterNot { it.third == null }
             .associateBy { it.third }
             .mapValues { (_, b) -> b.first to b.second }
-            .mapKeys { (a, _) -> a.toIntOrNull() }
-            .filterKeys { a -> a != null }
         create.transaction { txConfig ->
             for ((key, value) in files) {
                 Logger.info { "Processing book $key" }
@@ -226,16 +228,23 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
                         middleName = it.names.getOrNull(2)
                     }
                 }
-                saveBook(
-                    txConfig, value.second, value.first, fb.title, fb.date, fb.bookSequence?.name, fb.bookSequence?.no,
-                    fb.lang, authors, fb.genres
+                txConfig.saveBook(
+                    bookPath = value.second,
+                    archive = value.first,
+                    title = fb.title,
+                    date = fb.date,
+                    seqName = fb.bookSequence?.name,
+                    seqNo = fb.bookSequence?.no,
+                    lang = fb.lang,
+                    authors = authors,
+                    genres = fb.genres
                 )
             }
         }
         return
     }
     if (ext == null || ext == "fb2")
-        create.transaction { x ->
+        create.transaction { txCtx ->
             for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2", true) }) {
                 val bookPath = file.absoluteFile.canonicalPath
                 Logger.info { "Processing file $bookPath" }
@@ -246,8 +255,7 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
                     Logger.error("Unable to parse fb2 in file $bookPath", e)
                     continue
                 }
-                saveBook(
-                    txCfg = x,
+                txCtx.saveBook(
                     bookPath = bookPath,
                     title = fb.description?.titleInfo?.bookTitle,
                     date = fb.description?.titleInfo?.date,
@@ -261,7 +269,7 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
 
         }
     if (ext == null || ext == "zip")
-        create.transaction { x ->
+        create.transaction { txCtx ->
             for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip", true) }) {
                 val bookPath = file.absoluteFile.canonicalPath
                 Logger.info { "Processing file $bookPath" }
@@ -276,8 +284,7 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
                         Logger.error("Unable to parse fb2 in file $bookPath", e)
                         continue
                     }
-                    saveBook(
-                        txCfg = x,
+                    txCtx.saveBook(
                         bookPath = fileHeader.fileName,
                         archive = zipFile.file.absoluteFile.canonicalPath,
                         title = fb.description?.titleInfo?.bookTitle,
@@ -294,8 +301,7 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
         }
 }
 
-private fun saveBook(
-    txCfg: Configuration,
+private fun Configuration.saveBook(
     bookPath: String,
     archive: String? = null,
     title: String?,
@@ -310,7 +316,7 @@ private fun saveBook(
         Logger.error(IllegalStateException("No book title in $bookPath"))
         return
     }
-    val transaction = using(txCfg)
+    val transaction = using(this)
     val existingBookId = transaction.select(BOOK.ID)
         .from(BOOK)
         .where(
@@ -370,7 +376,7 @@ private fun saveBook(
                 .id
     }?.toSet() ?: emptySet()
     val genreIds = genres?.map {
-        GenreDao(txCfg).fetchByName(it).firstOrNull()?.id
+        GenreDao(this).fetchByName(it).firstOrNull()?.id
             ?: transaction
                 .insertInto(GENRE, GENRE.NAME)
                 .values(it)
@@ -378,8 +384,8 @@ private fun saveBook(
                 .fetchSingle()
                 .id
     }?.toSet() ?: setOf()
-    BookAuthorDao(txCfg).insert(authorIds.map { BookAuthor(bookId, it) })
-    BookGenreDao(txCfg).insert(genreIds.map { BookGenre(bookId, it) })
+    BookAuthorDao(this).insert(authorIds.map { BookAuthor(bookId, it) })
+    BookGenreDao(this).insert(genreIds.map { BookGenre(bookId, it) })
     transaction.batchInsert(
         *authorIds.map { BookAuthorRecord(bookId, it) }.toTypedArray(),
         *genreIds.map { BookGenreRecord(bookId, it) }.toTypedArray(),
