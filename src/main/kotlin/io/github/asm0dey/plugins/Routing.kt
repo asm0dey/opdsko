@@ -53,7 +53,8 @@ fun Application.routes() {
                 val create by closestDI().instance<DSLContext>()
                 val ext = call.request.queryParameters["ext"]
                 val cleanup = call.request.queryParameters["cleanup"]
-                scan(dir, create, ext)
+                val inpxMode = call.request.queryParameters["mode"] == "inpx"
+                scan(dir, create, ext, inpxMode)
                 if (cleanup == "true") {
                     val pathsToDelete = create.select(BOOK.ID, BOOK.PATH, BOOK.ZIP_FILE).from(BOOK)
                         .mapNotNull {

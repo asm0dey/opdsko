@@ -18,13 +18,13 @@
 package io.github.asm0dey
 
 import com.kursx.parser.fb2.FictionBook
+import com.kursx.parser.fb2.Person
+import io.github.asm0dey.inpx.InpxParser
 import io.github.asm0dey.model.Entry
 import io.github.asm0dey.opdsko.jooq.Tables.*
 import io.github.asm0dey.opdsko.jooq.tables.daos.BookAuthorDao
 import io.github.asm0dey.opdsko.jooq.tables.daos.BookGenreDao
 import io.github.asm0dey.opdsko.jooq.tables.daos.GenreDao
-import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
-import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
 import io.github.asm0dey.opdsko.jooq.tables.pojos.BookAuthor
 import io.github.asm0dey.opdsko.jooq.tables.pojos.BookGenre
 import io.github.asm0dey.opdsko.jooq.tables.records.AuthorRecord
@@ -36,6 +36,7 @@ import io.ktor.server.application.*
 import io.ktor.server.netty.*
 import net.lingala.zip4j.ZipFile
 import org.flywaydb.core.Flyway
+import org.jooq.Configuration
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.using
 import org.tinylog.Logger
@@ -194,127 +195,197 @@ private fun genreNames(): HashMap<String, String> {
     }
 }
 
-fun scan(libraryRoot: String, create: DSLContext, ext: String?) {
-    if (ext == null || ext == "fb2")
-        for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2", true) }) {
-            val bookPath = file.absoluteFile.canonicalPath
-            Logger.info { "Processing file $bookPath" }
-            if (file.length() < 20) continue
-            val fb = try {
-                FictionBook(file)
-            } catch (e: Exception) {
-                Logger.error("Unable to parse fb2 in file $bookPath", e)
-                continue
+fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolean = false) {
+    require(!inpxMode || (inpxMode && ext == null))
+    if (inpxMode) {
+        val inpx = File(libraryRoot).listFiles { it -> it.name.endsWith(".inpx") }?.first()
+        require(inpx != null) { ".inpx should be located in the scan root" }
+        val inpxData = InpxParser.scan(inpx.absolutePath)
+        val files = File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip") }.flatMap {
+            val zip = ZipFile(it)
+            zip.fileHeaders.map {
+                Triple(
+                    zip.file.absolutePath,
+                    it.fileName,
+                    it.fileName.substringAfterLast('/').substringBeforeLast(".fb2")
+                )
             }
-            create.saveBook(fb, bookPath)
         }
-    if (ext == null || ext == "zip")
-        for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip", true) }) {
-            val bookPath = file.absoluteFile.canonicalPath
-            Logger.info { "Processing file $bookPath" }
-            if (file.length() < 20) continue
-            val zipFile = ZipFile(file)
-            for (fileHeader in zipFile.fileHeaders) {
-                if (!fileHeader.fileName.endsWith(".fb2")) continue
+            .associateBy { it.third }
+            .mapValues { (_, b) -> b.first to b.second }
+            .mapKeys { (a, _) -> a.toIntOrNull() }
+            .filterKeys { a -> a != null }
+        create.transaction { txConfig ->
+            for ((key, value) in files) {
+                Logger.info { "Processing book $key" }
+                val fb = inpxData[key] ?: continue
+                val authors = fb.authors.map {
+                    Person().apply {
+                        lastName = it.names.firstOrNull()
+                        firstName = it.names.getOrNull(1)
+                        middleName = it.names.getOrNull(2)
+                    }
+                }
+                saveBook(
+                    txConfig, value.second, value.first, fb.title, fb.date, fb.bookSequence?.name, fb.bookSequence?.no,
+                    fb.lang, authors, fb.genres
+                )
+            }
+        }
+        return
+    }
+    if (ext == null || ext == "fb2")
+        create.transaction { x ->
+            for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2", true) }) {
+                val bookPath = file.absoluteFile.canonicalPath
+                Logger.info { "Processing file $bookPath" }
+                if (file.length() < 20) continue
                 val fb = try {
-                    Logger.info { "\tProcessing entry $fileHeader" }
-                    FictionBook(zipFile, fileHeader)
+                    FictionBook(file)
                 } catch (e: Exception) {
                     Logger.error("Unable to parse fb2 in file $bookPath", e)
                     continue
                 }
-                create.saveBook(fb, fileHeader.fileName, zipFile.file.absoluteFile.canonicalPath)
+                saveBook(
+                    txCfg = x,
+                    bookPath = bookPath,
+                    title = fb.description?.titleInfo?.bookTitle,
+                    date = fb.description?.titleInfo?.date,
+                    seqName = fb.description?.titleInfo?.sequence?.name,
+                    seqNo = fb.description?.titleInfo?.sequence?.number?.toIntOrNull(),
+                    lang = fb.description?.titleInfo?.lang,
+                    authors = fb.description?.titleInfo?.authors,
+                    genres = fb.description?.titleInfo?.genres
+                )
             }
+
+        }
+    if (ext == null || ext == "zip")
+        create.transaction { x ->
+            for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip", true) }) {
+                val bookPath = file.absoluteFile.canonicalPath
+                Logger.info { "Processing file $bookPath" }
+                if (file.length() < 20) continue
+                val zipFile = ZipFile(file)
+                for (fileHeader in zipFile.fileHeaders) {
+                    if (!fileHeader.fileName.endsWith(".fb2")) continue
+                    val fb = try {
+                        Logger.info { "\tProcessing entry $fileHeader" }
+                        FictionBook(zipFile, fileHeader)
+                    } catch (e: Exception) {
+                        Logger.error("Unable to parse fb2 in file $bookPath", e)
+                        continue
+                    }
+                    saveBook(
+                        txCfg = x,
+                        bookPath = fileHeader.fileName,
+                        archive = zipFile.file.absoluteFile.canonicalPath,
+                        title = fb.description?.titleInfo?.bookTitle,
+                        date = fb.description?.titleInfo?.date,
+                        seqName = fb.description?.titleInfo?.sequence?.name,
+                        seqNo = fb.description?.titleInfo?.sequence?.number?.toIntOrNull(),
+                        lang = fb.description?.titleInfo?.lang,
+                        authors = fb.description?.titleInfo?.authors,
+                        genres = fb.description?.titleInfo?.genres
+                    )
+                }
+            }
+
         }
 }
 
-private fun DSLContext.saveBook(fb: FictionBook, bookPath: String, archive: String? = null) {
-    if (fb.description?.titleInfo?.bookTitle.isNullOrBlank()) return
-    transaction { txConfig ->
-        if (fb.description?.titleInfo?.bookTitle == null) {
-            Logger.error(IllegalStateException("No book title in $bookPath"))
-            return@transaction
-        }
-        val transaction = using(txConfig)
-        val existingBookId = transaction.select(BOOK.ID)
-            .from(BOOK)
-            .where(
-                BOOK.NAME.eq(fb.description?.titleInfo?.bookTitle),
-                BOOK.PATH.eq(bookPath),
-                BOOK.ZIP_FILE.isNotDistinctFrom(archive)
-            )
-            .limit(1)
-            .fetchOne { it[BOOK.ID] }
-        if (existingBookId != null) {
-            Logger.debug { "Already added" }
-            return@transaction
-        }
-        transaction.delete(BOOK).where(BOOK.PATH.eq(bookPath), BOOK.ZIP_FILE.isNotDistinctFrom(archive)).execute()
-        val bookId = transaction
-            .insertInto(BOOK)
-            .set(
-                BookRecord(
-                    Book(
-                        null,
-                        bookPath,
-                        fb.description?.titleInfo?.bookTitle,
-                        fb.description?.titleInfo?.date,
-                        LocalDateTime.now(),
-                        fb.description?.titleInfo?.sequence?.name,
-                        fb.description?.titleInfo?.sequence?.number?.toIntOrNull(),
-                        fb.description?.titleInfo?.lang,
-                        archive
-                    )
-                )
-            )
-            .returning()
-            .fetchSingle()
-            .id
-        val authorIds = fb.description?.titleInfo?.authors?.map {
-            transaction.select(AUTHOR.ID)
-                .from(AUTHOR)
-                .where(
-                    it.middleName.normalizeName()?.let { AUTHOR.MIDDLE_NAME.eq(it) } ?: AUTHOR.MIDDLE_NAME.isNull,
-                    it.lastName.normalizeName()?.let { AUTHOR.LAST_NAME.eq(it) } ?: AUTHOR.LAST_NAME.isNull,
-                    it.firstName.normalizeName()?.let { AUTHOR.FIRST_NAME.eq(it) } ?: AUTHOR.FIRST_NAME.isNull,
-                    it.nickname.normalizeName()?.let { AUTHOR.NICKNAME.eq(it) } ?: AUTHOR.NICKNAME.isNull,
-                )
-                .fetchOne { it[AUTHOR.ID] }
-                ?: transaction.insertInto(AUTHOR)
-                    .set(
-                        AuthorRecord(
-                            Author(
-                                null,
-                                it.id,
-                                it.firstName.normalizeName(),
-                                it.middleName.normalizeName(),
-                                it.lastName.normalizeName(),
-                                it.nickname.normalizeName(),
-                                LocalDateTime.now()
-                            )
-                        )
-                    )
-                    .returning(AUTHOR.ID)
-                    .fetchSingle()
-                    .id
-        }?.toSet() ?: emptySet()
-        val genreIds = fb.description?.titleInfo?.genres?.map {
-            GenreDao(txConfig).fetchByName(it).firstOrNull()?.id
-                ?: transaction
-                    .insertInto(GENRE, GENRE.NAME)
-                    .values(it)
-                    .returning()
-                    .fetchSingle()
-                    .id
-        }?.toSet() ?: setOf()
-        BookAuthorDao(txConfig).insert(authorIds.map { BookAuthor(bookId, it) })
-        BookGenreDao(txConfig).insert(genreIds.map { BookGenre(bookId, it) })
-        transaction.batchInsert(
-            *authorIds.map { BookAuthorRecord(bookId, it) }.toTypedArray(),
-            *genreIds.map { BookGenreRecord(bookId, it) }.toTypedArray(),
-        )
-
+private fun saveBook(
+    txCfg: Configuration,
+    bookPath: String,
+    archive: String? = null,
+    title: String?,
+    date: String?,
+    seqName: String?,
+    seqNo: Int?,
+    lang: String?,
+    authors: List<Person>?,
+    genres: List<String>?
+) {
+    if (title.isNullOrBlank()) {
+        Logger.error(IllegalStateException("No book title in $bookPath"))
+        return
     }
+    val transaction = using(txCfg)
+    val existingBookId = transaction.select(BOOK.ID)
+        .from(BOOK)
+        .where(
+            BOOK.NAME.eq(title),
+            BOOK.PATH.eq(bookPath),
+            BOOK.ZIP_FILE.isNotDistinctFrom(archive)
+        )
+        .limit(1)
+        .fetchOne { it[BOOK.ID] }
+    if (existingBookId != null) {
+        Logger.debug { "Already added" }
+        return
+    }
+    transaction.delete(BOOK).where(BOOK.PATH.eq(bookPath), BOOK.ZIP_FILE.isNotDistinctFrom(archive)).execute()
+    val bookId = transaction
+        .insertInto(BOOK)
+        .set(
+            BookRecord(
+                null,
+                bookPath,
+                title,
+                date,
+                LocalDateTime.now(),
+                seqName,
+                seqNo,
+                lang,
+                archive
+            )
+        )
+        .returning()
+        .fetchSingle()
+        .id
+    val authorIds = authors?.map {
+        transaction.select(AUTHOR.ID)
+            .from(AUTHOR)
+            .where(
+                AUTHOR.MIDDLE_NAME.isNotDistinctFrom(it.middleName.normalizeName()),
+                AUTHOR.LAST_NAME.isNotDistinctFrom(it.lastName.normalizeName()),
+                AUTHOR.FIRST_NAME.isNotDistinctFrom(it.firstName.normalizeName()),
+                AUTHOR.NICKNAME.isNotDistinctFrom(it.nickname.normalizeName()),
+            )
+            .fetchOne { it[AUTHOR.ID] }
+            ?: transaction.insertInto(AUTHOR)
+                .set(
+                    AuthorRecord(
+                        null,
+                        it.id,
+                        it.firstName.normalizeName(),
+                        it.middleName.normalizeName(),
+                        it.lastName.normalizeName(),
+                        it.nickname.normalizeName(),
+                        LocalDateTime.now()
+                    )
+                )
+                .returning(AUTHOR.ID)
+                .fetchSingle()
+                .id
+    }?.toSet() ?: emptySet()
+    val genreIds = genres?.map {
+        GenreDao(txCfg).fetchByName(it).firstOrNull()?.id
+            ?: transaction
+                .insertInto(GENRE, GENRE.NAME)
+                .values(it)
+                .returning()
+                .fetchSingle()
+                .id
+    }?.toSet() ?: setOf()
+    BookAuthorDao(txCfg).insert(authorIds.map { BookAuthor(bookId, it) })
+    BookGenreDao(txCfg).insert(genreIds.map { BookGenre(bookId, it) })
+    transaction.batchInsert(
+        *authorIds.map { BookAuthorRecord(bookId, it) }.toTypedArray(),
+        *genreIds.map { BookGenreRecord(bookId, it) }.toTypedArray(),
+    )
+
+
 }
 
 fun String?.normalizeName() = if (isNullOrBlank()) null else trim().split(" ").joinToString(" ") {
