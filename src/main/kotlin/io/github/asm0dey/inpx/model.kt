@@ -10,6 +10,4 @@ data class FictionBook(
     val bookSequence: BookSequence?,
     val date: String?,
     val lang: String?
-) {
-
-}
+)

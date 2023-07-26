@@ -448,7 +448,9 @@ class Api(application: Application) : AbstractDIController(application) {
                                     attributes["hx-get"] = "/api/book/${bookWithInfo.id}/image"
                                     attributes["hx-target"] = "#modal-cont"
                                     attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
-                                    img(src = "/opds/image/${bookWithInfo.id}")
+                                    img(src = "/opds/image/${bookWithInfo.id}"){
+                                        attributes["loading"] = "lazy"
+                                    }
                                 }
                             }
                         }

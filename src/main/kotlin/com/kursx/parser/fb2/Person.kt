@@ -29,7 +29,7 @@ open class Person {
 
                 "email" -> {
                     if (emails == null) emails = ArrayList()
-                    emails!!.add(author.textContent)
+                    emails.add(author.textContent)
                 }
 
                 "nickname" -> nickname = author.textContent

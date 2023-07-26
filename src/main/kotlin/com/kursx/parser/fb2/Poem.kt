@@ -41,11 +41,11 @@ class Poem : Element {
             if (title != null) list.addAll(title!!.paragraphs)
             for (stanza1 in stanza) {
                 if (stanza1.title != null) {
-                    for (title1 in stanza1.title!!) {
+                    for (title1 in stanza1.title) {
                         if (title1 != null) list.addAll(title1.paragraphs)
                     }
                 }
-                list.addAll(stanza1.stanza!!)
+                list.addAll(stanza1.stanza)
             }
             return getText(list, "\n")
         }
