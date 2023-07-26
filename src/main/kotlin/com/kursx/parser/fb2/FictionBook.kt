@@ -1,5 +1,7 @@
 package com.kursx.parser.fb2
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.FileHeader
 import org.jsoup.Jsoup
@@ -18,10 +20,12 @@ import javax.xml.parsers.ParserConfigurationException
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamException
 
+@Serializable
 class FictionBook {
     private var xmlns: Array<Xmlns?> = Array(0){null}
     var description: Description? = null
         private set
+    @Transient
     private var bodies: MutableList<Body> = ArrayList()
     var binaries: MutableMap<String, Binary> = hashMapOf()
     private var encoding = "utf-8"
@@ -161,7 +165,7 @@ class FictionBook {
         for (item in 0 until binary.length) {
             val binary1 = Binary(binary.item(item))
             try {
-                binaries[binary1.getId().replace("#", "")] = binary1
+                binaries[binary1.id!!.replace("#", "")] = binary1
             } catch (e: Exception) {
                 FB2_LOGGER.error(e) { "Invalid binary $binary1 in file $path" }
             }
@@ -171,7 +175,7 @@ class FictionBook {
     private fun setXmlns(nodeList: ArrayList<Node?>) {
         xmlns = arrayOfNulls(nodeList.size)
         for (index in nodeList.indices) {
-            val node = nodeList[index]
+            val node = nodeList[index]!!
             xmlns[index] = Xmlns(node)
         }
     }
@@ -190,7 +194,7 @@ class FictionBook {
     }
 
     val authors: ArrayList<Person>
-        get() = description!!.getDocumentInfo().getAuthors()
+        get() = description!!.documentInfo!!.authors
     val body: Body
         get() = getBody(null)
     val notes: Body
@@ -200,21 +204,44 @@ class FictionBook {
 
     private fun getBody(name: String?): Body {
         for (body in bodies) {
-            if (name == body.getName()) {
+            if (name == body.name) {
                 return body
             }
         }
         return bodies[0]
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FictionBook
+
+        if (!xmlns.contentEquals(other.xmlns)) return false
+        if (description != other.description) return false
+        if (binaries != other.binaries) return false
+        if (encoding != other.encoding) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = xmlns.contentHashCode()
+        result = 31 * result + (description?.hashCode() ?: 0)
+        result = 31 * result + binaries.hashCode()
+        result = 31 * result + encoding.hashCode()
+        return result
+    }
+
     val title: String
-        get() = description!!.getTitleInfo().getBookTitle()
-    val lang: String
-        get() = description!!.getTitleInfo().getLang()
+        get() = description!!.titleInfo!!.bookTitle!!
+    val lang: String?
+        get() = description!!.titleInfo?.lang
     val annotation: Annotation?
-        get() = description!!.getTitleInfo().getAnnotation()
+        get() = description!!.titleInfo?.annotation
 
     companion object {
         val FB2_LOGGER: TaggedLogger = Logger.tag("FB2")
     }
+
 }

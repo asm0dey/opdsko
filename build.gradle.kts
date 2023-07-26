@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "io.github.asm0dey"
-version = "0.0.18"
+version = "0.0.19"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -68,6 +68,7 @@ dependencies {
     // utils
     implementation(libs.commons.codec)
     implementation(libs.kotlin.process)
+    implementation(libs.ehcache)
     // xml
     implementation(libs.jsoup)
     implementation(libs.jaxb.runtime)
@@ -75,6 +76,7 @@ dependencies {
     implementation(libs.xmlutil.ktor)
     implementation(libs.kotlin.xml.builder)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.cbor)
     // logging
     implementation(libs.tinylog.api.kotlin)
     implementation(libs.slf4j.tinylog)

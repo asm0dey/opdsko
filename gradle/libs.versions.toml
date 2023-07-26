@@ -22,7 +22,7 @@ ktor = "2.3.2"
 
 kodein-di = "7.20.2"
 
-kotlinx-coroutines = "1.7.2"
+kotlinx-coroutines = "1.7.3"
 
 netty-tcnative = "2.0.61.Final"
 
@@ -71,7 +71,7 @@ slf4j-tinylog = { group = "org.tinylog", name = "slf4j-tinylog", version.ref = "
 
 tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }
 
-htmx-org = "org.webjars.npm:htmx.org:1.9.3"
+htmx-org = "org.webjars.npm:htmx.org:1.9.4"
 
 hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.9"
 
@@ -116,7 +116,9 @@ ktor-server-netty-jvm = { group = "io.ktor", name = "ktor-server-netty-jvm", ver
 kotlin-process = "com.github.pgreze:kotlin-process:1.4.1"
 
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-cbor = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-cbor", version.ref = "kotlinx-serialization" }
 
 kotlin-serialization = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
 
 zip4j = { group = "net.lingala.zip4j", name = "zip4j", version = "2.11.5" }
+ehcache = "org.ehcache:ehcache:3.10.8"

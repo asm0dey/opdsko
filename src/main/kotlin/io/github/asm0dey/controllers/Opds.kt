@@ -91,7 +91,7 @@ class Opds(application: Application) : AbstractDIController(application) {
             }
             get("/image/{id}") {
                 val (binary, data) = info.imageByBookId(call.parameters["id"]!!.toLong())
-                call.respondBytes(data, ContentType.parse(binary.contentType))
+                call.respondBytes(data, ContentType.parse(binary.contentType!!))
             }
             route("/book") {
                 get("/{id}/info") {
