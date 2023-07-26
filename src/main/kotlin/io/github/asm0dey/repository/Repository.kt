@@ -22,6 +22,7 @@ import io.github.asm0dey.opdsko.jooq.Tables.*
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
 import io.github.asm0dey.service.BookWithInfo
+import kotlinx.html.SELECT
 import org.jooq.*
 import org.jooq.impl.DSL
 import java.time.LocalDateTime
@@ -237,11 +238,18 @@ class Repository(val create: DSLContext) {
 
     }
 
-    fun allBooksByAuthor(authorId: Long): List<BookWithInfo> {
-        return getBookWithInfo()
+    fun allBooksByAuthor(authorId: Long, page: Int, pageSize: Int): Pair<Int, MutableList<BookWithInfo>> {
+        val total = create.select(DSL.countDistinct(BOOK.ID))
+            .from(BOOK)
+            .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
+            .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
+            .fetchSingle().value1()
+        return total to getBookWithInfo()
             .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
             .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
             .orderBy(BOOK.NAME)
+            .limit(pageSize)
+            .offset(pageSize * page)
             .fetch { BookWithInfo(it) }
     }
 

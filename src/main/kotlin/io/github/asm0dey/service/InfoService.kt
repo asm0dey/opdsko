@@ -69,8 +69,7 @@ class InfoService(private val repo: Repository) {
                     FictionBook::class.java,
                     ResourcePoolsBuilder
                         .newResourcePoolsBuilder()
-                        .heap(1000, EntryUnit.ENTRIES)
-                        .offheap(50, MemoryUnit.MB)
+                        .heap(100, EntryUnit.ENTRIES)
                         .disk(4, MemoryUnit.GB, true)
                 )
                 .withValueSerializer(FBSerializer)
@@ -84,7 +83,6 @@ class InfoService(private val repo: Repository) {
                     ResourcePoolsBuilder
                         .newResourcePoolsBuilder()
                         .heap(1000, EntryUnit.ENTRIES)
-                        .offheap(10, MemoryUnit.MB)
                         .disk(1, MemoryUnit.GB, true)
                 )
         )
@@ -236,7 +234,7 @@ class InfoService(private val repo: Repository) {
     fun authorName(authorId: Long) = repo.authorName(authorId)
     fun seriesNumberByAuthor(authorId: Long) = repo.seriesNumberByAuthor(authorId)
     fun latestAuthorUpdate(authorId: Long) = repo.latestAuthorUpdate(authorId).z
-    fun allBooksByAuthor(authorId: Long) = repo.allBooksByAuthor(authorId)
+    fun allBooksByAuthor(authorId: Long, page: Int, pageSize: Int = 50) = repo.allBooksByAuthor(authorId, page, pageSize)
     fun seriesByAuthorId(authorId: Long) = repo.seriesByAuthorId(authorId)
     fun booksBySeriesAndAuthor(seriesName: String, authorId: Long) = repo.booksBySeriesAndAuthor(seriesName, authorId)
     fun booksWithoutSeriesByAuthorId(authorId: Long) = repo.booksWithoutSeriesByAuthorId(authorId)

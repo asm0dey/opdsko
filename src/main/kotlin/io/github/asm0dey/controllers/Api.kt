@@ -60,7 +60,7 @@ class Api(application: Application) : AbstractDIController(application) {
             get("/search") {
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
                 val searchTerm = URLDecoder.decode(call.request.queryParameters["search"]!!, UTF_8)
-                val (books, _, total) = info.searchBookByText(searchTerm, page-1)
+                val (books, _, total) = info.searchBookByText(searchTerm, page - 1)
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
@@ -238,7 +238,8 @@ class Api(application: Application) : AbstractDIController(application) {
             }
             get("/author/browse/{id}/all") {
                 val authorId = call.parameters["id"]!!.toLong()
-                val books = info.allBooksByAuthor(authorId)
+                val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+                val (total, books) = info.allBooksByAuthor(authorId, page - 1)
                 val authorName = info.authorName(authorId)
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
@@ -255,7 +256,8 @@ class Api(application: Application) : AbstractDIController(application) {
                         "All books" to "/api/author/browse/$authorId/all"
                     )
                 )
-                return@get smartHtml(call, x, y)
+                val z = pagination(page, total, "/api/author/browse/$authorId/all")
+                return@get smartHtml(call, x, y, z)
             }
             get("/author/browse/{id}/out") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -448,7 +450,7 @@ class Api(application: Application) : AbstractDIController(application) {
                                     attributes["hx-get"] = "/api/book/${bookWithInfo.id}/image"
                                     attributes["hx-target"] = "#modal-cont"
                                     attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
-                                    img(src = "/opds/image/${bookWithInfo.id}"){
+                                    img(src = "/opds/image/${bookWithInfo.id}") {
                                         attributes["loading"] = "lazy"
                                     }
                                 }
@@ -510,7 +512,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 role = "navigation"
                 a {
                     classes = setOfNotNull("pagination-previous", if (curPage == 1) "is-disabled" else null)
-                    if (curPage!=1) {
+                    if (curPage != 1) {
                         attributes["hx-trigger"] = "click"
                         attributes["hx-get"] = base.withParam("page=${curPage - 1}")
                         attributes["hx-target"] = "#layout"
@@ -520,7 +522,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 }
                 a {
                     classes = setOfNotNull("pagination-next", if (curPage == last) "is-disabled" else null)
-                    if (curPage!=last) {
+                    if (curPage != last) {
                         attributes["hx-trigger"] = "click"
                         attributes["hx-get"] = base.withParam("page=${curPage + 1}")
                         attributes["hx-target"] = "#layout"

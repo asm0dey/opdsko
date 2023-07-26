@@ -70,7 +70,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                         "Search results for \"$searchTerm\"",
                         "search:$searchTerm",
                         ZonedDateTime.now(),
-                        searchPaginationLinks(hasMore, searchTerm, page)
+                        searchPaginationLinks(hasMore, page, "/opds/search/${searchTerm.encoded}")
                     )
                     call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
                 }
@@ -169,9 +169,21 @@ class Opds(application: Application) : AbstractDIController(application) {
                     get("/{id}/all") {
                         val authorId = call.parameters["id"]!!.toLong()
                         val path = call.request.path()
-                        val books = info.allBooksByAuthor(authorId)
+                        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 0
+                        val (total, books) = info.allBooksByAuthor(authorId, page)
                         val authorName = info.authorName(authorId)
-                        val xml = bookXml(books, path, "All books by $authorName", "author:$authorId:all")
+
+                        val xml = bookXml(
+                            books,
+                            path,
+                            "All books by $authorName",
+                            "author:$authorId:all",
+                            additionalLinks = searchPaginationLinks(
+                                (page + 1) * 50 < total,
+                                page,
+                                "/opds/author/browse/$authorId/all"
+                            )
+                        )
                         call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
                     }
                     get("/{id}/series") {
@@ -561,17 +573,17 @@ class Opds(application: Application) : AbstractDIController(application) {
 
     private fun searchPaginationLinks(
         hasMore: Boolean,
-        searchTerm: String,
         page: Int,
+        paginationBase: String,
     ) = listOfNotNull(
         if (hasMore) {
-            Entry.Link("next", "/opds/search/${searchTerm.encoded}?page=${page + 1}", ACQUISITION_TYPE)
+            Entry.Link("next", "$paginationBase?page=${page + 1}", ACQUISITION_TYPE)
         } else null,
         if (page > 0) {
-            Entry.Link("previous", "/opds/search/${searchTerm.encoded}?page=${page - 1}", ACQUISITION_TYPE)
+            Entry.Link("previous", "$paginationBase?page=${page - 1}", ACQUISITION_TYPE)
         } else null,
         if (page > 0) {
-            Entry.Link("first", "/opds/search/${searchTerm.encoded}", ACQUISITION_TYPE)
+            Entry.Link("first", paginationBase, ACQUISITION_TYPE)
         } else null,
     )
 
