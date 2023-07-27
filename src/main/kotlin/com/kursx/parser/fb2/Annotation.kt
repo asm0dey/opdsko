@@ -1,6 +1,7 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.jsoup.Jsoup
 import org.w3c.dom.Node
 import java.io.StringWriter
@@ -13,9 +14,12 @@ import javax.xml.transform.stream.StreamResult
 @Suppress("unused")
 @Serializable
 open class Annotation : IdElement {
+    @ProtoNumber(2)
     var text = ""
         private set
+    @ProtoNumber(3)
     var lang: String? = null
+    @ProtoNumber(4)
     var elements: ArrayList<Element>? = null
 
     constructor()

@@ -1,16 +1,23 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 @Suppress("unused")
 @Serializable
 class Section : IdElement {
+    @ProtoNumber(7)
     var image: Image? = null
+    @ProtoNumber(2)
     var annotation: Annotation? = null
+    @ProtoNumber(3)
     protected var epigraphs: ArrayList<Epigraph> = arrayListOf()
+    @ProtoNumber(4)
     protected var sections: ArrayList<Section> = arrayListOf()
+    @ProtoNumber(5)
     protected var elements: ArrayList<Element> = arrayListOf()
+    @ProtoNumber(6)
     protected var title: Title? = null
 
     constructor()

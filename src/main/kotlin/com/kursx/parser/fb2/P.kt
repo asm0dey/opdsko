@@ -4,15 +4,23 @@ import com.kursx.parser.fb2.fonts.Emphasis
 import com.kursx.parser.fb2.fonts.StrikeThrough
 import com.kursx.parser.fb2.fonts.Strong
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 @Suppress("unused")
 @Serializable
 open class P : Element {
+    @ProtoNumber(1)
     var images: ArrayList<Image>? = null
         protected set
+
+    @ProtoNumber(2)
     protected var emphasis: ArrayList<Emphasis>? = null
+
+    @ProtoNumber(3)
     protected var strong: ArrayList<Strong>? = null
+
+    @ProtoNumber(4)
     protected var strikeThrough: ArrayList<StrikeThrough>? = null
 
     //    TODO

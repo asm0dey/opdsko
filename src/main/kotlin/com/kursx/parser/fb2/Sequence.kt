@@ -1,13 +1,16 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 @Suppress("unused")
 @Serializable
 class Sequence {
+    @ProtoNumber(1)
     var name: String? = null
         protected set
+    @ProtoNumber(2)
     var number: String? = null
         protected set
 

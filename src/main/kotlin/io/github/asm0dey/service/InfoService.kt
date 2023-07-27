@@ -29,11 +29,10 @@ import io.github.asm0dey.repository.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 import net.lingala.zip4j.ZipFile
-import org.apache.commons.codec.binary.Base64
 import org.ehcache.config.builders.CacheConfigurationBuilder
 import org.ehcache.config.builders.CacheManagerBuilder
 import org.ehcache.config.builders.ResourcePoolsBuilder
@@ -160,7 +159,7 @@ class InfoService(private val repo: Repository) {
         val fb = obtainBook(archive, path)
         val id = fb.description?.titleInfo?.coverPage?.first()?.value?.replace("#", "")
         val binary = fb.binaries[id]!!
-        val data = Base64().decode(binary.binary)
+        val data = binary.binary
         return Pair(binary, data)
     }
 
@@ -262,17 +261,15 @@ class InfoService(private val repo: Repository) {
 }
 
 object FBSerializer : Serializer<FictionBook> {
-
     @OptIn(ExperimentalSerializationApi::class)
     override fun equals(fb: FictionBook, binary: ByteBuffer): Boolean =
-        Cbor.decodeFromByteArray<FictionBook>(binary.array()) == fb
+        ProtoBuf.decodeFromByteArray<FictionBook>(binary.array()) == fb
 
     @OptIn(ExperimentalSerializationApi::class)
-    override fun serialize(fb: FictionBook): ByteBuffer = ByteBuffer.wrap(Cbor.encodeToByteArray(fb))
+    override fun serialize(fb: FictionBook): ByteBuffer = ByteBuffer.wrap(ProtoBuf.encodeToByteArray(fb))
 
     @OptIn(ExperimentalSerializationApi::class)
-    override fun read(binary: ByteBuffer): FictionBook = Cbor.decodeFromByteArray(binary.array())
-
+    override fun read(binary: ByteBuffer): FictionBook = ProtoBuf.decodeFromByteArray(binary.array())
 }
 
 

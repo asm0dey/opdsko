@@ -1,13 +1,18 @@
 package com.kursx.parser.fb2
 
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 //http://www.fictionbook.org/index.php/Элемент_cite
 @Suppress("unused")
 class Cite : Element {
+    @ProtoNumber(1)
     var id: String? = null
+    @ProtoNumber(2)
     var lang: String? = null
+    @ProtoNumber(3)
     protected var elements: ArrayList<Element> = arrayListOf()
+    @ProtoNumber(4)
     protected var textAuthor: ArrayList<TextAuthor> = arrayListOf()
 
     constructor()
@@ -26,30 +31,11 @@ class Cite : Element {
         for (i in 0 until nodeList.length) {
             val paragraph = nodeList.item(i)
             when (paragraph.nodeName) {
-                "text-author" -> {
-                    if (textAuthor == null) textAuthor = ArrayList()
-                    textAuthor.add(TextAuthor(paragraph))
-                }
-
-                "poem" -> {
-                    if (elements == null) elements = ArrayList()
-                    elements.add(Poem(paragraph))
-                }
-
-                "subtitle" -> {
-                    if (elements == null) elements = ArrayList()
-                    elements.add(Subtitle(paragraph))
-                }
-
-                "p" -> {
-                    if (elements == null) elements = ArrayList()
-                    elements.add(P(paragraph))
-                }
-
-                "empty-line" -> {
-                    elements.add(EmptyLine())
-                }
-            }
+                "text-author" -> textAuthor.add(TextAuthor(paragraph))
+                "poem" -> elements.add(Poem(paragraph))
+                "subtitle" -> elements.add(Subtitle(paragraph))
+                "p" -> elements.add(P(paragraph))
+                "empty-line" -> elements.add(EmptyLine()) }
         }
     }
 

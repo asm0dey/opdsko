@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "io.github.asm0dey"
-version = "0.1.0"
+version = "0.1.1"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -76,7 +76,7 @@ dependencies {
     implementation(libs.xmlutil.ktor)
     implementation(libs.kotlin.xml.builder)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.serialization.cbor)
+    implementation(libs.kotlinx.serialization.protobuf)
     // logging
     implementation(libs.tinylog.api.kotlin)
     implementation(libs.slf4j.tinylog)

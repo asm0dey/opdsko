@@ -1,21 +1,28 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Document
 
 @Suppress("unused")
 @Serializable
 class PublishInfo {
+    @ProtoNumber(1)
     var bookName: String? = null
         protected set
+    @ProtoNumber(2)
     var city: String? = null
         protected set
+    @ProtoNumber(3)
     var year: String? = null
         protected set
+    @ProtoNumber(4)
     var publisher: String? = null
         protected set
+    @ProtoNumber(5)
     var isbn: String? = null
         protected set
+    @ProtoNumber(6)
     var sequence: Sequence? = null
         protected set
 

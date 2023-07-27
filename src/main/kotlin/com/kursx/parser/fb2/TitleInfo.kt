@@ -1,31 +1,43 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Document
 
 @Suppress("unused")
 @Serializable
 open class TitleInfo {
+    @ProtoNumber(1)
     var genres = ArrayList<String>()
 
     //  TODO http://www.fictionbook.org/index.php/Жанры_FictionBook_2.1
+    @ProtoNumber(2)
     var keywords = ArrayList<String>()
         protected set
+    @ProtoNumber(3)
     var bookTitle: String? = null
         protected set
+    @ProtoNumber(4)
     var date: String? = null
         protected set
+    @ProtoNumber(5)
     var lang: String? = null
+    @ProtoNumber(6)
     var srcLang: String? = null
         protected set
+    @ProtoNumber(7)
     var authors = ArrayList<Person>()
         protected set
+    @ProtoNumber(8)
     var translators = ArrayList<Person>()
         protected set
+    @ProtoNumber(9)
     var annotation: Annotation? = null
         protected set
+    @ProtoNumber(10)
     var coverPage = ArrayList<Image>()
         protected set
+    @ProtoNumber(11)
     var sequence: Sequence? = null
         protected set
 

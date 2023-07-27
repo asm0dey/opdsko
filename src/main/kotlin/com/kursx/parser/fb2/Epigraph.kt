@@ -1,12 +1,15 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 @Suppress("unused")
 @Serializable
 class Epigraph : IdElement {
+    @ProtoNumber(2)
     var elements = ArrayList<Element>()
+    @ProtoNumber(3)
     var textAuthor: ArrayList<TextAuthor>? = ArrayList()
 
     constructor()

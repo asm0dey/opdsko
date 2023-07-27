@@ -1,11 +1,13 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 @Suppress("unused")
 @Serializable
 class Title {
+    @ProtoNumber(1)
     var paragraphs = ArrayList<P>()
         protected set
 

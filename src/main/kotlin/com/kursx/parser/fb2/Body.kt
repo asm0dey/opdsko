@@ -1,17 +1,24 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 //http://www.fictionbook.org/index.php/Элемент_body
 @Suppress("unused")
 @Serializable
 class Body {
+    @ProtoNumber(1)
     var lang: String? = null
+    @ProtoNumber(2)
     var name: String? = null
+    @ProtoNumber(3)
     var title: Title? = null
+    @ProtoNumber(4)
     var image: Image? = null
+    @ProtoNumber(5)
     var sections = ArrayList<Section>()
+    @ProtoNumber(6)
     var epigraphs: ArrayList<Epigraph>? = null
 
     constructor()

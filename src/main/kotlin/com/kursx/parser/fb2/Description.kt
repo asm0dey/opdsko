@@ -1,19 +1,25 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Document
 
 @Suppress("unused")
 @Serializable
 class Description {
+    @ProtoNumber(1)
     var titleInfo: TitleInfo? = null
         protected set
+    @ProtoNumber(2)
     var srcTitleInfo: SrcTitleInfo? = null
         protected set
+    @ProtoNumber(3)
     var documentInfo: DocumentInfo? = null
         protected set
+    @ProtoNumber(4)
     var publishInfo: PublishInfo? = null
         protected set
+    @ProtoNumber(5)
     var customInfo = ArrayList<CustomInfo>()
         protected set
 

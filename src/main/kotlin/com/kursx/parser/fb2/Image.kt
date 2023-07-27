@@ -1,15 +1,17 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.cbor.ByteString
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 @Suppress("unused")
 @Serializable
 class Image {
+    @ProtoNumber(1)
     var name: String? = null
         protected set
 
+    @ProtoNumber(2)
     var value: String? = null
         protected set
 
@@ -21,10 +23,7 @@ class Image {
     constructor() : super()
 
     override fun toString(): String {
-        return "Image{" +
-                "name='" + name + '\'' +
-                ", value='" + value + '\'' +
-                '}'
+        return "Image{name='$name', value='$value'}"
     }
 
     override fun equals(other: Any?): Boolean {

@@ -1,28 +1,39 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Document
 
 @Suppress("unused")
 @Serializable
 class DocumentInfo {
+    @ProtoNumber(1)
     var authors = ArrayList<Person>()
         protected set
+    @ProtoNumber(2)
     protected var publishers: ArrayList<Person>? = null
+    @ProtoNumber(3)
     var programUsed: String? = null
         protected set
+    @ProtoNumber(4)
     var srcUrl: String? = null
         protected set
+    @ProtoNumber(5)
     var srcOcr: String? = null
         protected set
+    @ProtoNumber(6)
     var email: String? = null
         protected set
+    @ProtoNumber(7)
     var id: String? = null
         protected set
+    @ProtoNumber(8)
     var version: String? = null
         protected set
+    @ProtoNumber(9)
     var history: History? = null
         protected set
+    @ProtoNumber(10)
     var date: Date? = null
         protected set
 

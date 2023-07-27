@@ -2,6 +2,7 @@ package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.protobuf.ProtoNumber
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.FileHeader
 import org.jsoup.Jsoup
@@ -22,12 +23,16 @@ import javax.xml.stream.XMLStreamException
 
 @Serializable
 class FictionBook {
+    @ProtoNumber(1)
     private var xmlns: Array<Xmlns?> = Array(0){null}
+    @ProtoNumber(2)
     var description: Description? = null
         private set
     @Transient
     private var bodies: MutableList<Body> = ArrayList()
+    @ProtoNumber(3)
     var binaries: MutableMap<String, Binary> = hashMapOf()
+    @ProtoNumber(4)
     private var encoding = "utf-8"
 
     constructor(zipFile: ZipFile, fileHeader: FileHeader) {

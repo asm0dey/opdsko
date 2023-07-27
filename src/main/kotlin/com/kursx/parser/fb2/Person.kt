@@ -1,6 +1,7 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 //http://www.fictionbook.org/index.php/Элемент_author
@@ -8,12 +9,19 @@ import org.w3c.dom.Node
 @Serializable
 open class Person {
     @JvmField
+    @ProtoNumber(1)
     var id: String? = null
+    @ProtoNumber(2)
     var firstName: String? = null
+    @ProtoNumber(3)
     var middleName: String? = null
+    @ProtoNumber(4)
     var lastName: String? = null
+    @ProtoNumber(5)
     var nickname: String? = null
+    @ProtoNumber(6)
     protected var homePages: ArrayList<String> = arrayListOf()
+    @ProtoNumber(7)
     protected var emails: ArrayList<String> = arrayListOf()
 
     constructor()

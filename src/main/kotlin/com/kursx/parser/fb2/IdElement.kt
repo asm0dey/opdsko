@@ -1,10 +1,12 @@
 package com.kursx.parser.fb2
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
 @Serializable
 open class IdElement {
+    @ProtoNumber(1)
     open var id: String? = null
 
     protected constructor()

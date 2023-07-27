@@ -34,6 +34,7 @@ import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
 import io.github.asm0dey.plugins.OPDSKO_JDBC
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
+import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator
 import net.lingala.zip4j.ZipFile
 import org.flywaydb.core.Flyway
 import org.jooq.Configuration
