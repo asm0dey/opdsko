@@ -32,7 +32,7 @@ xmlutil = "0.86.1"
 
 jte = "3.0.1"
 
-flyway = "9.21.0"
+flyway = "9.21.1"
 
 kotlinx-serialization = "1.5.1"
 
