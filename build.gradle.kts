@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "io.github.asm0dey"
-version = "0.1.1"
+version = "0.1.2"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.ktor.server.core.jvm)
     implementation(libs.ktor.server.host.common.jvm)
     implementation(libs.ktor.server.html.builder)
+    implementation(libs.ktor.server.openapi)
     implementation(libs.ktor.server.metrics.jvm)
     implementation(libs.ktor.server.netty.jvm)
     implementation(libs.ktor.server.resources)

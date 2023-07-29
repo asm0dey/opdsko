@@ -10,7 +10,6 @@ nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2.1" }
 
 org-flywaydb-flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 
-gg-jte-gradle = { id = "gg.jte.gradle", version.ref = "jte" }
 
 org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
@@ -29,8 +28,6 @@ netty-tcnative = "2.0.61.Final"
 tinylog = "2.6.2"
 
 xmlutil = "0.86.1"
-
-jte = "3.0.1"
 
 flyway = "9.21.1"
 
@@ -52,8 +49,6 @@ jooq-kotlin = "org.jooq:jooq-kotlin:3.18.5"
 sqlite-jdbc = "org.xerial:sqlite-jdbc:3.42.0.0"
 
 commons-codec = "commons-codec:commons-codec:1.16.0"
-
-jte-kotlin = { group = "gg.jte", name = "jte-kotlin", version.ref = "jte" }
 
 jsoup = "org.jsoup:jsoup:1.16.1"
 
@@ -89,11 +84,11 @@ kotlinx-coroutines-reactor = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 ktor-server-tests-jvm = { group = "io.ktor", name = "ktor-server-tests-jvm", version.ref = "ktor" }
 
+ktor-server-openapi = { group = "io.ktor", name = "ktor-server-openapi", version.ref = "ktor" }
+
 ktor-serialization-kotlinx-xml = { group = "io.ktor", name = "ktor-serialization-kotlinx-xml", version.ref = "ktor" }
 
 ktor-server-html-builder = { group = "io.ktor", name = "ktor-server-html-builder", version.ref = "ktor" }
-
-ktor-server-jte = { group = "io.ktor", name = "ktor-server-jte", version.ref = "ktor" }
 
 ktor-server-resources = { group = "io.ktor", name = "ktor-server-resources", version.ref = "ktor" }
 
@@ -116,10 +111,11 @@ ktor-server-netty-jvm = { group = "io.ktor", name = "ktor-server-netty-jvm", ver
 kotlin-process = "com.github.pgreze:kotlin-process:1.4.1"
 
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
-kotlinx-serialization-cbor = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-cbor", version.ref = "kotlinx-serialization" }
+
 kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
 
 kotlin-serialization = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
 
 zip4j = { group = "net.lingala.zip4j", name = "zip4j", version = "2.11.5" }
+
 ehcache = "org.ehcache:ehcache:3.10.8"

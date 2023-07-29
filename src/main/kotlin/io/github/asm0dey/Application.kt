@@ -386,13 +386,10 @@ private fun Configuration.saveBook(
                 .id
     }?.toSet() ?: setOf()
     BookAuthorDao(this).insert(authorIds.map { BookAuthor(bookId, it) })
-    BookGenreDao(this).insert(genreIds.map { BookGenre(bookId, it) })
+    BookGenreDao( this).insert(genreIds .map { BookGenre( bookId, it) })
     transaction.batchInsert(
-        *authorIds.map { BookAuthorRecord(bookId, it) }.toTypedArray(),
-        *genreIds.map { BookGenreRecord(bookId, it) }.toTypedArray(),
+        authorIds.map { BookAuthorRecord(bookId, it) } + genreIds.map { BookGenreRecord(bookId, it) }
     )
-
-
 }
 
 fun String?.normalizeName() = if (isNullOrBlank()) null else trim().split(" ").joinToString(" ") {

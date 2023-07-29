@@ -1,9 +1,11 @@
 package com.kursx.parser.fb2
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 import org.w3c.dom.Node
 
+@OptIn(ExperimentalSerializationApi::class)
 @Suppress("unused")
 @Serializable
 class Section : IdElement {
@@ -28,38 +30,14 @@ class Section : IdElement {
             when (node.nodeName) {
                 "title" -> title = Title(node)
                 "elements" -> annotation = Annotation(node)
-                "image" -> {
-                    elements.add(P(Image(node)))
-                }
-
-                "epigraph" -> {
-                    epigraphs.add(Epigraph(node))
-                }
-
-                "section" -> {
-                    sections.add(Section(node))
-                }
-
-                "poem" -> {
-                    elements.add(Poem(node))
-                }
-
-                "subtitle" -> {
-                    elements.add(Subtitle(node))
-                }
-
-                "p" -> {
-                    elements.add(P(node))
-                }
-
-                "empty-line" -> {
-                    elements.add(EmptyLine())
-                }
-
-                "cite" -> {
-                    elements.add(Cite(node))
-                }
-            }
+                "image" -> elements.add(P(Image(node)))
+                "epigraph" -> epigraphs.add(Epigraph(node))
+                "section" -> sections.add(Section(node))
+                "poem" -> elements.add(Poem(node))
+                "subtitle" -> elements.add(Subtitle(node))
+                "p" -> elements.add(P(node))
+                "empty-line" -> elements.add(EmptyLine())
+                "cite" -> elements.add(Cite(node)) }
         }
     }
 

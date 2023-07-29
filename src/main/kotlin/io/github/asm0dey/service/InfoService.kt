@@ -33,6 +33,7 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
 import net.lingala.zip4j.ZipFile
+import org.ehcache.Cache
 import org.ehcache.config.builders.CacheConfigurationBuilder
 import org.ehcache.config.builders.CacheManagerBuilder
 import org.ehcache.config.builders.ResourcePoolsBuilder
@@ -51,6 +52,7 @@ import java.nio.file.Path
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.concurrent.thread
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteRecursively
@@ -58,17 +60,19 @@ import kotlin.io.path.exists
 
 class InfoService(private val repo: Repository) {
     private val cacheDir = if (!Path.of("cache").exists()) Files.createDirectory(Path.of("cache")) else Path.of("cache")
-    private val cacheManager = CacheManagerBuilder.newCacheManagerBuilder()
+    private val cacheManager = CacheManagerBuilder
+        .newCacheManagerBuilder()
         .with(CacheManagerPersistenceConfiguration(cacheDir.toFile()))
         .withCache(
             "articlesCache",
             CacheConfigurationBuilder
                 .newCacheConfigurationBuilder(
-                    String::class.javaObjectType,
+                    String::class.java,
                     FictionBook::class.java,
                     ResourcePoolsBuilder
                         .newResourcePoolsBuilder()
                         .heap(100, EntryUnit.ENTRIES)
+                        .offheap(200, MemoryUnit.MB)
                         .disk(4, MemoryUnit.GB, true)
                 )
                 .withValueSerializer(FBSerializer)
@@ -82,15 +86,20 @@ class InfoService(private val repo: Repository) {
                     ResourcePoolsBuilder
                         .newResourcePoolsBuilder()
                         .heap(1000, EntryUnit.ENTRIES)
+                        .offheap(100, MemoryUnit.MB)
                         .disk(1, MemoryUnit.GB, true)
                 )
         )
         .build(true)
 
     private val bookCache =
-        cacheManager.getCache("articlesCache", String::class.javaObjectType, FictionBook::class.java)
+        cacheManager.getCache("articlesCache", String::class.java, FictionBook::class.java)
     private val sizeCache =
-        cacheManager.getCache("sizeCache", String::class.javaObjectType, String::class.java)
+        cacheManager.getCache("sizeCache", String::class.java, String::class.java)
+
+    init {
+        Runtime.getRuntime().addShutdownHook(thread(start = false) { cacheManager.close() })
+    }
 
 
     fun searchBookByText(searchTerm: String, page: Int, pageSize: Int = 50): Triple<List<BookWithInfo>, Boolean, Int> {
@@ -130,8 +139,13 @@ class InfoService(private val repo: Repository) {
         }
 
     private fun obtainBook(zipFile: String?, path: String): FictionBook {
-        val bookPath = if (zipFile == null) path else "$zipFile#$path"
-        return bookCache[bookPath] ?: readFb(zipFile, path).also { bookCache.put(bookPath, it) }
+        return fromCache(bookCache, if (zipFile == null) path else "$zipFile#$path") {
+            readFb(zipFile, path)
+        }
+    }
+
+    private inline fun <KEY, VALUE> fromCache(cache: Cache<KEY, VALUE>, key: KEY, block: () -> VALUE): VALUE {
+        return cache[key] ?: block().also { cache.put(key, it) }
     }
 
     private fun readFb(zipFile: String?, path: String) =
@@ -233,7 +247,9 @@ class InfoService(private val repo: Repository) {
     fun authorName(authorId: Long) = repo.authorName(authorId)
     fun seriesNumberByAuthor(authorId: Long) = repo.seriesNumberByAuthor(authorId)
     fun latestAuthorUpdate(authorId: Long) = repo.latestAuthorUpdate(authorId).z
-    fun allBooksByAuthor(authorId: Long, page: Int, pageSize: Int = 50) = repo.allBooksByAuthor(authorId, page, pageSize)
+    fun allBooksByAuthor(authorId: Long, page: Int, pageSize: Int = 50) =
+        repo.allBooksByAuthor(authorId, page, pageSize)
+
     fun seriesByAuthorId(authorId: Long) = repo.seriesByAuthorId(authorId)
     fun booksBySeriesAndAuthor(seriesName: String, authorId: Long) = repo.booksBySeriesAndAuthor(seriesName, authorId)
     fun booksWithoutSeriesByAuthorId(authorId: Long) = repo.booksWithoutSeriesByAuthorId(authorId)

@@ -25,6 +25,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.pipeline.*
 import org.kodein.di.instance
 import org.kodein.di.ktor.controller.AbstractDIController
 import org.redundent.kotlin.xml.*
@@ -98,13 +99,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                     val bookId = call.parameters["id"]!!.toLong()
                     val book = info.bookInfo(bookId)
                     call.respondText(
-                        entryXml(
-                            book,
-                            info.imageTypes(listOf(book))[book.id],
-                            bookDescriptionsLonger(listOf(book.id to book.book))[book.id],
-                            info.shortDescriptions(listOf(book))[book.id],
-                            call.request.path()
-                        ),
+                        bookInfo(book),
                         ContentType.parse("application/atom+xml;type=entry;profile=opds-catalog")
                     )
                 }
@@ -315,6 +310,15 @@ class Opds(application: Application) : AbstractDIController(application) {
             }
         }
     }
+
+    private fun PipelineContext<Unit, ApplicationCall>.bookInfo(book: BookWithInfo) =
+        entryXml(
+            book,
+            info.imageTypes(listOf(book))[book.id],
+            bookDescriptionsLonger(listOf(book.id to book.book))[book.id],
+            info.shortDescriptions(listOf(book))[book.id],
+            call.request.path()
+        )
 
     private fun rootXml() = xml("feed", version = XmlVersion.V10, namespace = root) {
         "id"(root) { -"root" }
