@@ -44,7 +44,7 @@ hikaricp = "com.zaxxer:HikariCP:5.0.1"
 
 flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
 
-jooq-kotlin = "org.jooq:jooq-kotlin:3.18.5"
+jooq-kotlin = "org.jooq:jooq-kotlin:3.18.6"
 
 sqlite-jdbc = "org.xerial:sqlite-jdbc:3.42.0.0"
 
