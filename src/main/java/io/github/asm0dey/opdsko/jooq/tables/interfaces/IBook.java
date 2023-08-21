@@ -58,4 +58,9 @@ public interface IBook extends Serializable {
      * Getter for <code>book.zip_file</code>.
      */
     public String getZipFile();
+
+    /**
+     * Getter for <code>book.seqid</code>.
+     */
+    public Integer getSeqid();
 }

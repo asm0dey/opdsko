@@ -34,12 +34,11 @@ import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
 import io.github.asm0dey.plugins.OPDSKO_JDBC
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
-import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator
 import net.lingala.zip4j.ZipFile
 import org.flywaydb.core.Flyway
 import org.jooq.Configuration
 import org.jooq.DSLContext
-import org.jooq.impl.DSL.using
+import org.jooq.impl.DSL.*
 import org.tinylog.Logger
 import java.io.File
 import java.io.FileOutputStream
@@ -132,7 +131,7 @@ fun main(args: Array<String>) {
             posixSetAccessible(myHeader.fileName)
         }
         if (!File("fb2c.conf.toml").exists())
-            Application::class.java.classLoader.getResourceAsStream("fb2c.conf.toml").buffered().use { inp ->
+            Application::class.java.classLoader.getResourceAsStream("fb2c.conf.toml")?.buffered()?.use { inp ->
                 FileOutputStream("fb2c.conf.toml").buffered().use { out ->
                     inp.copyTo(out)
                 }
@@ -151,7 +150,7 @@ private fun posixSetAccessible(fileName: String) = try {
 } catch (_: Exception) {
 }
 
-@Suppress("UnusedReceiverParameter")
+@Suppress("UnusedReceiverParameter", "unused")
 fun Application.main() {
     initDb()
 }
@@ -241,6 +240,7 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
                     genres = fb.genres
                 )
             }
+            updateSequenceIds(txConfig)
         }
         return
     }
@@ -267,7 +267,7 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
                     genres = fb.description?.titleInfo?.genres
                 )
             }
-
+            updateSequenceIds(txCtx)
         }
     if (ext == null || ext == "zip")
         create.transaction { txCtx ->
@@ -298,8 +298,23 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
                     )
                 }
             }
-
+            updateSequenceIds(txCtx)
         }
+}
+
+private fun updateSequenceIds(txConfig: Configuration) {
+    val tr = using(txConfig)
+    val names = selectDistinct(BOOK.SEQUENCE)
+        .from(BOOK)
+        .where(BOOK.SEQUENCE.isNotNull)
+        .orderBy(BOOK.SEQUENCE)
+    val numbers = select(rowNumber().over(), names.field(0, String::class.java))
+        .from(names)
+    tr.update(BOOK)
+        .set(BOOK.SEQID, numbers.field(0, Int::class.javaObjectType))
+        .from(numbers)
+        .where(BOOK.SEQUENCE.eq(numbers.field(2, String::class.java)))
+        .execute()
 }
 
 private fun Configuration.saveBook(
@@ -344,7 +359,8 @@ private fun Configuration.saveBook(
                 seqName,
                 seqNo,
                 lang,
-                archive
+                archive,
+                null
             )
         )
         .returning()
@@ -386,7 +402,7 @@ private fun Configuration.saveBook(
                 .id
     }?.toSet() ?: setOf()
     BookAuthorDao(this).insert(authorIds.map { BookAuthor(bookId, it) })
-    BookGenreDao( this).insert(genreIds .map { BookGenre( bookId, it) })
+    BookGenreDao(this).insert(genreIds.map { BookGenre(bookId, it) })
     transaction.batchInsert(
         authorIds.map { BookAuthorRecord(bookId, it) } + genreIds.map { BookGenreRecord(bookId, it) }
     )

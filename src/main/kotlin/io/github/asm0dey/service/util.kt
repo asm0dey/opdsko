@@ -28,7 +28,7 @@ import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
 import io.github.asm0dey.plugins.dtf
 import net.lingala.zip4j.ZipFile
 import org.jooq.Record2
-import org.jooq.Record4
+import org.jooq.Record5
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -46,7 +46,7 @@ val String.decoded: String get() = URLDecoder.decode(this, StandardCharsets.UTF_
 
 @JvmInline
 @Suppress("unused")
-value class BookWithInfo(val record: Record4<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>>) {
+value class BookWithInfo(val record: Record5<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>, String>) {
     val book: IBook
         get() = record.component2()[0]
     val authors: List<IAuthor>
@@ -59,6 +59,8 @@ value class BookWithInfo(val record: Record4<Long, MutableList<Book>, MutableLis
         }
     val id
         get() = record.get(Tables.BOOK.ID)!!
+    val sequence
+        get() = record.get(Tables.BOOK.SEQUENCE)
 }
 
 @Suppress("unused")

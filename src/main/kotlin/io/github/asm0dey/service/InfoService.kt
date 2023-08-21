@@ -42,7 +42,7 @@ import org.ehcache.config.units.MemoryUnit
 import org.ehcache.impl.config.persistence.CacheManagerPersistenceConfiguration
 import org.ehcache.spi.serialization.Serializer
 import org.jooq.Record2
-import org.jooq.Record4
+import org.jooq.Record5
 import org.jooq.Result
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -165,7 +165,7 @@ class InfoService(private val repo: Repository) {
             id to type
         }
 
-    fun latestBooks(): Result<Record4<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>>> =
+    fun latestBooks(): Result<Record5<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>, String>> =
         repo.latestBooks()
 
     fun imageByBookId(bookId: Long): Pair<Binary, ByteArray> {
@@ -251,9 +251,9 @@ class InfoService(private val repo: Repository) {
         repo.allBooksByAuthor(authorId, page, pageSize)
 
     fun seriesByAuthorId(authorId: Long) = repo.seriesByAuthorId(authorId)
-    fun booksBySeriesAndAuthor(seriesName: String, authorId: Long) = repo.booksBySeriesAndAuthor(seriesName, authorId)
+    fun booksBySeriesAndAuthor(seriesName: Long, authorId: Long) = repo.booksBySeriesAndAuthor(seriesName, authorId)
     fun booksWithoutSeriesByAuthorId(authorId: Long) = repo.booksWithoutSeriesByAuthorId(authorId)
-    fun booksBySeriesName(name: String) = repo.booksBySeriesName(name)
+    fun booksBySeriesId(name: Int) = repo.booksBySeriesName(name)
     fun seriesNameStarts(prefix: String, trim: Boolean = true) = repo.seriesNameStarts(prefix, trim)
     fun genres(): List<Triple<Long, String, Int>> {
         return repo.genres()

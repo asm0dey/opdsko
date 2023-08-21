@@ -40,7 +40,7 @@ import kotlin.collections.set
 import kotlin.math.abs
 import kotlin.math.min
 
-private val String.encoded get() = this.replace("+", "%2b")
+private val String.encoded get() = this.encodeURLPath()
 
 
 class Api(application: Application) : AbstractDIController(application) {
@@ -289,7 +289,7 @@ class Api(application: Application) : AbstractDIController(application) {
 
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, pair) in namesWithDates) {
-                        navTile(name, "${pair.second} books", "/api/author/browse/$authorId/series/${name.encoded}")
+                        navTile(name.second, "${pair.second} books", "/api/author/browse/$authorId/series/${name.first}")
                     }
                 }
                 val y = breadCrumbs(
@@ -302,10 +302,10 @@ class Api(application: Application) : AbstractDIController(application) {
                 )
                 return@get smartHtml(call, x, y)
             }
-            get("/author/browse/{id}/series/{name}") {
+            get("/author/browse/{id}/series/{seqId}") {
                 val authorId = call.parameters["id"]!!.toLong()
-                val seriesName = URLDecoder.decode(call.parameters["name"]!!, UTF_8)
-                val books = info.booksBySeriesAndAuthor(seriesName, authorId)
+                val seqId = call.parameters["seqId"]!!.toLong()
+                val books = info.booksBySeriesAndAuthor(seqId, authorId)
                 val path = call.request.path()
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
@@ -320,7 +320,7 @@ class Api(application: Application) : AbstractDIController(application) {
                         "Library" to "/api",
                         "By Authors" to "/api/author/c",
                         authorName to "/api/author/browse/$authorId",
-                        seriesName to path,
+                        books.firstOrNull()?.sequence?.to(path),
                     )
                 )
                 return@get smartHtml(call, x, y)
@@ -330,11 +330,11 @@ class Api(application: Application) : AbstractDIController(application) {
                 val trim = nameStart.length < 5
                 val series = info.seriesNameStarts(nameStart, trim)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
-                    for ((name, countOrId, complete) in series) {
+                    for ((name, countOrId, complete, seqid) in series) {
                         if (!complete)
                             navTile(name, "$countOrId items inside", "/api/series/browse/${name.encoded}")
                         else
-                            navTile(name, "$countOrId items inside", "/api/series/item/${name.encoded}")
+                            navTile(name, "$countOrId items inside", "/api/series/item/$seqid")
                     }
                 }
                 val y = breadCrumbs(
@@ -346,11 +346,11 @@ class Api(application: Application) : AbstractDIController(application) {
                 )
                 return@get smartHtml(call, x, y)
             }
-            get("series/item/{name}") {
-                val name = call.parameters["name"]!!.decoded
+            get("series/item/{seqId}") {
+                val seqId = call.parameters["seqId"]!!.toInt()
                 val authorFilter = call.parameters["author"]?.toLongOrNull()
                 val sorting = call.request.queryParameters["sort"] ?: "num"
-                val books = info.booksBySeriesName(name)
+                val books = info.booksBySeriesId(seqId)
                 val sorted = when (sorting) {
                     "num" -> books.sortedBy { it.book.sequenceNumber ?: Int.MAX_VALUE }
                     "name" -> books.sortedBy { it.book.name!! }
@@ -368,7 +368,7 @@ class Api(application: Application) : AbstractDIController(application) {
                     breadCrumbs(
                         "Library" to "/api",
                         "Series" to "/api/series/browse",
-                        name to "/api/series/item/${name.encoded}"
+                        books.first().sequence to "/api/series/item/$seqId"
                     )
                 return@get smartHtml(call, x, y)
             }

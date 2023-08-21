@@ -196,16 +196,17 @@ class Opds(application: Application) : AbstractDIController(application) {
                             ), ContentType.parse(NAVIGATION_TYPE)
                         )
                     }
-                    get("/{id}/series/{name}") {
+                    get("/{id}/series/{seqId}") {
                         val authorId = call.parameters["id"]!!.toLong()
-                        val seriesName = URLDecoder.decode(call.parameters["name"]!!, StandardCharsets.UTF_8)
-                        val result = info.booksBySeriesAndAuthor(seriesName, authorId)
+                        val seqId = call.parameters["seqId"]!!.toLong()
+                        val result = info.booksBySeriesAndAuthor(seqId, authorId)
                         val path = call.request.path()
+                        val seqName = result.first().sequence
                         val xml = bookXml(
                             result,
                             path,
-                            seriesName,
-                            "author:$authorId:series:$seriesName"
+                            seqName,
+                            "author:$authorId:series:$seqName"
                         )
                         call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
 
@@ -236,7 +237,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                         "series:start:$nameStart",
                         if (nameStart.isEmpty()) "First letter of all series"
                         else "Series starting with $nameStart",
-                        entries = series.map { (name, count, complete) ->
+                        entries = series.map { (name, count, complete, seqId) ->
                             Entry(
                                 name,
                                 "series:start:$nameStart:$name",
@@ -244,7 +245,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                                 ZonedDateTime.now(),
                                 Entry.Link(
                                     "subsection",
-                                    if (complete) "/opds/series/item/${name.encoded}" else "/opds/series/browse/${name.encoded}",
+                                    if (complete) "/opds/series/item/${seqId}" else "/opds/series/browse/${name.encoded}",
                                     NAVIGATION_TYPE,
                                     count.toLong()
                                 )
@@ -252,12 +253,12 @@ class Opds(application: Application) : AbstractDIController(application) {
                         }
                     ), ContentType.parse(NAVIGATION_TYPE))
                 }
-                get("/item/{name}") {
+                get("/item/{seqId}") {
                     val path = call.request.path()
-                    val name = call.parameters["name"]!!.decoded
+                    val seqId = call.parameters["seqId"]!!.toInt()
                     val authorFilter = call.parameters["author"]?.toLongOrNull()
                     val sorting = call.request.queryParameters["sort"] ?: "num"
-                    val books = info.booksBySeriesName(name)
+                    val books = info.booksBySeriesId(seqId)
                     val allAuthors = books.flatMap { it.authors.map { it.buildName() to it.id } }.toSet()
                     val sorted = when (sorting) {
                         "num" -> books.sortedBy { it.book.sequenceNumber ?: Int.MAX_VALUE }
@@ -270,8 +271,8 @@ class Opds(application: Application) : AbstractDIController(application) {
                     val xml = bookXml(
                         filtered,
                         path,
-                        name,
-                        "series:$name",
+                        books.first().sequence,
+                        "series:$seqId",
                         sorted.maxOf { it.book.added }.z,
                         listOfNotNull(
                             Entry.Link(
@@ -296,7 +297,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                                     "http://opds-spec.org/facet",
                                     "$path?sort=$sorting&author=$id",
                                     ACQUISITION_TYPE,
-                                    title = "Only books in $name by $authorName",
+                                    title = "Only books in ${books.first().sequence} by $authorName",
                                     facetGroup = "Author",
                                     activeFacet = id == authorFilter
                                 )
@@ -591,7 +592,7 @@ class Opds(application: Application) : AbstractDIController(application) {
         } else null,
     )
 
-    private val String.encoded: String get() = URLEncoder.encode(this, StandardCharsets.UTF_8)
+    private val String.encoded: String get() = this.encodeURLPath()
 
     private fun authorStartEntries(items: List<Pair<String, Long>>, trim: Boolean, nameStart: String?) =
         items.map { (name, countOrId) ->
@@ -633,20 +634,20 @@ class Opds(application: Application) : AbstractDIController(application) {
         ),
     )
 
-    private fun authorSeries(namesWithDates: Map<String, Pair<LocalDateTime, Int>>, authorId: Long) =
+    private fun authorSeries(namesWithDates: Map<Pair<Int, String>, Pair<LocalDateTime, Int>>, authorId: Long) =
         namesWithDates.map { (name, dateAndCount) ->
             Entry(
-                name,
+                name.second,
                 listOf(
                     Entry.Link(
                         "subsection",
-                        "/opds/author/browse/$authorId/series/${name.encoded}",
+                        "/opds/author/browse/$authorId/series/${name.first}",
                         ACQUISITION_TYPE,
                         dateAndCount.second.toLong()
                     )
                 ),
-                "author:$authorId:series:$name",
-                "$name: $dateAndCount books",
+                "author:$authorId:series:${name.second}",
+                "${name.second}: $dateAndCount books",
                 dateAndCount.first.z
             )
         }

@@ -188,4 +188,19 @@ public class BookDao extends DAOImpl<BookRecord, io.github.asm0dey.opdsko.jooq.t
     public List<io.github.asm0dey.opdsko.jooq.tables.pojos.Book> fetchByZipFile(String... values) {
         return fetch(Book.BOOK.ZIP_FILE, values);
     }
+
+    /**
+     * Fetch records that have <code>seqid BETWEEN lowerInclusive AND
+     * upperInclusive</code>
+     */
+    public List<io.github.asm0dey.opdsko.jooq.tables.pojos.Book> fetchRangeOfSeqid(Integer lowerInclusive, Integer upperInclusive) {
+        return fetchRange(Book.BOOK.SEQID, lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * Fetch records that have <code>seqid IN (values)</code>
+     */
+    public List<io.github.asm0dey.opdsko.jooq.tables.pojos.Book> fetchBySeqid(Integer... values) {
+        return fetch(Book.BOOK.SEQID, values);
+    }
 }
