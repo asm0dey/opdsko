@@ -26,6 +26,8 @@ import io.github.asm0dey.opdsko.jooq.tables.interfaces.IBook
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
 import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
 import io.github.asm0dey.plugins.dtf
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 import net.lingala.zip4j.ZipFile
 import org.jooq.Record2
 import org.jooq.Record5
@@ -106,7 +108,11 @@ fun Long.humanReadable(): String {
     return String.format("%.1f %ciB", value / 1024.0, ci.current())
 }
 
-fun bookDescriptionsLonger(pathsByIds: List<Pair<Long, IBook>>): Map<Long, String?> {
+fun bookDescriptionsLonger(
+    pathsByIds: List<Pair<Long, IBook>>,
+    sequenceLinkBase: String = "/api/series/item/",
+    opds: Boolean = false
+): Map<Long, String?> {
     return pathsByIds
         .associate { (id, book) ->
             val file = File(book.path)
@@ -120,14 +126,36 @@ fun bookDescriptionsLonger(pathsByIds: List<Pair<Long, IBook>>): Map<Long, Strin
             }
             val elements = fb.description?.titleInfo?.annotation?.elements
             val descr = elements?.let { Element.getText(elements, "<br>") } ?: ""
-            val text = buildString {
-                append("<p><b>Size</b>: $size</p>")
-                seq?.let { append("<p><b>Series</b>: $it") }
-                seqNo?.let { append("#${it.toString().padStart(3, '0')}") }
-                append("</p>")
-                append(descr)
+            val text = createHTML(false).div {
+                p {
+                    b { +"Size" }
+                    +": $size"
+                }
+                seq?.let {
+                    p {
+                        b { +"Series" }
+                        +": "
+                        a {
+                            if (!opds) {
+                                at["_"] = "on click take .is-active from #modal wait 200ms then remove #modal"
+                                at["hx-trigger"] = "click"
+                                at["hx-get"] = "$sequenceLinkBase${book.seqid}"
+                                at["hx-target"] = "#layout"
+                                at["hx-push-url"] = "true"
+                            } else {
+                                href = "$sequenceLinkBase${book.seqid}"
+                            }
+                            +seq
+                        }
+                        seqNo?.let { +" #${it.toString().padStart(3, '0')}" }
+                    }
+                }
+                unsafe { +descr }
             }
             id to text
         }
 }
+
+val Tag.at
+    get() = attributes
 

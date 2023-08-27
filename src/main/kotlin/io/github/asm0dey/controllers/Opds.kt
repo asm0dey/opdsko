@@ -30,7 +30,6 @@ import org.kodein.di.instance
 import org.kodein.di.ktor.controller.AbstractDIController
 import org.redundent.kotlin.xml.*
 import java.net.URLDecoder
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
@@ -316,7 +315,7 @@ class Opds(application: Application) : AbstractDIController(application) {
         entryXml(
             book,
             info.imageTypes(listOf(book))[book.id],
-            bookDescriptionsLonger(listOf(book.id to book.book))[book.id],
+            bookDescriptionsLonger(listOf(book.id to book.book),"/opds/series/item")[book.id],
             info.shortDescriptions(listOf(book))[book.id],
             call.request.path()
         )

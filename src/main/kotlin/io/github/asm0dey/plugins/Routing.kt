@@ -76,13 +76,3 @@ fun Application.routes() {
         controller { Api(instance()) }
     }
 }
-
-
-@Suppress("SpellCheckingInspection")
-const val OPDSKO_JDBC = "jdbc:sqlite:opds.db"
-
-
-
-
-
-
