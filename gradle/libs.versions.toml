@@ -28,7 +28,7 @@ tinylog = "2.6.2"
 
 xmlutil = "0.86.1"
 
-flyway = "9.21.1"
+flyway = "9.21.2"
 ##  ⬆ = "9.21.2"
 
 kotlinx-serialization = "1.6.0"
