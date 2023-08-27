@@ -39,7 +39,10 @@ fun Application.ioc() {
         bindSingleton<DataSource> {
             val config = HikariConfig()
             config.poolName = "opdsko pool"
-            config.jdbcUrl = OPDSKO_JDBC
+            config.jdbcUrl = environment.config.propertyOrNull("db.url")?.getString()
+                ?: throw IllegalStateException("No db url defined")
+            config.username = environment.config.propertyOrNull("db.username")?.getString()
+            config.password = environment.config.propertyOrNull("db.password")?.getString()
             config.connectionTestQuery = "SELECT 1"
             config.maxLifetime = 60000
             config.idleTimeout = 45000

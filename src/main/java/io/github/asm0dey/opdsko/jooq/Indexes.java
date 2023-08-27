@@ -34,5 +34,6 @@ public class Indexes {
     public static final Index BOOK_GENRE_BOOK_ID = Internal.createIndex(DSL.name("book_genre_book_id"), BookGenre.BOOK_GENRE, new OrderField[] { BookGenre.BOOK_GENRE.BOOK_ID }, false);
     public static final Index BOOK_GENRE_GENRE_ID = Internal.createIndex(DSL.name("book_genre_genre_id"), BookGenre.BOOK_GENRE, new OrderField[] { BookGenre.BOOK_GENRE.GENRE_ID }, false);
     public static final Index BOOK_SEQ = Internal.createIndex(DSL.name("book_seq"), Book.BOOK, new OrderField[] { Book.BOOK.SEQUENCE }, false);
+    public static final Index BOOK_SEQUENCE_INDEX = Internal.createIndex(DSL.name("book_sequence_index"), Book.BOOK, new OrderField[] { Book.BOOK.SEQUENCE }, false);
     public static final Index GENRE_NAME = Internal.createIndex(DSL.name("genre_name"), Genre.GENRE, new OrderField[] { Genre.GENRE.NAME }, true);
 }

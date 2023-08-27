@@ -145,7 +145,7 @@ public class Book extends TableImpl<BookRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.BOOK_ADDED, Indexes.BOOK_SEQ);
+        return Arrays.asList(Indexes.BOOK_ADDED, Indexes.BOOK_SEQ, Indexes.BOOK_SEQUENCE_INDEX);
     }
 
     @Override

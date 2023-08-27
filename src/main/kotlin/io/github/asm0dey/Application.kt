@@ -31,7 +31,6 @@ import io.github.asm0dey.opdsko.jooq.tables.records.AuthorRecord
 import io.github.asm0dey.opdsko.jooq.tables.records.BookAuthorRecord
 import io.github.asm0dey.opdsko.jooq.tables.records.BookGenreRecord
 import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
-import io.github.asm0dey.plugins.OPDSKO_JDBC
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 import net.lingala.zip4j.ZipFile
@@ -50,10 +49,11 @@ import javax.xml.namespace.QName
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events.StartElement
 import kotlin.collections.set
+import kotlin.concurrent.thread
 import kotlin.io.path.Path
 import kotlin.io.path.setPosixFilePermissions
 
-const val FB2C_VERSION = "v1.70.0"
+const val FB2C_VERSION = "v1.71.0"
 
 val genreNames = genreNames()
 var epubConverterAccessible = true
@@ -81,66 +81,67 @@ val os by lazy {
 }
 
 fun main(args: Array<String>) {
-    Flyway.configure().mixed(true).dataSource(OPDSKO_JDBC, null, null).load().migrate()
-    val osArch = System.getProperty("os.arch").lowercase()
-    val arch = if (os != null) {
-        when {
-            osArch.contains("64") -> when (os) {
-                "linux" -> "_amd64"
-                "win" -> "64"
-                "darwin" -> "amd64"
-                else -> error("Unsupported platform")
-            }
+    thread {
+        val osArch = System.getProperty("os.arch").lowercase()
+        val arch = if (os != null) {
+            when {
+                osArch.contains("64") -> when (os) {
+                    "linux" -> "_amd64"
+                    "win" -> "64"
+                    "darwin" -> "amd64"
+                    else -> error("Unsupported platform")
+                }
 
-            osArch.contains("86") -> when (os) {
-                "linux" -> "_i386"
-                "win" -> "32"
-                else -> error("Unsupported platform")
-            }
+                osArch.contains("86") -> when (os) {
+                    "linux" -> "_i386"
+                    "win" -> "32"
+                    else -> error("Unsupported platform")
+                }
 
-            else -> {
-                epubConverterAccessible = false
-                null
+                else -> {
+                    epubConverterAccessible = false
+                    null
+                }
             }
-        }
-    } else null
-    if (arch != null) {
-        val targetFile = "fb2c_$FB2C_VERSION.zip"
-        if (!File(targetFile).exists()) {
-            println(
-                "It seems that there is no archive of fb2c next to the executable,\n" +
-                        "downloading it…"
-            )
-            downloadFile(
-                URL("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$os$arch.zip"),
-                targetFile
-            )
-            println(
-                """Downloaded db2c archive.
+        } else null
+        if (arch != null) {
+            val targetFile = "fb2c_$FB2C_VERSION.zip"
+            if (!File(targetFile).exists()) {
+                println(
+                    "It seems that there is no archive of fb2c next to the executable,\n" +
+                            "downloading it…"
+                )
+                downloadFile(
+                    URL("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$os$arch.zip"),
+                    targetFile
+                )
+                println(
+                    """Downloaded db2c archive.
                 |Unpacking…
             """.trimMargin()
-            )
-        }
-        ZipFile(targetFile).use {
-            val myHeader = it.fileHeaders.first { it.fileName.startsWith("fb2c") }
-            it.extractFile(
-                myHeader,
-                it.file.absoluteFile.parentFile.absolutePath,
-                myHeader.fileName.substringAfter('/')
-            )
-            posixSetAccessible(myHeader.fileName)
-        }
-        if (!File("fb2c.conf.toml").exists())
-            Application::class.java.classLoader.getResourceAsStream("fb2c.conf.toml")?.buffered()?.use { inp ->
-                FileOutputStream("fb2c.conf.toml").buffered().use { out ->
-                    inp.copyTo(out)
-                }
-                posixSetAccessible("fb2c.conf.toml")
-
+                )
             }
-        println("Unpacked. Resuming application launch.")
+            ZipFile(targetFile).use {
+                val myHeader = it.fileHeaders.first { it.fileName.startsWith("fb2c") }
+                it.extractFile(
+                    myHeader,
+                    it.file.absoluteFile.parentFile.absolutePath,
+                    myHeader.fileName.substringAfter('/')
+                )
+                posixSetAccessible(myHeader.fileName)
+            }
+            if (!File("fb2c.conf.toml").exists())
+                Application::class.java.classLoader.getResourceAsStream("fb2c.conf.toml")?.buffered()?.use { inp ->
+                    FileOutputStream("fb2c.conf.toml").buffered().use { out ->
+                        inp.copyTo(out)
+                    }
+                    posixSetAccessible("fb2c.conf.toml")
+
+                }
+            println("Unpacked. Resuming application launch.")
 
 
+        }
     }
     EngineMain.main(args)
 }
@@ -153,6 +154,11 @@ private fun posixSetAccessible(fileName: String) = try {
 @Suppress("UnusedReceiverParameter", "unused")
 fun Application.main() {
     initDb()
+    Flyway.configure().mixed(true).dataSource(
+        environment.config.propertyOrNull("db.url")?.getString() ?: throw IllegalStateException("No db url defined"),
+        environment.config.propertyOrNull("db.username")?.getString(),
+        environment.config.propertyOrNull("db.password")?.getString()
+    ).load().migrate()
 }
 
 private fun initDb() {
