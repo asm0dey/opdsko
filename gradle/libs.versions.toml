@@ -16,7 +16,7 @@ org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.
 
 kotlin = "1.9.10"
 
-ktor = "2.3.3"
+ktor = "2.3.4"
 
 kodein-di = "7.20.2"
 
