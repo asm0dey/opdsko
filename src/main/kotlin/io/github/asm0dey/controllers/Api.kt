@@ -435,7 +435,7 @@ class Api(application: Application) : AbstractDIController(application) {
         images: Map<Long, String?>,
         descriptionsShort: Map<Long, String?>
     ) {
-        div("tile is-parent is-3") {
+        div("tile is-parent is-4") {
             div("tile is-child") {
                 div("card") {
                     div("card-header") {

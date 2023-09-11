@@ -199,9 +199,8 @@ class Repository(val create: DSLContext) {
                 if (trim) substring(fullName, 1, prefix.length + 1)
                 else fullName).`as`("term")
         val second = (if (trim) count(AUTHOR.ID).cast(Long::class.java) else AUTHOR.ID).`as`("number")
-        return create.selectDistinct(
-            toSelect, second
-        )
+        return create
+            .selectDistinct(toSelect, second)
             .from(AUTHOR)
             .where(toSelect.isNotNull, toSelect.ne(""), toSelect.startsWith(prefix))
             .groupBy(toSelect)

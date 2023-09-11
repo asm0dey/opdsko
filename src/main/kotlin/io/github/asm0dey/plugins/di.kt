@@ -47,7 +47,13 @@ fun Application.ioc() {
             config.maxLifetime = 60000
             config.idleTimeout = 45000
             config.maximumPoolSize = 3
-            HikariDataSource(config)
+            HikariDataSource(config).also {
+                it.connection.use {
+                    it.prepareStatement("PRAGMA trusted_schema=1;").use {
+                        it.execute()
+                    }
+                }
+            }
         }
         bindSingleton {
             DSL.using(instance<DataSource>(), SQLDialect.SQLITE).apply {

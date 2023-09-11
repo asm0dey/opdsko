@@ -246,7 +246,11 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
                     genres = fb.genres
                 )
             }
-            updateSequenceIds(txConfig)
+            try {
+                updateSequenceIds(txConfig)
+            } catch (e: Exception) {
+                Logger.error(e) { "Error while updating sequence ids" }
+            }
         }
         return
     }
@@ -310,16 +314,18 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
 
 private fun updateSequenceIds(txConfig: Configuration) {
     val tr = using(txConfig)
-    val names = selectDistinct(BOOK.SEQUENCE)
+    val names = selectDistinct(BOOK.SEQUENCE.`as`("seqname"))
         .from(BOOK)
         .where(BOOK.SEQUENCE.isNotNull)
         .orderBy(BOOK.SEQUENCE)
-    val numbers = select(rowNumber().over(), names.field(0, String::class.java))
+        .asTable("names")
+    val numbers = select(rowNumber().over().`as`("seqrow"), names.field("seqname")!!.`as`("seqname"))
         .from(names)
+        .asTable("numbers")
     tr.update(BOOK)
-        .set(BOOK.SEQID, numbers.field(0, Int::class.javaObjectType))
+        .set(BOOK.SEQID, numbers.field("seqrow", Int::class.javaObjectType))
         .from(numbers)
-        .where(BOOK.SEQUENCE.eq(numbers.field(2, String::class.java)))
+        .where(BOOK.SEQUENCE.eq(numbers.field("seqname", String::class.java)))
         .execute()
 }
 
