@@ -26,7 +26,7 @@ netty-tcnative = "2.0.61.Final"
 
 tinylog = "2.6.2"
 
-xmlutil = "0.86.1"
+xmlutil = "0.86.2"
 
 flyway = "9.22.0"
 
