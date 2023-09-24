@@ -65,7 +65,7 @@ slf4j-tinylog = { group = "org.tinylog", name = "slf4j-tinylog", version.ref = "
 
 tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }
 
-htmx-org = "org.webjars.npm:htmx.org:1.9.5"
+htmx-org = "org.webjars.npm:htmx.org:1.9.6"
 
 hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.11"
 
