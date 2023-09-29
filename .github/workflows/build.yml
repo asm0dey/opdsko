@@ -30,7 +30,7 @@ jobs:
         java-version: '18'
         distribution: 'temurin'
     - name: Build with Gradle
-      uses: gradle/gradle-build-action@3122f2c659b52a78671a7862f5bc93f72823bb43
+      uses: gradle/gradle-build-action@d1b726d8c1e0cc120447ad1a950d6e6794c51ad8
       with:
         arguments: build
     - name: Release
