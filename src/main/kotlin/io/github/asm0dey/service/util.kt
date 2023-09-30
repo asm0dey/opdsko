@@ -111,7 +111,7 @@ fun Long.humanReadable(): String {
 fun bookDescriptionsLonger(
     pathsByIds: List<Pair<Long, IBook>>,
     sequenceLinkBase: String = "/api/series/item/",
-    opds: Boolean = false
+    htmx: Boolean = true
 ): Map<Long, String?> {
     return pathsByIds
         .associate { (id, book) ->
@@ -136,7 +136,7 @@ fun bookDescriptionsLonger(
                         b { +"Series" }
                         +": "
                         a {
-                            if (!opds) {
+                            if (htmx) {
                                 at["_"] = "on click take .is-active from #modal wait 200ms then remove #modal"
                                 at["hx-trigger"] = "click"
                                 at["hx-get"] = "$sequenceLinkBase${book.seqid}"

@@ -187,14 +187,14 @@ class InfoService(private val repo: Repository) {
         }
         val source = if (archive == null) path
         else {
-            val zip = ZipFile(archive)
-            val header = zip.getFileHeader(path)
-            val tmpFile = withContext(Dispatchers.IO) {
-                File.createTempFile("conv", ".fb2")
+            withContext(Dispatchers.IO) {
+                val zip = ZipFile(archive)
+                val header = zip.getFileHeader(path)
+                val tmpFile = File.createTempFile("conv", ".fb2")
+                tmpFile.delete()
+                zip.extractFile(header, tmpFile.parent, tmpFile.name)
+                tmpFile.absolutePath
             }
-            tmpFile.delete()
-            zip.extractFile(header, tmpFile.parent, tmpFile.name)
-            tmpFile.absolutePath
         }
         val executable = "./fb2c".takeIf { File(it).exists() } ?: "fb2c.exe"
         process(

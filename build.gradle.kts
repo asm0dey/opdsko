@@ -1,6 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jooq.meta.jaxb.ForcedType
 import org.jooq.meta.jaxb.Logging
-import java.nio.file.Paths
 
 plugins {
     java
@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.nu.studer.jooq)
     alias(libs.plugins.org.flywaydb.flyway)
     alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
+    alias(libs.plugins.graalvm)
 }
 
 group = "io.github.asm0dey"
@@ -66,6 +67,7 @@ dependencies {
     implementation(libs.jooq.kotlin)
     implementation(libs.sqlite.jdbc)
     jooqGenerator(libs.sqlite.jdbc)
+    nativeImageClasspath(libs.sqlite.jdbc)
     // utils
     implementation(libs.commons.codec)
     implementation(libs.kotlin.process)
@@ -97,10 +99,17 @@ configure<SourceSetContainer> {
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(20))
+    }
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
     }
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
 val jooqDb = mapOf("url" to "jdbc:sqlite:$projectDir/build/db/opds.db")
 
 flyway {
@@ -192,3 +201,17 @@ jooq {
 val generateJooq by project.tasks
 generateJooq.dependsOn(tasks.flywayMigrate)
 //generateJooq.doLast { File("$projectDir/build/db/opds.db").delete() }
+graalvmNative {
+    agent {
+        enabled.set(true)
+    }
+    toolchainDetection.set(true)
+    binaries {
+        named("main") {
+            imageName.set("opdsko")
+            verbose.set(true)
+            fallback.set(false)
+            useFatJar.set(true)
+        }
+    }
+}

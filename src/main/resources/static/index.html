@@ -12,7 +12,7 @@
 <nav class="navbar is-black" hx-boost="true">
     <div class="container">
         <div class="navbar-brand">
-            <a class="navbar-item brand-text" hx-get="/api" hx-target="#layout">Asm0dey's library</a>
+            <a class="navbar-item brand-text" hx-get="/api" hx-target="#layout" href="/api">Asm0dey's library</a>
         </div>
     </div>
 </nav>
@@ -21,7 +21,7 @@
     <div class="section" hx-boost="true">
         <div class="field has-addons">
             <div class="control has-icons-left is-expanded">
-                <input class="input" type="text" name="search" placeholder="Search" hx-trigger="keyup[keyCode === 13]"
+                <input class="input" type="text" name="search" id="search" placeholder="Search" hx-trigger="keyup[keyCode === 13]"
                        hx-get="/api/search" hx-target="#layout">
                 <span class="icon is-small is-left">
                       <i class="fas fa-search"></i>

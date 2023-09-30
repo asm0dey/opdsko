@@ -1,65 +1,40 @@
-/*
- * opdsko
- * Copyright (C) 2022  asm0dey
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 package io.github.asm0dey.controllers
 
 import io.github.asm0dey.epubConverterAccessible
 import io.github.asm0dey.service.*
 import io.ktor.http.*
-import io.ktor.http.ContentType.Text.Html
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.routing.get
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.kodein.di.instance
 import org.kodein.di.ktor.controller.AbstractDIController
 import java.net.URI
 import java.net.URLDecoder
-import java.nio.charset.StandardCharsets.UTF_8
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
+import java.nio.charset.StandardCharsets
 import kotlin.math.abs
 import kotlin.math.min
 
-val String.encoded get() = this.encodeURLPath()
-
-
-class Api(application: Application) : AbstractDIController(application) {
+class Simple(app: Application) : AbstractDIController(app) {
     private val info by instance<InfoService>()
     override fun Route.getRoutes() {
-        route("/api") {
+        route("/simple") {
             get {
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
-                    navTile("New books", "Recent publications from this catalog", "/api/new")
-                    navTile("Books by series", "Authors by first letters", "/api/series/browse")
-                    navTile("Books by author", "Series by first letters", "/api/author/c")
-                    navTile("Genres", "Books by genres", "/api/genre")
+                    navTile("New books", "Recent publications from this catalog", "/simple/new")
+                    navTile("Books by series", "Authors by first letters", "/simple/series/browse")
+                    navTile("Books by author", "Series by first letters", "/simple/author/c")
+                    navTile("Genres", "Books by genres", "/simple/genre")
                 }
-                return@get smartHtml(call, x, breadCrumbs("Library" to "/api"))
+                return@get call.respondHtml { fullHtml(breadCrumbs("Library" to "/simple"), x, pagination(1, 1, "")) }
 
             }
             get("/search") {
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                val searchTerm = URLDecoder.decode(call.request.queryParameters["search"]!!, UTF_8)
+                val searchTerm = URLDecoder.decode(call.request.queryParameters["search"]!!, StandardCharsets.UTF_8)
                 val (books, _, total) = info.searchBookByText(searchTerm, page - 1)
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
@@ -70,12 +45,12 @@ class Api(application: Application) : AbstractDIController(application) {
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "Search: $searchTerm" to "/api/search?search=${searchTerm.encoded}",
+                        "Library" to "/simple",
+                        "Search: $searchTerm" to "/simple/search?search=${searchTerm.encoded}",
                     )
                 )
-                val z = pagination(page, total, "/api/search?search=${searchTerm.encoded}")
-                return@get smartHtml(call, x, y, z)
+                val z = pagination(page, total, "/simple/search?search=${searchTerm.encoded}")
+                return@get call.respondHtml { fullHtml(y, x, z) }
             }
             get("/new") {
                 val books = info.latestBooks().map { BookWithInfo(it) }
@@ -88,31 +63,31 @@ class Api(application: Application) : AbstractDIController(application) {
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "New" to "/api/new",
+                        "Library" to "/simple",
+                        "New" to "/simple/new",
                     )
                 )
-                return@get smartHtml(call, x, y)
+                return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
 
             }
             get("/author/c/{name?}") {
-                val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", UTF_8)
+                val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", StandardCharsets.UTF_8)
                 val trim = nameStart.length < 5
                 val items = info.authorNameStarts(nameStart, trim)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, countOrId) in items) {
-                        if (trim) navTile(name, "$countOrId items inside", "/api/author/c/${name.encoded}")
-                        else navTile(name, "Books by $name", "/api/author/browse/$countOrId")
+                        if (trim) navTile(name, "$countOrId items inside", "/simple/author/c/${name.encoded}")
+                        else navTile(name, "Books by $name", "/simple/author/browse/$countOrId")
                     }
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "By Authors" to "/api/author/c",
-                        if (trim && nameStart.isNotBlank()) nameStart to "/api/author/c/${nameStart.encoded}" else null
+                        "Library" to "/simple",
+                        "By Authors" to "/simple/author/c",
+                        if (trim && nameStart.isNotBlank()) nameStart to "/simple/author/c/${nameStart.encoded}" else null
                     )
                 )
-                return@get smartHtml(call, x, y)
+                return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
             get("/author/browse/{id}") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -123,55 +98,55 @@ class Api(application: Application) : AbstractDIController(application) {
                         navTile(
                             "By series",
                             "All books by $authorName in series",
-                            "/api/author/browse/$authorId/series"
+                            "/simple/author/browse/$authorId/series"
                         )
                     if (inseries > 0 && out > 0)
                         navTile(
                             "Out of series",
                             "All books by $authorName out of series",
-                            "/api/author/browse/$authorId/out"
+                            "/simple/author/browse/$authorId/out"
                         )
                     navTile(
                         "All books",
                         "All books by $authorName alphabetically",
-                        "/api/author/browse/$authorId/all"
+                        "/simple/author/browse/$authorId/all"
                     )
 
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "By Authors" to "/api/author/c",
-                        authorName to "/api/author/browse/$authorId"
+                        "Library" to "/simple",
+                        "By Authors" to "/simple/author/c",
+                        authorName to "/simple/author/browse/$authorId"
                     )
                 )
-                return@get smartHtml(call, x, y)
+                return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
             route("/genre") {
                 get {
                     val genres = info.genres()
                     val x = createHTML(false).div("tile is-parent columns is-multiline") {
                         for ((id, genre, count) in genres) {
-                            navTile(genre, "$count items", "/api/genre/$id")
+                            navTile(genre, "$count items", "/simple/genre/$id")
                         }
                     }
-                    val y = breadCrumbs("Library" to "/api", "By Authors" to "/api/genre")
-                    return@get smartHtml(call, x, y)
+                    val y = breadCrumbs("Library" to "/simple", "By Authors" to "/simple/genre")
+                    return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
                 }
                 route("/{id}") {
                     get {
                         val genreId = call.parameters["id"]?.toLong()!!
                         val genreName = info.genreName(genreId) ?: return@get call.respond(HttpStatusCode.NotFound)
                         val x = createHTML(false).div("tile is-parent columns is-multiline") {
-                            navTile("Authors", "Books in genre by author", "/api/genre/$genreId/author")
-                            navTile("All", "All books in genre", "/api/genre/$genreId/all")
+                            navTile("Authors", "Books in genre by author", "/simple/genre/$genreId/author")
+                            navTile("All", "All books in genre", "/simple/genre/$genreId/all")
                         }
                         val y = breadCrumbs(
-                            "Library" to "/api",
-                            "By Genre" to "/api/genre",
-                            genreName to "/api/genre/$genreId"
+                            "Library" to "/simple",
+                            "By Genre" to "/simple/genre",
+                            genreName to "/simple/genre/$genreId"
                         )
-                        return@get smartHtml(call, x, y)
+                        return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
                     }
                     get("/all") {
                         val genreId = call.parameters["id"]?.toLong()!!
@@ -186,13 +161,13 @@ class Api(application: Application) : AbstractDIController(application) {
                             }
                         }
                         val y = breadCrumbs(
-                            "Library" to "/api",
-                            "By Genre" to "/api/genre",
-                            genreName to "/api/genre/$genreId",
-                            "All books" to "/api/genre/$genreId/all",
+                            "Library" to "/simple",
+                            "By Genre" to "/simple/genre",
+                            genreName to "/simple/genre/$genreId",
+                            "All books" to "/simple/genre/$genreId/all",
                         )
-                        val z = pagination(page, total, "/api/genre/$genreId/all")
-                        return@get smartHtml(call, x, y, z)
+                        val z = pagination(page, total, "/simple/genre/$genreId/all")
+                        return@get call.respondHtml { fullHtml(y, x, z) }
                     }
                     route("/author") {
                         get {
@@ -201,16 +176,16 @@ class Api(application: Application) : AbstractDIController(application) {
                             val genreAuthors = info.genreAuthors(genreId)
                             val x = createHTML(false).div("tile is-parent columns is-multiline") {
                                 for ((id, name) in genreAuthors) {
-                                    navTile(name, "Books in $genreName by $name", "/api/genre/$genreId/author/$id")
+                                    navTile(name, "Books in $genreName by $name", "/simple/genre/$genreId/author/$id")
                                 }
                             }
                             val y = breadCrumbs(
-                                "Library" to "/api",
-                                "By Genre" to "/api/genre",
-                                genreName to "/api/genre/$genreId",
-                                "By Author" to "/api/genre/$genreId/author",
+                                "Library" to "/simple",
+                                "By Genre" to "/simple/genre",
+                                genreName to "/simple/genre/$genreId",
+                                "By Author" to "/simple/genre/$genreId/author",
                             )
-                            return@get smartHtml(call, x, y)
+                            return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
                         }
                         get("/{aid}") {
                             val genreId = call.parameters["id"]?.toLong()!!
@@ -225,13 +200,13 @@ class Api(application: Application) : AbstractDIController(application) {
                                 }
                             }
                             val y = breadCrumbs(
-                                "Library" to "/api",
-                                "By Genre" to "/api/genre",
-                                genreName to "/api/genre/$genreId",
-                                "By Author" to "/api/genre/$genreId/author",
-                                authorName to "/api/genre/$genreId/author/$authorId",
+                                "Library" to "/simple",
+                                "By Genre" to "/simple/genre",
+                                genreName to "/simple/genre/$genreId",
+                                "By Author" to "/simple/genre/$genreId/author",
+                                authorName to "/simple/genre/$genreId/author/$authorId",
                             )
-                            return@get smartHtml(call, x, y)
+                            return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
                         }
                     }
                 }
@@ -250,14 +225,14 @@ class Api(application: Application) : AbstractDIController(application) {
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "By Authors" to "/api/author/c",
-                        authorName to "/api/author/browse/$authorId",
-                        "All books" to "/api/author/browse/$authorId/all"
+                        "Library" to "/simple",
+                        "By Authors" to "/simple/author/c",
+                        authorName to "/simple/author/browse/$authorId",
+                        "All books" to "/simple/author/browse/$authorId/all"
                     )
                 )
-                val z = pagination(page, total, "/api/author/browse/$authorId/all")
-                return@get smartHtml(call, x, y, z)
+                val z = pagination(page, total, "/simple/author/browse/$authorId/all")
+                return@get call.respondHtml { fullHtml(y, x, z) }
             }
             get("/author/browse/{id}/out") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -273,13 +248,13 @@ class Api(application: Application) : AbstractDIController(application) {
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "By Authors" to "/api/author/c",
-                        authorName to "/api/author/browse/$authorId",
-                        "Out of series" to "/api/author/browse/$authorId/out"
+                        "Library" to "/simple",
+                        "By Authors" to "/simple/author/c",
+                        authorName to "/simple/author/browse/$authorId",
+                        "Out of series" to "/simple/author/browse/$authorId/out"
                     )
                 )
-                return@get smartHtml(call, x, y)
+                return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
             get("/author/browse/{id}/series") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -289,18 +264,22 @@ class Api(application: Application) : AbstractDIController(application) {
 
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, pair) in namesWithDates) {
-                        navTile(name.second, "${pair.second} books", "/api/author/browse/$authorId/series/${name.first}")
+                        navTile(
+                            name.second,
+                            "${pair.second} books",
+                            "/simple/author/browse/$authorId/series/${name.first}"
+                        )
                     }
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "By Authors" to "/api/author/c",
-                        authorName to "/api/author/browse/$authorId",
+                        "Library" to "/simple",
+                        "By Authors" to "/simple/author/c",
+                        authorName to "/simple/author/browse/$authorId",
                         "Series" to path
                     )
                 )
-                return@get smartHtml(call, x, y)
+                return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
             get("/author/browse/{id}/series/{seqId}") {
                 val authorId = call.parameters["id"]!!.toLong()
@@ -317,13 +296,13 @@ class Api(application: Application) : AbstractDIController(application) {
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "By Authors" to "/api/author/c",
-                        authorName to "/api/author/browse/$authorId",
+                        "Library" to "/simple",
+                        "By Authors" to "/simple/author/c",
+                        authorName to "/simple/author/browse/$authorId",
                         books.firstOrNull()?.sequence?.to(path),
                     )
                 )
-                return@get smartHtml(call, x, y)
+                return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
             get("series/browse/{name?}") {
                 val nameStart = (call.parameters["name"] ?: "").decoded
@@ -332,19 +311,19 @@ class Api(application: Application) : AbstractDIController(application) {
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, countOrId, complete, seqid) in series) {
                         if (!complete)
-                            navTile(name, "$countOrId items inside", "/api/series/browse/${name.encoded}")
+                            navTile(name, "$countOrId items inside", "/simple/series/browse/${name.encoded}")
                         else
-                            navTile(name, "$countOrId items inside", "/api/series/item/$seqid")
+                            navTile(name, "$countOrId items inside", "/simple/series/item/$seqid")
                     }
                 }
                 val y = breadCrumbs(
                     listOfNotNull(
-                        "Library" to "/api",
-                        "By Series" to "/api/series/browse",
-                        if (trim && nameStart.isNotBlank()) nameStart to "/api/series/browse/${nameStart.encoded}" else null
+                        "Library" to "/simple",
+                        "By Series" to "/simple/series/browse",
+                        if (trim && nameStart.isNotBlank()) nameStart to "/simple/series/browse/${nameStart.encoded}" else null
                     )
                 )
-                return@get smartHtml(call, x, y)
+                return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
             get("series/item/{seqId}") {
                 val seqId = call.parameters["seqId"]!!.toInt()
@@ -366,11 +345,11 @@ class Api(application: Application) : AbstractDIController(application) {
                 }
                 val y =
                     breadCrumbs(
-                        "Library" to "/api",
-                        "Series" to "/api/series/browse",
-                        books.first().sequence to "/api/series/item/$seqId"
+                        "Library" to "/simple",
+                        "Series" to "/simple/series/browse",
+                        books.first().sequence to "/simple/series/item/$seqId"
                     )
-                return@get smartHtml(call, x, y)
+                return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
             get("/book/{id}/info") {
                 val bookId = call.parameters["id"]!!.toLong()
@@ -378,255 +357,58 @@ class Api(application: Application) : AbstractDIController(application) {
                 val descrHtml = bookDescriptionsLonger(listOf(bookId to book.book))[bookId]
                 val hasImage = info.imageTypes(listOf(book))[bookId] != null
                 val x = modalContent(book, hasImage, descrHtml)
-                call.respondText(x, Html)
+                call.respondText(x, ContentType.Text.Html)
             }
             get("/book/{id}/image") {
                 val bookId = call.parameters["id"]!!.toLong()
                 val x = modalImageContent("/opds/image/$bookId")
-                call.respondText(x, Html)
-            }
-        }
-
-    }
-
-    private fun modalImageContent(imageUrl: String): String {
-        val closeModalScript = "on click take .is-active from #modal wait 200ms then remove #modal"
-        return createHTML(false).div("modal") {
-            id = "modal"
-            div("modal-background") {
-                attributes["_"] = closeModalScript
-            }
-            div("modal-content is-clipped") {
-                p("image") {
-                    img(src = imageUrl)
-                }
-            }
-            button(classes = "modal-close is-large") {
-                attributes["aria-label"] = "close"
-                attributes["_"] = closeModalScript
+                call.respondText(x, ContentType.Text.Html)
             }
         }
     }
 
-
-    private suspend fun smartHtml(
-        call: ApplicationCall,
-        content: String,
-        breadcrumbs: String,
-        pagination: String = pagination(1, 1, "")
-    ) =
-        if (call.request.headers["HX-Request"] == "true") call.respondText(
-            content + breadcrumbs + pagination,
-            Html
-        )
-        else call.respondHtml { fullHtml(breadcrumbs, content, pagination) }
-
-    private fun DIV.bookTile(
-        bookWithInfo: BookWithInfo,
-        images: Map<Long, String?>,
-        descriptionsShort: Map<Long, String?>
-    ) {
-        div("tile is-parent is-4") {
-            div("tile is-child") {
-                div("card") {
-                    div("card-header") {
-                        p("card-header-title") {
-                            +bookWithInfo.book.name
-                        }
-                    }
-                    if (images[bookWithInfo.id] != null) {
-                        div("card-image") {
-                            figure("image") {
-                                a {
-                                    attributes["hx-get"] = "/api/book/${bookWithInfo.id}/image"
-                                    attributes["hx-target"] = "#modal-cont"
-                                    attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
-                                    img(src = "/opds/image/${bookWithInfo.id}") {
-                                        attributes["loading"] = "lazy"
+    private fun BODY.navbar() {
+        script {
+            unsafe {
+                +("""function addFontSize(addPx){
+                                      html = document.querySelector('html');
+                                      currentSize = parseFloat(window.getComputedStyle(html, null)
+                                        .getPropertyValue('font-size'));
+                                      html.style.fontSize = (currentSize + addPx) + 'px';
                                     }
-                                }
-                            }
-                        }
-                    }
-                    div("card-content") {
-                        div("content") {
-                            text((descriptionsShort[bookWithInfo.id]?.let {
-                                it.substring(0 until min(it.length, 200))
-                            }?.plus('…') ?: ""))
-                        }
-                    }
-                    footer("card-footer mb-0 pb-0 is-align-items-self-end") {
-                        a(classes = "card-footer-item") {
-                            attributes["hx-get"] = "/api/book/${bookWithInfo.id}/info"
-                            attributes["hx-target"] = "#modal-cont"
-                            attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
-                            +"Info"
-                        }
-                        if (!epubConverterAccessible)
-                            a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"Download" }
-                        else {
-                            a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"fb2" }
-                            a("/opds/book/${bookWithInfo.id}/download/epub", classes = "card-footer-item") { +"epub" }
-                        }
-                    }
-                }
-
+                                    """.trimIndent())
             }
         }
-    }
-
-    private fun breadCrumbs(vararg items: Pair<String, String>) = breadCrumbs(items.toList())
-
-    private fun breadCrumbs(items: List<Pair<String, String>>) = createHTML(false).div {
-        attributes["hx-swap-oob"] = "innerHTML:.breadcrumb"
-        ul {
-            items.forEachIndexed { index, pair ->
-                val (name, href) = pair
-                li(if (index == items.size - 1) "is-active" else null) {
+        nav {
+            ul {
+                li { +"Library" }
+                li {
                     a {
-                        layoutUpdateAttributes(href)
-                        +name
+                        onClick = "addFontSize(1)"
+                        +"A+"
+                    }
+                    +"|"
+                    a {
+                        onClick = "addFontSize(-1)"
+                        +"ᴀ-"
                     }
                 }
             }
         }
     }
 
-    private fun pagination(curPage: Int, total: Int, base: String) = createHTML(false).div {
-        fun String.withParam(param: String) = if (URI(this).query == null) "${this}?$param" else "${this}&$param"
-        val last = total / 50 + 1
-        attributes["hx-swap-oob"] = "innerHTML:.navv"
-        if (curPage == 1 && total / 50 + 1 == 1) div()
-        else
-            nav {
-                classes = setOf("pagination", "is-centered")
-                role = "navigation"
-                a {
-                    classes = setOfNotNull("pagination-previous", if (curPage == 1) "is-disabled" else null)
-                    if (curPage != 1) {
-                        attributes["hx-trigger"] = "click"
-                        attributes["hx-get"] = base.withParam("page=${curPage - 1}")
-                        attributes["hx-target"] = "#layout"
-                        attributes["hx-push-url"] = "true"
-                    }
-                    +"Previous page"
-                }
-                a {
-                    classes = setOfNotNull("pagination-next", if (curPage == last) "is-disabled" else null)
-                    if (curPage != last) {
-                        attributes["hx-trigger"] = "click"
-                        attributes["hx-get"] = base.withParam("page=${curPage + 1}")
-                        attributes["hx-target"] = "#layout"
-                        attributes["hx-push-url"] = "true"
-                    }
-                    +"Next page"
-                }
-                ul("pagination-list") {
-                    val pageToDraw = (1..last).map {
-                        it to (it == 1 || it == last || abs(curPage - it) <= 1)
-                    }
-                    val realToDraw = pageToDraw.fold(listOf<Pair<Int, Boolean>>()) { a, b ->
-                        if (b.second) a + b
-                        else if (a.last().second) a + (-1 to false)
-                        else a
-                    }
-                    for ((page, draw) in realToDraw) {
-                        if (!draw) {
-                            li {
-                                span {
-                                    classes = setOf("pagination-ellipsis")
-                                    +"…"
-                                }
-                            }
-                        } else {
-                            li {
-                                a {
-                                    classes =
-                                        setOfNotNull("pagination-link", if (curPage == page) "is-current" else null)
-                                    attributes["hx-trigger"] = "click"
-                                    attributes["hx-get"] = base.withParam("page=$page")
-                                    attributes["hx-target"] = "#layout"
-                                    attributes["hx-push-url"] = "true"
-                                    +(page.toString())
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    private fun HTML.head() {
+        head {
+            link("https://unpkg.com/awsm.css/dist/awsm.min.css", rel = "stylesheet")
+        }
     }
 
-    private fun HTMLTag.layoutUpdateAttributes(href: String) {
-        attributes["hx-trigger"] = "click"
-        attributes["hx-get"] = href
-        attributes["hx-target"] = "#layout"
-        attributes["hx-push-url"] = "true"
-    }
-
-    private fun modalContent(
-        book: BookWithInfo,
-        hasImage: Boolean,
-        descrHtml: String?
-    ): String {
-        val closeModalScript = "on click take .is-active from #modal wait 200ms then remove #modal"
-        return createHTML(false).div("modal") {
-            id = "modal"
-            div("modal-background") {
-                attributes["_"] = closeModalScript
-            }
-            div("modal-card") {
-                header("modal-card-head") {
-                    p("modal-card-title") {
-                        +book.book.name
-                    }
-                    button(classes = "delete") {
-                        attributes["aria-label"] = "close"
-                        attributes["_"] = closeModalScript
-                    }
-                }
-                section("modal-card-body") {
-                    article("media") {
-                        if (hasImage) {
-                            figure("media-left") {
-                                p("image") {
-                                    img(src = "/opds/image/${book.id}") {
-                                        attributes["style"] = "width: 172px"
-                                    }
-                                }
-                            }
-                        }
-                        div("media-content") {
-                            div("content") {
-                                p {
-                                    div("tags") {
-                                        for (author in book.authors) {
-                                            a {
-                                                attributes["_"] = closeModalScript
-                                                layoutUpdateAttributes("/api/author/browse/${author.id}")
-                                                span("tag is-rounded is-normal is-link is-medium is-light") {
-                                                    +author.buildName()
-                                                }
-                                            }
-                                        }
-                                    }
-                                    div("tags") {
-                                        for (genre in book.genres) {
-                                            a {
-                                                attributes["_"] = closeModalScript
-                                                layoutUpdateAttributes("/api/genre/${genre.second}")
-                                                span("tag is-rounded is-normal is-info is-light") {
-                                                    +genre.first
-                                                }
-                                            }
-                                        }
-                                    }
-                                    unsafe {
-                                        +(descrHtml ?: "")
-                                    }
-                                }
-                            }
-                        }
-                    }
+    fun DIV.navTile(title: String, subtitle: String, href: String) {
+        div("tile is-parent is-4 is-clickable") {
+            a(href = href) {
+                article("tile box is-child") {
+                    p("title") { +title }
+                    p("subtitle") { +subtitle }
                 }
             }
         }
@@ -639,9 +421,9 @@ class Api(application: Application) : AbstractDIController(application) {
             title("Asm0dey's library")
             link(rel = "stylesheet", href = "/webjars/bulma/css/bulma.min.css")
             link(rel = "stylesheet", href = "/webjars/font-awesome/css/all.min.css")
-            script(src = "/webjars/htmx.org/dist/htmx.min.js") {
-                defer = true
-            }
+//            script(src = "/webjars/htmx.org/dist/htmx.min.js") {
+//                defer = true
+//            }
             script(src = "/webjars/hyperscript.org/dist/_hyperscript.min.js") {
                 defer = true
             }
@@ -650,10 +432,7 @@ class Api(application: Application) : AbstractDIController(application) {
             nav(classes = "navbar is-black") {
                 div("container") {
                     div("navbar-brand") {
-                        a("navbar-item brand-text") {
-                            attributes["hx-get"] = "/api"
-                            attributes["hx-target"] = "#layout"
-                        }
+                        a(href = "/simple", classes = "navbar-item brand-text") { text("Library") }
                     }
                 }
             }
@@ -661,24 +440,21 @@ class Api(application: Application) : AbstractDIController(application) {
                 div("section") {
                     attributes["hx-boost"] = "true"
                     div("field has-addons") {
-                        div("control has-icons-left is-expanded") {
-                            input(InputType.text, name = "search", classes = "input") {
-                                attributes["placeholder"] = "Search"
-                                attributes["hx-trigger"] = "keyup[keyCode === 13]"
-                                attributes["hx-get"] = "/api/search"
-                                attributes["hx-target"] = "#layout"
+                        form(action = "/simple/search") {
+                            div("control has-icons-left is-expanded") {
+                                input(InputType.text, name = "search", classes = "input") {
+                                    id = "search"
+                                }
+                                span("icon is-small is-left") {
+                                    i("fas fa-search")
+                                }
                             }
-                            span("icon is-small is-left") {
-                                i("fas fa-search")
+                            div("control") {
+                                button(classes = "button", type = ButtonType.submit) {
+                                    +"Search"
+                                }
                             }
-                        }
-                        div("control") {
-                            button(classes = "button") {
-                                attributes["hx-include"] = "[name='search']"
-                                attributes["hx-get"] = "/api/search"
-                                attributes["hx-target"] = "#layout"
-                                +"Search"
-                            }
+
                         }
                     }
                 }
@@ -705,13 +481,216 @@ class Api(application: Application) : AbstractDIController(application) {
             }
         }
     }
-    fun DIV.navTile(title: String, subtitle: String, href: String) {
-        div("tile is-parent is-4 is-clickable") {
-            layoutUpdateAttributes(href)
-            article("tile box is-child") {
-                p("title") { +title }
-                p("subtitle") { +subtitle }
+
+    private fun pagination(curPage: Int, total: Int, base: String) = createHTML(false).div {
+        fun String.withParam(param: String) = if (URI(this).query == null) "${this}?$param" else "${this}&$param"
+        val last = total / 50 + 1
+        attributes["hx-swap-oob"] = "innerHTML:.navv"
+        if (curPage == 1 && total / 50 + 1 == 1) div()
+        else
+            nav {
+                classes = setOf("pagination", "is-centered")
+                role = "navigation"
+                a {
+                    classes = setOfNotNull("pagination-previous", if (curPage == 1) "is-disabled" else null)
+                    if (curPage != 1) {
+                        href = base.withParam("page=${curPage - 1}")
+                    }
+                    +"Previous page"
+                }
+                a {
+                    classes = setOfNotNull("pagination-next", if (curPage == last) "is-disabled" else null)
+                    if (curPage != last) {
+                        href = base.withParam("page=${curPage + 1}")
+                    }
+                    +"Next page"
+                }
+                ul("pagination-list") {
+                    val pageToDraw = (1..last).map {
+                        it to (it == 1 || it == last || abs(curPage - it) <= 1)
+                    }
+                    val realToDraw = pageToDraw.fold(listOf<Pair<Int, Boolean>>()) { a, b ->
+                        if (b.second) a + b
+                        else if (a.last().second) a + (-1 to false)
+                        else a
+                    }
+                    for ((page, draw) in realToDraw) {
+                        if (!draw) {
+                            li {
+                                span {
+                                    classes = setOf("pagination-ellipsis")
+                                    +"…"
+                                }
+                            }
+                        } else {
+                            li {
+                                a(
+                                    href = base.withParam("page=$page"),
+                                    classes = setOfNotNull(
+                                        "pagination-link",
+                                        if (curPage == page) "is-current" else null
+                                    ).joinToString(", ")
+                                ) {
+                                    +(page.toString())
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun breadCrumbs(vararg items: Pair<String, String>) = breadCrumbs(items.toList())
+
+    private fun breadCrumbs(items: List<Pair<String, String>>) = createHTML(false).div {
+        attributes["hx-swap-oob"] = "innerHTML:.breadcrumb"
+        ul {
+            items.forEachIndexed { index, pair ->
+                val (name, href) = pair
+                li(if (index == items.size - 1) "is-active" else null) {
+                    a(href) {
+                        +name
+                    }
+                }
             }
         }
     }
+
+    private fun DIV.bookTile(
+        bookWithInfo: BookWithInfo,
+        images: Map<Long, String?>,
+        descriptionsShort: Map<Long, String?>
+    ) {
+        div("tile is-parent is-4") {
+            div("tile is-child") {
+                div("card") {
+                    div("card-header") {
+                        p("card-header-title") {
+                            +bookWithInfo.book.name
+                        }
+                    }
+/*
+                    if (images[bookWithInfo.id] != null) {
+                        div("card-image") {
+                            figure("image") {
+                                img(src = "/opds/image/${bookWithInfo.id}") {
+                                    attributes["loading"] = "lazy"
+                                    style = "width: 200px"
+                                }
+                            }
+                        }
+                    }
+*/
+                    div("card-content") {
+                        div("content") {
+                            text((descriptionsShort[bookWithInfo.id]?.let {
+                                it.substring(0 until min(it.length, 200))
+                            }?.plus('…') ?: ""))
+                        }
+                    }
+                    footer("card-footer mb-0 pb-0 is-align-items-self-end") {
+                        a("/simple/book/${bookWithInfo.id}/info", classes = "card-footer-item") {
+                            +"Info"
+                        }
+                        if (!epubConverterAccessible)
+                            a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"Download" }
+                        else {
+                            a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"fb2" }
+                            a("/opds/book/${bookWithInfo.id}/download/epub", classes = "card-footer-item") { +"epub" }
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    private fun modalContent(
+        book: BookWithInfo,
+        hasImage: Boolean,
+        descrHtml: String?
+    ): String {
+        val closeModalScript = "on click take .is-active from #modal wait 200ms then remove #modal"
+        return createHTML(false).div("modal") {
+            id = "modal"
+            div("modal-background") {
+                attributes["_"] = closeModalScript
+            }
+            div("modal-card") {
+                header("modal-card-head") {
+                    p("modal-card-title") {
+                        +book.book.name
+                    }
+                    button(classes = "delete") {
+                        attributes["aria-label"] = "close"
+                        attributes["_"] = closeModalScript
+                    }
+                }
+                section("modal-card-body") {
+                    article("media") {
+/*
+                        if (hasImage) {
+                            figure("media-left") {
+                                p("image") {
+                                    img(src = "/opds/image/${book.id}") {
+                                        attributes["style"] = "width: 172px"
+                                    }
+                                }
+                            }
+                        }
+*/
+                        div("media-content") {
+                            div("content") {
+                                p {
+                                    div("tags") {
+                                        for (author in book.authors) {
+                                            a("/simple/author/browse/${author.id}") {
+                                                attributes["_"] = closeModalScript
+                                                span("tag is-rounded is-normal is-link is-medium is-light") {
+                                                    +author.buildName()
+                                                }
+                                            }
+                                        }
+                                    }
+                                    div("tags") {
+                                        for (genre in book.genres) {
+                                            a("/simple/genre/${genre.second}") {
+                                                attributes["_"] = closeModalScript
+                                                span("tag is-rounded is-normal is-info is-light") {
+                                                    +genre.first
+                                                }
+                                            }
+                                        }
+                                    }
+                                    unsafe {
+                                        +(descrHtml ?: "")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun modalImageContent(imageUrl: String): String {
+        val closeModalScript = "on click take .is-active from #modal wait 200ms then remove #modal"
+        return createHTML(false).div("modal") {
+            id = "modal"
+            div("modal-background") {
+                attributes["_"] = closeModalScript
+            }
+            div("modal-content is-clipped") {
+                p("image") {
+                    img(src = imageUrl)
+                }
+            }
+            button(classes = "modal-close is-large") {
+                attributes["aria-label"] = "close"
+                attributes["_"] = closeModalScript
+            }
+        }
+    }
+
 }

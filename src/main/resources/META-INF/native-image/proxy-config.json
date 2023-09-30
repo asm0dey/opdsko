@@ -1,0 +1,17 @@
+[
+  {
+    "interfaces":["java.security.PrivilegedAction"]
+  },
+  {
+    "interfaces":["java.sql.Connection"]
+  },
+  {
+    "interfaces":["java.util.function.Consumer"]
+  },
+  {
+    "interfaces":["org.ehcache.shadow.org.terracotta.offheapstore.storage.portability.Portability","org.ehcache.shadow.org.terracotta.offheapstore.disk.persistent.PersistentPortability"]
+  },
+  {
+    "interfaces":["org.ehcache.shadow.org.terracotta.offheapstore.storage.portability.WriteBackPortability","org.ehcache.shadow.org.terracotta.offheapstore.disk.persistent.PersistentPortability"]
+  }
+]

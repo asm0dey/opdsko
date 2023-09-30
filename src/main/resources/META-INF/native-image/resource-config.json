@@ -1,0 +1,94 @@
+{
+  "resources":{
+  "includes":[{
+    "pattern":"\\QMETA-INF/maven/org.xerial/sqlite-jdbc/pom.properties\\E"
+  }, {
+    "pattern":"\\QMETA-INF/resources/webjars/bulma/0.9.4/css/bulma.min.css\\E"
+  }, {
+    "pattern":"\\QMETA-INF/resources/webjars/font-awesome/6.4.2/css/all.min.css\\E"
+  }, {
+    "pattern":"\\QMETA-INF/resources/webjars/font-awesome/6.4.2/webfonts/fa-solid-900.woff2\\E"
+  }, {
+    "pattern":"\\QMETA-INF/resources/webjars/htmx.org/1.9.5/dist/htmx.min.js\\E"
+  }, {
+    "pattern":"\\QMETA-INF/resources/webjars/hyperscript.org/0.9.11/dist/_hyperscript.min.js\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.ktor.server.config.ConfigLoader\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.sql.Driver\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/kotlin.reflect.jvm.internal.impl.builtins.BuiltInsLoader\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.ehcache.core.spi.service.ServiceFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.flywaydb.core.extensibility.Plugin\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.tinylog.configuration.ConfigurationLoader\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.tinylog.converters.FileConverter\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.tinylog.provider.LoggingProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.tinylog.writers.Writer\\E"
+  }, {
+    "pattern":"\\Qapplication.conf\\E"
+  }, {
+    "pattern":"\\Qdb/migration/V1__init.sql\\E"
+  }, {
+    "pattern":"\\Qdb/migration/V2__fts.sql\\E"
+  }, {
+    "pattern":"\\Qdb/migration/V3__fts_triggers.sql\\E"
+  }, {
+    "pattern":"\\Qdb/migration/V4__book_sequence_index.sql\\E"
+  }, {
+    "pattern":"\\Qdb/migration/V5__zip_support.sql\\E"
+  }, {
+    "pattern":"\\Qdb/migration/V6__sequence_ids.sql\\E"
+  }, {
+    "pattern":"\\Qdb/migration\\E"
+  }, {
+    "pattern":"\\Qgenres.xml\\E"
+  }, {
+    "pattern":"\\Qkotlin/annotation/annotation.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/collections/collections.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/coroutines/coroutines.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/internal/internal.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/kotlin.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/ranges/ranges.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/reflect/reflect.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qorg/flywaydb/core/internal/version.txt\\E"
+  }, {
+    "pattern":"\\Qorg/fusesource/jansi/internal/native/Linux/x86_64/libjansi.so\\E"
+  }, {
+    "pattern":"\\Qorg/fusesource/jansi/jansi.properties\\E"
+  }, {
+    "pattern":"\\Qorg/sqlite/native/Linux/x86_64/libsqlitejdbc.so\\E"
+  }, {
+    "pattern":"\\Qsqlite-jdbc.properties\\E"
+  }, {
+    "pattern":"\\Qstatic/index.html\\E"
+  }, {
+    "pattern":"\\Qstatic\\E"
+  }, {
+    "pattern":"\\Qtinylog.properties\\E"
+  }, {
+    "pattern":"java.base:\\Qsun/net/www/content-types.properties\\E"
+  }, {
+    "pattern":"java.xml:\\Qcom/sun/org/apache/xml/internal/serializer/Encodings.properties\\E"
+  }]},
+  "bundles":[{
+    "name":"com.sun.org.apache.xml.internal.serializer.XMLEntities",
+    "locales":[""]
+  }]
+}

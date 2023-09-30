@@ -12,9 +12,13 @@ org-flywaydb-flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 
 org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
+graalvm = {id="org.graalvm.buildtools.native", version="0.9.27"}
+
 [versions]
 
 kotlin = "1.9.10"
+##  ⬆ = "1.9.20-Beta"
+##  ⬆ = "1.9.20-Beta2"
 
 ktor = "2.3.4"
 
@@ -26,9 +30,9 @@ netty-tcnative = "2.0.61.Final"
 
 tinylog = "2.6.2"
 
-xmlutil = "0.86.1"
+xmlutil = "0.86.2"
 
-flyway = "9.22.0"
+flyway = "9.22.1"
 
 kotlinx-serialization = "1.6.0"
 
@@ -65,7 +69,7 @@ slf4j-tinylog = { group = "org.tinylog", name = "slf4j-tinylog", version.ref = "
 
 tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }
 
-htmx-org = "org.webjars.npm:htmx.org:1.9.5"
+htmx-org = "org.webjars.npm:htmx.org:1.9.6"
 
 hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.11"
 

@@ -315,7 +315,7 @@ class Opds(application: Application) : AbstractDIController(application) {
         entryXml(
             book,
             info.imageTypes(listOf(book))[book.id],
-            bookDescriptionsLonger(listOf(book.id to book.book),"/opds/series/item")[book.id],
+            bookDescriptionsLonger(listOf(book.id to book.book),"/opds/series/item", htmx = false)[book.id],
             info.shortDescriptions(listOf(book))[book.id],
             call.request.path()
         )
