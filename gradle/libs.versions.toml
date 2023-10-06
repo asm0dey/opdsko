@@ -26,7 +26,7 @@ kodein-di = "7.20.2"
 
 kotlinx-coroutines = "1.7.3"
 
-netty-tcnative = "2.0.61.Final"
+netty-tcnative = "2.0.62.Final"
 
 tinylog = "2.6.2"
 
