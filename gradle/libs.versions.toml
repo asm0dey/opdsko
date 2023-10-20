@@ -55,7 +55,7 @@ commons-codec = "commons-codec:commons-codec:1.16.0"
 
 jsoup = "org.jsoup:jsoup:1.16.1"
 
-jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.3"
+jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.4"
 
 xmlutil-serialization-jvm = { group = "io.github.pdvrieze.xmlutil", name = "serialization-jvm", version.ref = "xmlutil" }
 
