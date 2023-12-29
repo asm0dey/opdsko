@@ -53,7 +53,7 @@ sqlite-jdbc = "org.xerial:sqlite-jdbc:3.43.0.0"
 
 commons-codec = "commons-codec:commons-codec:1.16.0"
 
-jsoup = "org.jsoup:jsoup:1.16.1"
+jsoup = "org.jsoup:jsoup:1.17.2"
 
 jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.3"
 
