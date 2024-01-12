@@ -6,35 +6,43 @@ org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kot
 
 com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 
-nu-studer-jooq = { id = "nu.studer.jooq", version = "8.2.1" }
+nu-studer-jooq = { id = "nu.studer.jooq", version = "9.0" }
+
+jooq = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.1" }
 
 org-flywaydb-flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 
 org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
-graalvm = {id="org.graalvm.buildtools.native", version="0.9.27"}
+graalvm = {id="org.graalvm.buildtools.native", version="0.9.28"}
 
 [versions]
 
-kotlin = "1.9.10"
-##  ⬆ = "1.9.20-Beta"
-##  ⬆ = "1.9.20-Beta2"
+kotlin = "1.9.22"
+##  ⬆ = "2.0.0-Beta1"
+##  ⬆ = "2.0.0-Beta2"
 
-ktor = "2.3.4"
+ktor = "2.3.7"
+##⬆ = "3.0.0-beta-1"
 
-kodein-di = "7.20.2"
+kodein-di = "7.21.2"
 
 kotlinx-coroutines = "1.7.3"
+##              ⬆ = "1.8.0-RC"
+##              ⬆ = "1.8.0-RC2"
 
-netty-tcnative = "2.0.61.Final"
+netty-tcnative = "2.0.62.Final"
 
 tinylog = "2.6.2"
+##   ⬆ = "2.7.0-M1"
+##   ⬆ = "2.7.0-M2"
+##   ⬆ = "2.7.0-M3"
 
-xmlutil = "0.86.2"
+xmlutil = "0.86.3"
 
-flyway = "9.22.1"
+flyway = "10.5.0"
 
-kotlinx-serialization = "1.6.0"
+kotlinx-serialization = "1.6.2"
 
 [libraries]
 
@@ -43,25 +51,25 @@ netty-tcnative-boringssl-static = { group = "io.netty", name = "netty-tcnative-b
 
 kodein-di-framework-ktor-server-controller-jvm = { group = "org.kodein.di", name = "kodein-di-framework-ktor-server-controller-jvm", version.ref = "kodein-di" }
 
-hikaricp = "com.zaxxer:HikariCP:5.0.1"
+hikaricp = "com.zaxxer:HikariCP:5.1.0"
 
 flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
 
-jooq-kotlin = "org.jooq:jooq-kotlin:3.18.6"
+jooq-kotlin = "org.jooq:jooq-kotlin:3.19.2"
 
-sqlite-jdbc = "org.xerial:sqlite-jdbc:3.43.0.0"
+sqlite-jdbc = "org.xerial:sqlite-jdbc:3.44.1.0"
 
 commons-codec = "commons-codec:commons-codec:1.16.0"
 
-jsoup = "org.jsoup:jsoup:1.16.1"
+jsoup = "org.jsoup:jsoup:1.17.2"
 
-jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.3"
+jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.4"
 
 xmlutil-serialization-jvm = { group = "io.github.pdvrieze.xmlutil", name = "serialization-jvm", version.ref = "xmlutil" }
 
-xmlutil-ktor = { group = "io.github.pdvrieze.xmlutil", name = "ktor", version.ref = "xmlutil" }
+xmlutil-ktor = { group = "io.github.pdvrieze.xmlutil", name = "ktor", version = "0.86.2" }
 
-kotlin-xml-builder = "org.redundent:kotlin-xml-builder:1.9.0"
+kotlin-xml-builder = "org.redundent:kotlin-xml-builder:1.9.1"
 
 tinylog-api-kotlin = { group = "org.tinylog", name = "tinylog-api-kotlin", version.ref = "tinylog" }
 
@@ -69,11 +77,11 @@ slf4j-tinylog = { group = "org.tinylog", name = "slf4j-tinylog", version.ref = "
 
 tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }
 
-htmx-org = "org.webjars.npm:htmx.org:1.9.6"
+htmx-org = "org.webjars.npm:htmx.org:1.9.10"
 
-hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.11"
+hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.12"
 
-font-awesome = "org.webjars:font-awesome:6.4.2"
+font-awesome = "org.webjars:font-awesome:6.5.1"
 
 bulma = "org.webjars.npm:bulma:0.9.4"
 

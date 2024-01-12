@@ -34,8 +34,8 @@ class Repository(val create: DSLContext) {
         val booksInSeries = count(BOOK.ID)
         return create.select(BOOK.SEQUENCE, latestBookInSeq, booksInSeries, BOOK.SEQID)
             .from(BOOK)
-            .innerJoin(BOOK_AUTHOR).on(BOOK.ID.eq(BOOK_AUTHOR.BOOK_ID))
-            .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId), BOOK.SEQUENCE.isNotNull)
+            .innerJoin(BOOK.author())
+            .where(BOOK.author().ID.eq(authorId), BOOK.SEQUENCE.isNotNull)
             .groupBy(BOOK.SEQUENCE)
             .orderBy(BOOK.SEQUENCE, latestBookInSeq.desc())
             .fetch {
@@ -47,15 +47,15 @@ class Repository(val create: DSLContext) {
     private val bookAuthors = multiset(
         selectDistinct(AUTHOR.asterisk())
             .from(AUTHOR)
-            .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.AUTHOR_ID.eq(AUTHOR.ID))
-            .where(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
+            .innerJoin(AUTHOR.book())
+            .where(AUTHOR.book().ID.eq(BOOK.ID))
     ).`as`("authors").convertFrom { it.into(Author::class.java) }
 
     private val bookGenres = multiset(
         selectDistinct(GENRE.NAME, GENRE.ID)
             .from(GENRE)
-            .innerJoin(BOOK_GENRE).on(BOOK_GENRE.GENRE_ID.eq(GENRE.ID))
-            .where(BOOK_GENRE.BOOK_ID.eq(BOOK.ID))
+            .innerJoin(GENRE.book())
+            .where(GENRE.book().ID.eq(BOOK.ID))
     ).`as`("genres").convertFrom { it.toList() }
 
     private fun Result<Record1<String>>.toList(): List<String> =
@@ -89,8 +89,8 @@ class Repository(val create: DSLContext) {
                 isnull,
             )
             .from(BOOK_AUTHOR)
-            .innerJoin(BOOK).on(BOOK.ID.eq(BOOK_AUTHOR.BOOK_ID))
-            .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.author())
+            .where(BOOK.author().ID.eq(authorId))
             .limit(1)
             .fetchSingle { it[notnull] to it[isnull] }
     }
@@ -99,8 +99,8 @@ class Repository(val create: DSLContext) {
         return create
             .select(BOOK.ADDED)
             .from(BOOK)
-            .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
-            .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.author())
+            .where(BOOK.author().ID.eq(authorId))
             .orderBy(BOOK.ADDED.desc())
             .limit(1)
             .fetchSingle { it[BOOK.ADDED] }
@@ -110,7 +110,7 @@ class Repository(val create: DSLContext) {
         create.select(BOOK.PATH, BOOK.ZIP_FILE).from(BOOK).where(BOOK.ID.eq(bookId))
             .fetchSingle { it[BOOK.PATH] to it[BOOK.ZIP_FILE] }
 
-    val fullname = concat(
+    private val fullName = concat(
         coalesce(AUTHOR.LAST_NAME, ""),
         if_(
             AUTHOR.FIRST_NAME.isNotNull,
@@ -144,10 +144,10 @@ class Repository(val create: DSLContext) {
 
     fun authorName(authorId: Long): String {
         return create
-            .select(fullname)
+            .select(fullName)
             .from(AUTHOR)
             .where(AUTHOR.ID.eq(authorId))
-            .fetchSingle { it[fullname] }
+            .fetchSingle { it[fullName] }
     }
 
     fun searchBookByText(term: String, page: Int, pageSize: Int): Triple<List<BookWithInfo>, Boolean, Int> {
@@ -231,10 +231,11 @@ class Repository(val create: DSLContext) {
 
     data class SequenceShortInfo(val seqName: String, val bookCount: Int, val fullName: Boolean, val seqId: Int?)
 
-    fun latestBooks() =
+    fun latestBooks(page: Int = 0) =
         getBookWithInfo()
             .orderBy(BOOK.ADDED.desc())
-            .limit(20)
+            .limit(21)
+            .offset(page * 21)
             .fetch()
 
     fun bookInfo(bookId: Long): Record5<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>, String> {
@@ -247,12 +248,12 @@ class Repository(val create: DSLContext) {
     fun allBooksByAuthor(authorId: Long, page: Int, pageSize: Int): Pair<Int, MutableList<BookWithInfo>> {
         val total = create.select(countDistinct(BOOK.ID))
             .from(BOOK)
-            .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
-            .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.author())
+            .where(BOOK.author().ID.eq(authorId))
             .fetchSingle().value1()
         return total to getBookWithInfo()
-            .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
-            .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.author())
+            .where(BOOK.author().ID.eq(authorId))
             .orderBy(BOOK.NAME)
             .limit(pageSize)
             .offset(pageSize * page)
@@ -261,8 +262,8 @@ class Repository(val create: DSLContext) {
 
     fun booksWithoutSeriesByAuthorId(authorId: Long): List<BookWithInfo> {
         return getBookWithInfo()
-            .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
-            .where(BOOK_AUTHOR.AUTHOR_ID.eq(authorId), BOOK.SEQUENCE.isNull)
+            .innerJoin(BOOK.author())
+            .where(BOOK.author().ID.eq(authorId), BOOK.SEQUENCE.isNull)
             .orderBy(BOOK.NAME)
             .fetch { BookWithInfo(it) }
     }
@@ -271,8 +272,8 @@ class Repository(val create: DSLContext) {
         seriesId: Long,
         authorId: Long,
     ): List<BookWithInfo> = getBookWithInfo()
-        .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
-        .where(BOOK.SEQID.eq(seriesId.toInt()), BOOK_AUTHOR.AUTHOR_ID.eq(authorId))
+        .innerJoin(BOOK.author())
+        .where(BOOK.SEQID.eq(seriesId.toInt()), BOOK.author().ID.eq(authorId))
         .orderBy(BOOK.SEQUENCE_NUMBER.asc().nullsLast(), BOOK.NAME)
         .fetch { BookWithInfo(it) }
 
@@ -282,13 +283,12 @@ class Repository(val create: DSLContext) {
         .asSequence()
 
     fun genres(): List<Triple<Long, String, Int>> {
-        val bookCount = count(BOOK.ID)
+        val bookCount = count(GENRE.book().ID)
         val genreName = min(GENRE.NAME)
         val map = create
             .select(GENRE.ID, genreName, bookCount)
             .from(GENRE)
-            .leftJoin(BOOK_GENRE).on(GENRE.ID.eq(BOOK_GENRE.GENRE_ID))
-            .innerJoin(BOOK).on(BOOK_GENRE.BOOK_ID.eq(BOOK.ID))
+            .leftJoin(GENRE.book())
             .groupBy(GENRE.ID)
             .fetch { Triple(it[GENRE.ID], it[genreName], it[bookCount]) }
             .groupBy { genres.containsKey(it.second) }
@@ -306,16 +306,16 @@ class Repository(val create: DSLContext) {
     }
 
     fun genreAuthors(genreId: Long): List<Pair<Long, String>> {
+        val book = AUTHOR.book()
+        val genre = book.genre()
         return create
-            .selectDistinct(AUTHOR.ID, fullname)
-            .from(GENRE)
-            .innerJoin(BOOK_GENRE).on(BOOK_GENRE.GENRE_ID.eq(GENRE.ID))
-            .innerJoin(BOOK).on(BOOK_GENRE.BOOK_ID.eq(BOOK.ID))
-            .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
-            .innerJoin(AUTHOR).on(AUTHOR.ID.eq(BOOK_AUTHOR.AUTHOR_ID))
-            .where(GENRE.ID.eq(genreId))
-            .orderBy(fullname)
-            .fetch { Pair(it[AUTHOR.ID], it[fullname]) }
+            .selectDistinct(AUTHOR.ID, fullName)
+            .from(AUTHOR)
+            .innerJoin(book)
+            .innerJoin(genre)
+            .where(genre.ID.eq(genreId))
+            .orderBy(fullName)
+            .fetch { Pair(it[AUTHOR.ID], it[fullName]) }
             .toList()
     }
 
@@ -332,12 +332,10 @@ class Repository(val create: DSLContext) {
                 bookGenres,
                 BOOK.SEQUENCE
             )
-            .from(GENRE)
-            .innerJoin(BOOK_GENRE).on(BOOK_GENRE.GENRE_ID.eq(GENRE.ID))
-            .innerJoin(BOOK).on(BOOK_GENRE.BOOK_ID.eq(BOOK.ID))
-            .innerJoin(BOOK_AUTHOR).on(BOOK_AUTHOR.BOOK_ID.eq(BOOK.ID))
-            .innerJoin(AUTHOR).on(AUTHOR.ID.eq(BOOK_AUTHOR.AUTHOR_ID))
-            .where(GENRE.ID.eq(genreId), AUTHOR.ID.eq(authorId))
+            .from(BOOK)
+            .innerJoin(BOOK.genre())
+            .innerJoin(BOOK.author())
+            .where(BOOK.genre().ID.eq(genreId), BOOK.author().ID.eq(authorId))
             .orderBy(BOOK.NAME)
             .fetch(::BookWithInfo)
             .toList()
@@ -347,10 +345,9 @@ class Repository(val create: DSLContext) {
     fun booksInGenre(genreId: Long, page: Int, pageSize: Int): Pair<Int, List<BookWithInfo>> {
         val total = create
             .select(countDistinct(BOOK.ID))
-            .from(GENRE)
-            .innerJoin(BOOK_GENRE).on(BOOK_GENRE.GENRE_ID.eq(GENRE.ID))
-            .innerJoin(BOOK).on(BOOK_GENRE.BOOK_ID.eq(BOOK.ID))
-            .where(GENRE.ID.eq(genreId))
+            .from(BOOK)
+            .innerJoin(BOOK.genre())
+            .where(BOOK.genre().ID.eq(genreId))
             .fetchSingle().value1()
 
         return total to create
@@ -361,10 +358,9 @@ class Repository(val create: DSLContext) {
                 bookGenres,
                 BOOK.SEQUENCE
             )
-            .from(GENRE)
-            .innerJoin(BOOK_GENRE).on(BOOK_GENRE.GENRE_ID.eq(GENRE.ID))
-            .innerJoin(BOOK).on(BOOK_GENRE.BOOK_ID.eq(BOOK.ID))
-            .where(GENRE.ID.eq(genreId))
+            .from(BOOK)
+            .innerJoin(BOOK.genre())
+            .where(BOOK.genre().ID.eq(genreId))
             .orderBy(BOOK.NAME)
             .limit(pageSize)
             .offset(page * pageSize)

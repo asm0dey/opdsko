@@ -7,24 +7,32 @@ package io.github.asm0dey.opdsko.jooq.tables;
 import io.github.asm0dey.opdsko.jooq.DefaultSchema;
 import io.github.asm0dey.opdsko.jooq.Indexes;
 import io.github.asm0dey.opdsko.jooq.Keys;
+import io.github.asm0dey.opdsko.jooq.tables.Author.AuthorPath;
+import io.github.asm0dey.opdsko.jooq.tables.BookAuthor.BookAuthorPath;
+import io.github.asm0dey.opdsko.jooq.tables.BookGenre.BookGenrePath;
+import io.github.asm0dey.opdsko.jooq.tables.Genre.GenrePath;
 import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
+import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function10;
 import org.jooq.Identity;
 import org.jooq.Index;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
-import org.jooq.Records;
-import org.jooq.Row10;
+import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.SelectField;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -106,11 +114,11 @@ public class Book extends TableImpl<BookRecord> {
     public final TableField<BookRecord, Integer> SEQID = createField(DSL.name("seqid"), SQLDataType.INTEGER, this, "");
 
     private Book(Name alias, Table<BookRecord> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private Book(Name alias, Table<BookRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private Book(Name alias, Table<BookRecord> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -134,8 +142,35 @@ public class Book extends TableImpl<BookRecord> {
         this(DSL.name("book"), null);
     }
 
-    public <O extends Record> Book(Table<O> child, ForeignKey<O, BookRecord> key) {
-        super(child, key, BOOK);
+    public <O extends Record> Book(Table<O> path, ForeignKey<O, BookRecord> childPath, InverseForeignKey<O, BookRecord> parentPath) {
+        super(path, childPath, parentPath, BOOK);
+    }
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    public static class BookPath extends Book implements Path<BookRecord> {
+        public <O extends Record> BookPath(Table<O> path, ForeignKey<O, BookRecord> childPath, InverseForeignKey<O, BookRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private BookPath(Name alias, Table<BookRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public BookPath as(String alias) {
+            return new BookPath(DSL.name(alias), this);
+        }
+
+        @Override
+        public BookPath as(Name alias) {
+            return new BookPath(alias, this);
+        }
+
+        @Override
+        public BookPath as(Table<?> alias) {
+            return new BookPath(alias.getQualifiedName(), this);
+        }
     }
 
     @Override
@@ -156,6 +191,44 @@ public class Book extends TableImpl<BookRecord> {
     @Override
     public UniqueKey<BookRecord> getPrimaryKey() {
         return Keys.BOOK__PK_BOOK;
+    }
+
+    private transient BookAuthorPath _bookAuthor;
+
+    /**
+     * Get the implicit to-many join path to the <code>book_author</code> table
+     */
+    public BookAuthorPath bookAuthor() {
+        if (_bookAuthor == null)
+            _bookAuthor = new BookAuthorPath(this, null, Keys.BOOK_AUTHOR__FK_BOOK_AUTHOR_PK_BOOK.getInverseKey());
+
+        return _bookAuthor;
+    }
+
+    private transient BookGenrePath _bookGenre;
+
+    /**
+     * Get the implicit to-many join path to the <code>book_genre</code> table
+     */
+    public BookGenrePath bookGenre() {
+        if (_bookGenre == null)
+            _bookGenre = new BookGenrePath(this, null, Keys.BOOK_GENRE__FK_BOOK_GENRE_PK_BOOK.getInverseKey());
+
+        return _bookGenre;
+    }
+
+    /**
+     * Get the implicit many-to-many join path to the <code>author</code> table
+     */
+    public AuthorPath author() {
+        return bookAuthor().author();
+    }
+
+    /**
+     * Get the implicit many-to-many join path to the <code>genre</code> table
+     */
+    public GenrePath genre() {
+        return bookGenre().genre();
     }
 
     @Override
@@ -197,27 +270,87 @@ public class Book extends TableImpl<BookRecord> {
         return new Book(name.getQualifiedName(), null);
     }
 
-    // -------------------------------------------------------------------------
-    // Row10 type methods
-    // -------------------------------------------------------------------------
-
+    /**
+     * Create an inline derived table from this table
+     */
     @Override
-    public Row10<Long, String, String, String, LocalDateTime, String, Integer, String, String, Integer> fieldsRow() {
-        return (Row10) super.fieldsRow();
+    public Book where(Condition condition) {
+        return new Book(getQualifiedName(), aliased() ? this : null, null, condition);
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Function10<? super Long, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super String, ? super Integer, ? super String, ? super String, ? super Integer, ? extends U> from) {
-        return convertFrom(Records.mapping(from));
+    @Override
+    public Book where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Class,
-     * Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function10<? super Long, ? super String, ? super String, ? super String, ? super LocalDateTime, ? super String, ? super Integer, ? super String, ? super String, ? super Integer, ? extends U> from) {
-        return convertFrom(toType, Records.mapping(from));
+    @Override
+    public Book where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Book where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Book where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Book where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Book where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Book where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Book whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Book whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

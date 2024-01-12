@@ -77,8 +77,9 @@ class Api(application: Application) : AbstractDIController(application) {
                 val z = pagination(page, total, "/api/search?search=${searchTerm.encoded}")
                 return@get smartHtml(call, x, y, z)
             }
-            get("/new") {
-                val books = info.latestBooks().map { BookWithInfo(it) }
+            get("/new/{page?}") {
+                val page = call.parameters["page"]?.toInt() ?: 1
+                val books = info.latestBooks(page - 1).map { BookWithInfo(it) }
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
@@ -92,7 +93,7 @@ class Api(application: Application) : AbstractDIController(application) {
                         "New" to "/api/new",
                     )
                 )
-                return@get smartHtml(call, x, y)
+                return@get smartHtml(call, x, y, pagination(page, Int.MAX_VALUE, "/api/new"))
 
             }
             get("/author/c/{name?}") {
@@ -289,7 +290,11 @@ class Api(application: Application) : AbstractDIController(application) {
 
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, pair) in namesWithDates) {
-                        navTile(name.second, "${pair.second} books", "/api/author/browse/$authorId/series/${name.first}")
+                        navTile(
+                            name.second,
+                            "${pair.second} books",
+                            "/api/author/browse/$authorId/series/${name.first}"
+                        )
                     }
                 }
                 val y = breadCrumbs(
@@ -439,6 +444,7 @@ class Api(application: Application) : AbstractDIController(application) {
                             figure("image") {
                                 a {
                                     attributes["hx-get"] = "/api/book/${bookWithInfo.id}/image"
+                                    attributes["hx-swap"] = "innerHTML show:.input:top"
                                     attributes["hx-target"] = "#modal-cont"
                                     attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
                                     img(src = "/opds/image/${bookWithInfo.id}") {
@@ -506,6 +512,7 @@ class Api(application: Application) : AbstractDIController(application) {
                     if (curPage != 1) {
                         attributes["hx-trigger"] = "click"
                         attributes["hx-get"] = base.withParam("page=${curPage - 1}")
+                        attributes["hx-swap"] = "innerHTML show:.input:top"
                         attributes["hx-target"] = "#layout"
                         attributes["hx-push-url"] = "true"
                     }
@@ -516,38 +523,42 @@ class Api(application: Application) : AbstractDIController(application) {
                     if (curPage != last) {
                         attributes["hx-trigger"] = "click"
                         attributes["hx-get"] = base.withParam("page=${curPage + 1}")
+                        attributes["hx-swap"] = "innerHTML show:.input:top"
                         attributes["hx-target"] = "#layout"
                         attributes["hx-push-url"] = "true"
                     }
                     +"Next page"
                 }
-                ul("pagination-list") {
-                    val pageToDraw = (1..last).map {
-                        it to (it == 1 || it == last || abs(curPage - it) <= 1)
-                    }
-                    val realToDraw = pageToDraw.fold(listOf<Pair<Int, Boolean>>()) { a, b ->
-                        if (b.second) a + b
-                        else if (a.last().second) a + (-1 to false)
-                        else a
-                    }
-                    for ((page, draw) in realToDraw) {
-                        if (!draw) {
-                            li {
-                                span {
-                                    classes = setOf("pagination-ellipsis")
-                                    +"…"
+                if (total != Int.MAX_VALUE) {
+                    ul("pagination-list") {
+                        val pageToDraw = (1..last).map {
+                            it to (it == 1 || it == last || abs(curPage - it) <= 1)
+                        }
+                        val realToDraw = pageToDraw.fold(listOf<Pair<Int, Boolean>>()) { a, b ->
+                            if (b.second) a + b
+                            else if (a.last().second) a + (-1 to false)
+                            else a
+                        }
+                        for ((page, draw) in realToDraw) {
+                            if (!draw) {
+                                li {
+                                    span {
+                                        classes = setOf("pagination-ellipsis")
+                                        +"…"
+                                    }
                                 }
-                            }
-                        } else {
-                            li {
-                                a {
-                                    classes =
-                                        setOfNotNull("pagination-link", if (curPage == page) "is-current" else null)
-                                    attributes["hx-trigger"] = "click"
-                                    attributes["hx-get"] = base.withParam("page=$page")
-                                    attributes["hx-target"] = "#layout"
-                                    attributes["hx-push-url"] = "true"
-                                    +(page.toString())
+                            } else {
+                                li {
+                                    a {
+                                        classes =
+                                            setOfNotNull("pagination-link", if (curPage == page) "is-current" else null)
+                                        attributes["hx-trigger"] = "click"
+                                        attributes["hx-get"] = base.withParam("page=$page")
+                                        attributes["hx-swap"] = "innerHTML show:.input:top"
+                                        attributes["hx-target"] = "#layout"
+                                        attributes["hx-push-url"] = "true"
+                                        +(page.toString())
+                                    }
                                 }
                             }
                         }
@@ -559,6 +570,7 @@ class Api(application: Application) : AbstractDIController(application) {
     private fun HTMLTag.layoutUpdateAttributes(href: String) {
         attributes["hx-trigger"] = "click"
         attributes["hx-get"] = href
+        attributes["hx-swap"] = "innerHTML show:.input:top"
         attributes["hx-target"] = "#layout"
         attributes["hx-push-url"] = "true"
     }
@@ -652,6 +664,7 @@ class Api(application: Application) : AbstractDIController(application) {
                     div("navbar-brand") {
                         a("navbar-item brand-text") {
                             attributes["hx-get"] = "/api"
+                            attributes["hx-swap"] = "innerHTML show:.input:top"
                             attributes["hx-target"] = "#layout"
                         }
                     }
@@ -666,6 +679,7 @@ class Api(application: Application) : AbstractDIController(application) {
                                 attributes["placeholder"] = "Search"
                                 attributes["hx-trigger"] = "keyup[keyCode === 13]"
                                 attributes["hx-get"] = "/api/search"
+                                attributes["hx-swap"] = "innerHTML show:.input:top"
                                 attributes["hx-target"] = "#layout"
                             }
                             span("icon is-small is-left") {
@@ -676,6 +690,7 @@ class Api(application: Application) : AbstractDIController(application) {
                             button(classes = "button") {
                                 attributes["hx-include"] = "[name='search']"
                                 attributes["hx-get"] = "/api/search"
+                                attributes["hx-swap"] = "innerHTML show:.input:top"
                                 attributes["hx-target"] = "#layout"
                                 +"Search"
                             }
@@ -705,6 +720,7 @@ class Api(application: Application) : AbstractDIController(application) {
             }
         }
     }
+
     fun DIV.navTile(title: String, subtitle: String, href: String) {
         div("tile is-parent is-4 is-clickable") {
             layoutUpdateAttributes(href)

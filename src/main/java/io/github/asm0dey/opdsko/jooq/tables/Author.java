@@ -7,24 +7,30 @@ package io.github.asm0dey.opdsko.jooq.tables;
 import io.github.asm0dey.opdsko.jooq.DefaultSchema;
 import io.github.asm0dey.opdsko.jooq.Indexes;
 import io.github.asm0dey.opdsko.jooq.Keys;
+import io.github.asm0dey.opdsko.jooq.tables.Book.BookPath;
+import io.github.asm0dey.opdsko.jooq.tables.BookAuthor.BookAuthorPath;
 import io.github.asm0dey.opdsko.jooq.tables.records.AuthorRecord;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
+import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function7;
 import org.jooq.Identity;
 import org.jooq.Index;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
-import org.jooq.Records;
-import org.jooq.Row7;
+import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.SelectField;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -91,11 +97,11 @@ public class Author extends TableImpl<AuthorRecord> {
     public final TableField<AuthorRecord, LocalDateTime> ADDED = createField(DSL.name("added"), SQLDataType.LOCALDATETIME(0).nullable(false), this, "");
 
     private Author(Name alias, Table<AuthorRecord> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private Author(Name alias, Table<AuthorRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private Author(Name alias, Table<AuthorRecord> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -119,8 +125,35 @@ public class Author extends TableImpl<AuthorRecord> {
         this(DSL.name("author"), null);
     }
 
-    public <O extends Record> Author(Table<O> child, ForeignKey<O, AuthorRecord> key) {
-        super(child, key, AUTHOR);
+    public <O extends Record> Author(Table<O> path, ForeignKey<O, AuthorRecord> childPath, InverseForeignKey<O, AuthorRecord> parentPath) {
+        super(path, childPath, parentPath, AUTHOR);
+    }
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    public static class AuthorPath extends Author implements Path<AuthorRecord> {
+        public <O extends Record> AuthorPath(Table<O> path, ForeignKey<O, AuthorRecord> childPath, InverseForeignKey<O, AuthorRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private AuthorPath(Name alias, Table<AuthorRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public AuthorPath as(String alias) {
+            return new AuthorPath(DSL.name(alias), this);
+        }
+
+        @Override
+        public AuthorPath as(Name alias) {
+            return new AuthorPath(alias, this);
+        }
+
+        @Override
+        public AuthorPath as(Table<?> alias) {
+            return new AuthorPath(alias.getQualifiedName(), this);
+        }
     }
 
     @Override
@@ -141,6 +174,25 @@ public class Author extends TableImpl<AuthorRecord> {
     @Override
     public UniqueKey<AuthorRecord> getPrimaryKey() {
         return Keys.AUTHOR__PK_AUTHOR;
+    }
+
+    private transient BookAuthorPath _bookAuthor;
+
+    /**
+     * Get the implicit to-many join path to the <code>book_author</code> table
+     */
+    public BookAuthorPath bookAuthor() {
+        if (_bookAuthor == null)
+            _bookAuthor = new BookAuthorPath(this, null, Keys.BOOK_AUTHOR__FK_BOOK_AUTHOR_PK_AUTHOR.getInverseKey());
+
+        return _bookAuthor;
+    }
+
+    /**
+     * Get the implicit many-to-many join path to the <code>book</code> table
+     */
+    public BookPath book() {
+        return bookAuthor().book();
     }
 
     @Override
@@ -182,27 +234,87 @@ public class Author extends TableImpl<AuthorRecord> {
         return new Author(name.getQualifiedName(), null);
     }
 
-    // -------------------------------------------------------------------------
-    // Row7 type methods
-    // -------------------------------------------------------------------------
-
+    /**
+     * Create an inline derived table from this table
+     */
     @Override
-    public Row7<Long, String, String, String, String, String, LocalDateTime> fieldsRow() {
-        return (Row7) super.fieldsRow();
+    public Author where(Condition condition) {
+        return new Author(getQualifiedName(), aliased() ? this : null, null, condition);
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Function7<? super Long, ? super String, ? super String, ? super String, ? super String, ? super String, ? super LocalDateTime, ? extends U> from) {
-        return convertFrom(Records.mapping(from));
+    @Override
+    public Author where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Class,
-     * Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function7<? super Long, ? super String, ? super String, ? super String, ? super String, ? super String, ? super LocalDateTime, ? extends U> from) {
-        return convertFrom(toType, Records.mapping(from));
+    @Override
+    public Author where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Author where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Author where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Author where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Author where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public Author where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Author whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public Author whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

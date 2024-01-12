@@ -7,22 +7,28 @@ package io.github.asm0dey.opdsko.jooq.tables;
 import io.github.asm0dey.opdsko.jooq.DefaultSchema;
 import io.github.asm0dey.opdsko.jooq.Indexes;
 import io.github.asm0dey.opdsko.jooq.Keys;
+import io.github.asm0dey.opdsko.jooq.tables.Book.BookPath;
+import io.github.asm0dey.opdsko.jooq.tables.Genre.GenrePath;
 import io.github.asm0dey.opdsko.jooq.tables.records.BookGenreRecord;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
+import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function2;
 import org.jooq.Index;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
-import org.jooq.Records;
-import org.jooq.Row2;
+import org.jooq.SQL;
 import org.jooq.Schema;
-import org.jooq.SelectField;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -64,11 +70,11 @@ public class BookGenre extends TableImpl<BookGenreRecord> {
     public final TableField<BookGenreRecord, Long> GENRE_ID = createField(DSL.name("genre_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     private BookGenre(Name alias, Table<BookGenreRecord> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private BookGenre(Name alias, Table<BookGenreRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private BookGenre(Name alias, Table<BookGenreRecord> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -92,8 +98,35 @@ public class BookGenre extends TableImpl<BookGenreRecord> {
         this(DSL.name("book_genre"), null);
     }
 
-    public <O extends Record> BookGenre(Table<O> child, ForeignKey<O, BookGenreRecord> key) {
-        super(child, key, BOOK_GENRE);
+    public <O extends Record> BookGenre(Table<O> path, ForeignKey<O, BookGenreRecord> childPath, InverseForeignKey<O, BookGenreRecord> parentPath) {
+        super(path, childPath, parentPath, BOOK_GENRE);
+    }
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    public static class BookGenrePath extends BookGenre implements Path<BookGenreRecord> {
+        public <O extends Record> BookGenrePath(Table<O> path, ForeignKey<O, BookGenreRecord> childPath, InverseForeignKey<O, BookGenreRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private BookGenrePath(Name alias, Table<BookGenreRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public BookGenrePath as(String alias) {
+            return new BookGenrePath(DSL.name(alias), this);
+        }
+
+        @Override
+        public BookGenrePath as(Name alias) {
+            return new BookGenrePath(alias, this);
+        }
+
+        @Override
+        public BookGenrePath as(Table<?> alias) {
+            return new BookGenrePath(alias.getQualifiedName(), this);
+        }
     }
 
     @Override
@@ -116,25 +149,26 @@ public class BookGenre extends TableImpl<BookGenreRecord> {
         return Arrays.asList(Keys.BOOK_GENRE__FK_BOOK_GENRE_PK_BOOK, Keys.BOOK_GENRE__FK_BOOK_GENRE_PK_GENRE);
     }
 
-    private transient Book _book;
-    private transient Genre _genre;
+    private transient BookPath _book;
 
     /**
      * Get the implicit join path to the <code>book</code> table.
      */
-    public Book book() {
+    public BookPath book() {
         if (_book == null)
-            _book = new Book(this, Keys.BOOK_GENRE__FK_BOOK_GENRE_PK_BOOK);
+            _book = new BookPath(this, Keys.BOOK_GENRE__FK_BOOK_GENRE_PK_BOOK, null);
 
         return _book;
     }
 
+    private transient GenrePath _genre;
+
     /**
      * Get the implicit join path to the <code>genre</code> table.
      */
-    public Genre genre() {
+    public GenrePath genre() {
         if (_genre == null)
-            _genre = new Genre(this, Keys.BOOK_GENRE__FK_BOOK_GENRE_PK_GENRE);
+            _genre = new GenrePath(this, Keys.BOOK_GENRE__FK_BOOK_GENRE_PK_GENRE, null);
 
         return _genre;
     }
@@ -178,27 +212,87 @@ public class BookGenre extends TableImpl<BookGenreRecord> {
         return new BookGenre(name.getQualifiedName(), null);
     }
 
-    // -------------------------------------------------------------------------
-    // Row2 type methods
-    // -------------------------------------------------------------------------
-
+    /**
+     * Create an inline derived table from this table
+     */
     @Override
-    public Row2<Long, Long> fieldsRow() {
-        return (Row2) super.fieldsRow();
+    public BookGenre where(Condition condition) {
+        return new BookGenre(getQualifiedName(), aliased() ? this : null, null, condition);
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Function2<? super Long, ? super Long, ? extends U> from) {
-        return convertFrom(Records.mapping(from));
+    @Override
+    public BookGenre where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
     }
 
     /**
-     * Convenience mapping calling {@link SelectField#convertFrom(Class,
-     * Function)}.
+     * Create an inline derived table from this table
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function2<? super Long, ? super Long, ? extends U> from) {
-        return convertFrom(toType, Records.mapping(from));
+    @Override
+    public BookGenre where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public BookGenre where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public BookGenre where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public BookGenre where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public BookGenre where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public BookGenre where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public BookGenre whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public BookGenre whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

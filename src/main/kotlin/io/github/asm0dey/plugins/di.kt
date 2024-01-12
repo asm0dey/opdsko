@@ -25,6 +25,8 @@ import io.ktor.server.application.*
 import org.jooq.ExecuteContext
 import org.jooq.ExecuteListener
 import org.jooq.SQLDialect
+import org.jooq.conf.RenderImplicitJoinType
+import org.jooq.conf.RenderImplicitJoinType.INNER_JOIN
 import org.jooq.conf.Settings
 import org.jooq.impl.DSL
 import org.jooq.impl.DefaultExecuteListenerProvider
@@ -59,6 +61,7 @@ fun Application.ioc() {
             DSL.using(instance<DataSource>(), SQLDialect.SQLITE).apply {
                 settings().apply {
                     isExecuteLogging = false
+                    renderImplicitJoinToManyType = INNER_JOIN
                 }
                 configuration().set(DefaultExecuteListenerProvider(CustomLogger()))
             }

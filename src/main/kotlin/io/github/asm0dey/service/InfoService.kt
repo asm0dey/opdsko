@@ -165,8 +165,8 @@ class InfoService(private val repo: Repository) {
             id to type
         }
 
-    fun latestBooks(): Result<Record5<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>, String>> =
-        repo.latestBooks()
+    fun latestBooks(page: Int = 0): Result<Record5<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>, String>> =
+        repo.latestBooks(page)
 
     fun imageByBookId(bookId: Long): Pair<Binary, ByteArray> {
         val (path, archive) = repo.bookPath(bookId)

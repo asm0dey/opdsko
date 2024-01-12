@@ -1,13 +1,16 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jooq.meta.jaxb.ForcedType
 import org.jooq.meta.jaxb.Logging
+//import org.jooq.meta.jaxb.ForcedType
+//import org.jooq.meta.jaxb.Logging
+import java.util.*
 
 plugins {
     java
     application
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.com.github.johnrengelman.shadow)
-    alias(libs.plugins.nu.studer.jooq)
+    alias(libs.plugins.jooq)
     alias(libs.plugins.org.flywaydb.flyway)
     alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
     alias(libs.plugins.graalvm)
@@ -27,8 +30,8 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 
 }
-val osName = System.getProperty("os.name").toLowerCase()
-val tcnative_classifier = when {
+val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+val tcnativeClassifier = when {
     osName.contains("win") -> "windows-x86_64"
     osName.contains("linux") -> "linux-x86_64"
     osName.contains("mac") -> "osx-x86_64"
@@ -54,8 +57,8 @@ dependencies {
     implementation(libs.zip4j)
     // http2
     implementation(libs.netty.tcnative)
-    if (tcnative_classifier != null) {
-        implementation("io.netty:netty-tcnative-boringssl-static:${libs.versions.netty.tcnative.get()}:$tcnative_classifier")
+    if (tcnativeClassifier != null) {
+        implementation("io.netty:netty-tcnative-boringssl-static:${libs.versions.netty.tcnative.get()}:$tcnativeClassifier")
     } else {
         implementation(libs.netty.tcnative.boringssl.static)
     }
@@ -66,7 +69,7 @@ dependencies {
     implementation(libs.flyway.core)
     implementation(libs.jooq.kotlin)
     implementation(libs.sqlite.jdbc)
-    jooqGenerator(libs.sqlite.jdbc)
+    jooqCodegen(libs.sqlite.jdbc)
     nativeImageClasspath(libs.sqlite.jdbc)
     // utils
     implementation(libs.commons.codec)
@@ -99,7 +102,7 @@ configure<SourceSetContainer> {
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(20))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
@@ -118,6 +121,9 @@ flyway {
     mixed = true
 }
 
+tasks.compileKotlin.configure {
+    dependsOn(tasks.named("jooqCodegen"))
+}
 
 sourceSets {
     //add a flyway sourceSet
@@ -137,70 +143,65 @@ val migrationDirs = listOf(
 tasks.flywayMigrate {
     dependsOn("flywayClasses")
     migrationDirs.forEach { inputs.dir(it) }
-    outputs.dirs("${project.buildDir}/generated/flyway", "${project.buildDir}/db")
+    outputs.dirs("${project.layout.buildDirectory}/generated/flyway", "${project.layout.buildDirectory}/db")
     doFirst {
         logger.info("Deleting old")
         delete(outputs.files)
-        logger.info("Creating directory ${project.buildDir}/db with result ${File("$projectDir/build/db").mkdirs()}")
+        logger.info("Creating directory ${project.layout.buildDirectory}/db with result ${File("$projectDir/build/db").mkdirs()}")
 
     }
 }
 
 jooq {
-    configurations {
-        create("main") {
-            jooqConfiguration.apply {
-
-                logging = Logging.WARN
-                jdbc.apply {
-                    url = jooqDb["url"]
-                }
-                generator.apply {
-                    generate.apply {
-                        isDeprecated = false
-                        isRecords = true
-                        isImmutablePojos = true
-                        isFluentSetters = true
-                        isJavaTimeTypes = true
-                        isImmutableInterfaces = true
-                        isDaos = true
+    configuration {
+        logging = Logging.WARN
+        jdbc {
+            url = jooqDb["url"]
+        }
+        generator {
+            generate {
+                isDeprecated = false
+                isRecords = true
+                isImmutablePojos = true
+                isFluentSetters = true
+                isJavaTimeTypes = true
+                isImmutableInterfaces = true
+                isDaos = true
+                isKotlinNotNullInterfaceAttributes = true
+                isKotlinNotNullPojoAttributes = true
+                isKotlinNotNullRecordAttributes = true
+                isLinks = true
+                isPojosAsKotlinDataClasses = true
+            }
+            target {
+                packageName = "io.github.asm0dey.opdsko.jooq"
+                directory = "src/main/java"
+            }
+            database {
+                forcedTypes {
+                    forcedType {
+                        name = "TIMESTAMP"
+                        includeExpression = ".*\\.added"
                     }
-                    target.apply {
-                        packageName = "io.github.asm0dey.opdsko.jooq"
-                        directory = "src/main/java"
+                    forcedType {
+                        name = "BIGINT"
+                        includeExpression = ".*\\.id"
                     }
-                    database.apply {
-                        forcedTypes.addAll(
-                            listOf(
-                                ForcedType().apply {
-                                    name = "TIMESTAMP"
-                                    includeExpression = ".*\\.added"
-                                },
-                                ForcedType().apply {
-                                    name = "BIGINT"
-                                    includeExpression = ".*\\.id"
-                                },
-                                ForcedType().apply {
-                                    name = "TEXT"
-                                    includeExpression = ".*_fts\\..*"
-                                },
-                                ForcedType().apply {
-                                    name = "BIGINT"
-                                    includeExpression = ".*\\..*_id"
-                                },
-                            )
-                        )
-                        excludes = ".*(_fts_|flyway_).*"
+                    forcedType {
+                        name = "TEXT"
+                        includeExpression = ".*_fts\\..*"
+                    }
+                    forcedType {
+                        name = "BIGINT"
+                        includeExpression = ".*\\..*_id"
                     }
                 }
+                excludes = ".*(_fts_|flyway_).*"
             }
         }
     }
 }
 
-val generateJooq by project.tasks
-generateJooq.dependsOn(tasks.flywayMigrate)
-//generateJooq.doLast { File("$projectDir/build/db/opds.db").delete() }
 graalvmNative {
     agent {
         enabled.set(true)

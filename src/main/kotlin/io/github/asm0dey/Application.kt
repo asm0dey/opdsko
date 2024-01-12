@@ -151,7 +151,7 @@ private fun posixSetAccessible(fileName: String) = try {
 } catch (_: Exception) {
 }
 
-@Suppress("UnusedReceiverParameter", "unused")
+@Suppress("unused")
 fun Application.main() {
     initDb()
     Flyway.configure().mixed(true).dataSource(
