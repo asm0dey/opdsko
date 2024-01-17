@@ -1,8 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jooq.meta.jaxb.ForcedType
 import org.jooq.meta.jaxb.Logging
-//import org.jooq.meta.jaxb.ForcedType
-//import org.jooq.meta.jaxb.Logging
 import java.util.*
 
 plugins {
@@ -105,13 +102,13 @@ kotlin {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_11)
+        jvmTarget.set(JvmTarget.JVM_21)
     }
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 val jooqDb = mapOf("url" to "jdbc:sqlite:$projectDir/build/db/opds.db")
 
