@@ -23,7 +23,7 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
     - name: Build with Gradle
-      uses: gradle/gradle-build-action@5516b399405349a7d56e45a78a0bd4b3eaa62f9e
+      uses: gradle/gradle-build-action@0706ab3a3c20483a3f37c3d9de1b0d95297e3743
       with:
         arguments: flywayMigrate jooqCodegen build
     - name: Release
