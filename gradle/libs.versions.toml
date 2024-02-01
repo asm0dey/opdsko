@@ -57,7 +57,7 @@ flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "fly
 
 jooq-kotlin = "org.jooq:jooq-kotlin:3.19.2"
 
-sqlite-jdbc = "org.xerial:sqlite-jdbc:3.44.1.0"
+sqlite-jdbc = "org.xerial:sqlite-jdbc:3.45.1.0"
 
 commons-codec = "commons-codec:commons-codec:1.16.0"
 
