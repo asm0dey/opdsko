@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+@file:Suppress("FunctionName")
+
 package io.github.asm0dey.controllers
 
 import io.github.asm0dey.epubConverterAccessible
@@ -49,12 +51,12 @@ class Api(application: Application) : AbstractDIController(application) {
         route("/api") {
             get {
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
-                    navTile("New books", "Recent publications from this catalog", "/api/new")
-                    navTile("Books by series", "Authors by first letters", "/api/series/browse")
-                    navTile("Books by author", "Series by first letters", "/api/author/c")
-                    navTile("Genres", "Books by genres", "/api/genre")
+                    NavTile("New books", "Recent publications from this catalog", "/api/new")
+                    NavTile("Books by series", "Authors by first letters", "/api/series/browse")
+                    NavTile("Books by author", "Series by first letters", "/api/author/c")
+                    NavTile("Genres", "Books by genres", "/api/genre")
                 }
-                return@get smartHtml(call, x, breadCrumbs("Library" to "/api"))
+                return@get smartHtml(call, x, BreadCrumbs("Library" to "/api"))
 
             }
             get("/search") {
@@ -65,16 +67,16 @@ class Api(application: Application) : AbstractDIController(application) {
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
-                        bookTile(book, imageTypes, shortDescriptions)
+                        BookTile(book, imageTypes, shortDescriptions)
                     }
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "Search: $searchTerm" to "/api/search?search=${searchTerm.encoded}",
                     )
                 )
-                val z = pagination(page, total, "/api/search?search=${searchTerm.encoded}")
+                val z = Pagination(page, total, "/api/search?search=${searchTerm.encoded}")
                 return@get smartHtml(call, x, y, z)
             }
             get("/new/{page?}") {
@@ -84,16 +86,16 @@ class Api(application: Application) : AbstractDIController(application) {
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
-                        bookTile(book, imageTypes, shortDescriptions)
+                        BookTile(book, imageTypes, shortDescriptions)
                     }
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "New" to "/api/new",
                     )
                 )
-                return@get smartHtml(call, x, y, pagination(page, Int.MAX_VALUE, "/api/new"))
+                return@get smartHtml(call, x, y, Pagination(page, Int.MAX_VALUE, "/api/new"))
 
             }
             get("/author/c/{name?}") {
@@ -102,11 +104,11 @@ class Api(application: Application) : AbstractDIController(application) {
                 val items = info.authorNameStarts(nameStart, trim)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, countOrId) in items) {
-                        if (trim) navTile(name, "$countOrId items inside", "/api/author/c/${name.encoded}")
-                        else navTile(name, "Books by $name", "/api/author/browse/$countOrId")
+                        if (trim) NavTile(name, "$countOrId items inside", "/api/author/c/${name.encoded}")
+                        else NavTile(name, "Books by $name", "/api/author/browse/$countOrId")
                     }
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "By Authors" to "/api/author/c",
@@ -121,25 +123,25 @@ class Api(application: Application) : AbstractDIController(application) {
                 val authorName = info.authorName(authorId)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     if (inseries > 0)
-                        navTile(
+                        NavTile(
                             "By series",
                             "All books by $authorName in series",
                             "/api/author/browse/$authorId/series"
                         )
                     if (inseries > 0 && out > 0)
-                        navTile(
+                        NavTile(
                             "Out of series",
                             "All books by $authorName out of series",
                             "/api/author/browse/$authorId/out"
                         )
-                    navTile(
+                    NavTile(
                         "All books",
                         "All books by $authorName alphabetically",
                         "/api/author/browse/$authorId/all"
                     )
 
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "By Authors" to "/api/author/c",
@@ -153,10 +155,10 @@ class Api(application: Application) : AbstractDIController(application) {
                     val genres = info.genres()
                     val x = createHTML(false).div("tile is-parent columns is-multiline") {
                         for ((id, genre, count) in genres) {
-                            navTile(genre, "$count items", "/api/genre/$id")
+                            NavTile(genre, "$count items", "/api/genre/$id")
                         }
                     }
-                    val y = breadCrumbs("Library" to "/api", "By Authors" to "/api/genre")
+                    val y = BreadCrumbs("Library" to "/api", "By Authors" to "/api/genre")
                     return@get smartHtml(call, x, y)
                 }
                 route("/{id}") {
@@ -164,10 +166,10 @@ class Api(application: Application) : AbstractDIController(application) {
                         val genreId = call.parameters["id"]?.toLong()!!
                         val genreName = info.genreName(genreId) ?: return@get call.respond(HttpStatusCode.NotFound)
                         val x = createHTML(false).div("tile is-parent columns is-multiline") {
-                            navTile("Authors", "Books in genre by author", "/api/genre/$genreId/author")
-                            navTile("All", "All books in genre", "/api/genre/$genreId/all")
+                            NavTile("Authors", "Books in genre by author", "/api/genre/$genreId/author")
+                            NavTile("All", "All books in genre", "/api/genre/$genreId/all")
                         }
-                        val y = breadCrumbs(
+                        val y = BreadCrumbs(
                             "Library" to "/api",
                             "By Genre" to "/api/genre",
                             genreName to "/api/genre/$genreId"
@@ -183,16 +185,16 @@ class Api(application: Application) : AbstractDIController(application) {
                         val descriptions = info.shortDescriptions(books)
                         val x = createHTML(false).div("tile is-parent columns is-multiline") {
                             for (book in books) {
-                                bookTile(book, images, descriptions)
+                                BookTile(book, images, descriptions)
                             }
                         }
-                        val y = breadCrumbs(
+                        val y = BreadCrumbs(
                             "Library" to "/api",
                             "By Genre" to "/api/genre",
                             genreName to "/api/genre/$genreId",
                             "All books" to "/api/genre/$genreId/all",
                         )
-                        val z = pagination(page, total, "/api/genre/$genreId/all")
+                        val z = Pagination(page, total, "/api/genre/$genreId/all")
                         return@get smartHtml(call, x, y, z)
                     }
                     route("/author") {
@@ -202,10 +204,10 @@ class Api(application: Application) : AbstractDIController(application) {
                             val genreAuthors = info.genreAuthors(genreId)
                             val x = createHTML(false).div("tile is-parent columns is-multiline") {
                                 for ((id, name) in genreAuthors) {
-                                    navTile(name, "Books in $genreName by $name", "/api/genre/$genreId/author/$id")
+                                    NavTile(name, "Books in $genreName by $name", "/api/genre/$genreId/author/$id")
                                 }
                             }
-                            val y = breadCrumbs(
+                            val y = BreadCrumbs(
                                 "Library" to "/api",
                                 "By Genre" to "/api/genre",
                                 genreName to "/api/genre/$genreId",
@@ -222,10 +224,10 @@ class Api(application: Application) : AbstractDIController(application) {
                             val descriptions = info.shortDescriptions(books)
                             val x = createHTML(false).div("tile is-parent columns is-multiline") {
                                 for (book in books) {
-                                    bookTile(book, imageTypes, descriptions)
+                                    BookTile(book, imageTypes, descriptions)
                                 }
                             }
-                            val y = breadCrumbs(
+                            val y = BreadCrumbs(
                                 "Library" to "/api",
                                 "By Genre" to "/api/genre",
                                 genreName to "/api/genre/$genreId",
@@ -246,10 +248,10 @@ class Api(application: Application) : AbstractDIController(application) {
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
-                        bookTile(book, imageTypes, shortDescriptions)
+                        BookTile(book, imageTypes, shortDescriptions)
                     }
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "By Authors" to "/api/author/c",
@@ -257,7 +259,7 @@ class Api(application: Application) : AbstractDIController(application) {
                         "All books" to "/api/author/browse/$authorId/all"
                     )
                 )
-                val z = pagination(page, total, "/api/author/browse/$authorId/all")
+                val z = Pagination(page, total, "/api/author/browse/$authorId/all")
                 return@get smartHtml(call, x, y, z)
             }
             get("/author/browse/{id}/out") {
@@ -269,10 +271,10 @@ class Api(application: Application) : AbstractDIController(application) {
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
-                        bookTile(book, imageTypes, shortDescriptions)
+                        BookTile(book, imageTypes, shortDescriptions)
                     }
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "By Authors" to "/api/author/c",
@@ -290,14 +292,14 @@ class Api(application: Application) : AbstractDIController(application) {
 
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, pair) in namesWithDates) {
-                        navTile(
+                        NavTile(
                             name.second,
                             "${pair.second} books",
                             "/api/author/browse/$authorId/series/${name.first}"
                         )
                     }
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "By Authors" to "/api/author/c",
@@ -317,10 +319,10 @@ class Api(application: Application) : AbstractDIController(application) {
                 val authorName = info.authorName(authorId)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (bookWithInfo in books) {
-                        bookTile(bookWithInfo, imageTypes, shortDescriptions)
+                        BookTile(bookWithInfo, imageTypes, shortDescriptions)
                     }
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "By Authors" to "/api/author/c",
@@ -337,12 +339,12 @@ class Api(application: Application) : AbstractDIController(application) {
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for ((name, countOrId, complete, seqid) in series) {
                         if (!complete)
-                            navTile(name, "$countOrId items inside", "/api/series/browse/${name.encoded}")
+                            NavTile(name, "$countOrId items inside", "/api/series/browse/${name.encoded}")
                         else
-                            navTile(name, "$countOrId items inside", "/api/series/item/$seqid")
+                            NavTile(name, "$countOrId items inside", "/api/series/item/$seqid")
                     }
                 }
-                val y = breadCrumbs(
+                val y = BreadCrumbs(
                     listOfNotNull(
                         "Library" to "/api",
                         "By Series" to "/api/series/browse",
@@ -367,10 +369,10 @@ class Api(application: Application) : AbstractDIController(application) {
                 val imageTypes = info.imageTypes(filtered)
                 val shortDescriptions = info.shortDescriptions(filtered)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
-                    for (bookWithInfo in filtered) bookTile(bookWithInfo, imageTypes, shortDescriptions)
+                    for (bookWithInfo in filtered) BookTile(bookWithInfo, imageTypes, shortDescriptions)
                 }
                 val y =
-                    breadCrumbs(
+                    BreadCrumbs(
                         "Library" to "/api",
                         "Series" to "/api/series/browse",
                         books.first().sequence to "/api/series/item/$seqId"
@@ -382,19 +384,17 @@ class Api(application: Application) : AbstractDIController(application) {
                 val book = info.bookInfo(bookId)
                 val descrHtml = bookDescriptionsLonger(listOf(bookId to book.book))[bookId]
                 val hasImage = info.imageTypes(listOf(book))[bookId] != null
-                val x = modalContent(book, hasImage, descrHtml)
-                call.respondText(x, Html)
+                call.respondText(Modal(book, hasImage, descrHtml), Html)
             }
             get("/book/{id}/image") {
                 val bookId = call.parameters["id"]!!.toLong()
-                val x = modalImageContent("/opds/image/$bookId")
-                call.respondText(x, Html)
+                call.respondText(ModalImage("/opds/image/$bookId"), Html)
             }
         }
 
     }
 
-    private fun modalImageContent(imageUrl: String): String {
+    private fun ModalImage(imageUrl: String): String {
         val closeModalScript = "on click take .is-active from #modal wait 200ms then remove #modal"
         return createHTML(false).div("modal") {
             id = "modal"
@@ -418,7 +418,7 @@ class Api(application: Application) : AbstractDIController(application) {
         call: ApplicationCall,
         content: String,
         breadcrumbs: String,
-        pagination: String = pagination(1, 1, "")
+        pagination: String = Pagination(1, 1, "")
     ) =
         if (call.request.headers["HX-Request"] == "true") call.respondText(
             content + breadcrumbs + pagination,
@@ -426,7 +426,7 @@ class Api(application: Application) : AbstractDIController(application) {
         )
         else call.respondHtml { fullHtml(breadcrumbs, content, pagination) }
 
-    private fun DIV.bookTile(
+    private fun DIV.BookTile(
         bookWithInfo: BookWithInfo,
         images: Map<Long, String?>,
         descriptionsShort: Map<Long, String?>
@@ -481,9 +481,9 @@ class Api(application: Application) : AbstractDIController(application) {
         }
     }
 
-    private fun breadCrumbs(vararg items: Pair<String, String>) = breadCrumbs(items.toList())
+    private fun BreadCrumbs(vararg items: Pair<String, String>) = BreadCrumbs(items.toList())
 
-    private fun breadCrumbs(items: List<Pair<String, String>>) = createHTML(false).div {
+    private fun BreadCrumbs(items: List<Pair<String, String>>) = createHTML(false).div {
         attributes["hx-swap-oob"] = "innerHTML:.breadcrumb"
         ul {
             items.forEachIndexed { index, pair ->
@@ -498,7 +498,7 @@ class Api(application: Application) : AbstractDIController(application) {
         }
     }
 
-    private fun pagination(curPage: Int, total: Int, base: String) = createHTML(false).div {
+    private fun Pagination(curPage: Int, total: Int, base: String) = createHTML(false).div {
         fun String.withParam(param: String) = if (URI(this).query == null) "${this}?$param" else "${this}&$param"
         val last = total / 50 + 1
         attributes["hx-swap-oob"] = "innerHTML:.navv"
@@ -575,7 +575,7 @@ class Api(application: Application) : AbstractDIController(application) {
         attributes["hx-push-url"] = "true"
     }
 
-    private fun modalContent(
+    private fun Modal(
         book: BookWithInfo,
         hasImage: Boolean,
         descrHtml: String?
@@ -666,6 +666,7 @@ class Api(application: Application) : AbstractDIController(application) {
                             attributes["hx-get"] = "/api"
                             attributes["hx-swap"] = "innerHTML show:.input:top"
                             attributes["hx-target"] = "#layout"
+                            +"Asm0dey's library"
                         }
                     }
                 }
@@ -721,7 +722,7 @@ class Api(application: Application) : AbstractDIController(application) {
         }
     }
 
-    fun DIV.navTile(title: String, subtitle: String, href: String) {
+    fun DIV.NavTile(title: String, subtitle: String, href: String) {
         div("tile is-parent is-4 is-clickable") {
             layoutUpdateAttributes(href)
             article("tile box is-child") {
