@@ -27,7 +27,7 @@ ktor = "2.3.8"
 
 kodein-di = "7.21.2"
 
-kotlinx-coroutines = "1.7.3"
+kotlinx-coroutines = "1.8.0"
 ##              ⬆ = "1.8.0-RC"
 ##              ⬆ = "1.8.0-RC2"
 
