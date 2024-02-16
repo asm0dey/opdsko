@@ -40,7 +40,7 @@ tinylog = "2.7.0"
 
 xmlutil = "0.86.3"
 
-flyway = "10.7.1"
+flyway = "10.8.1"
 
 kotlinx-serialization = "1.6.2"
 
