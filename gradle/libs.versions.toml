@@ -42,7 +42,7 @@ xmlutil = "0.86.3"
 
 flyway = "10.7.1"
 
-kotlinx-serialization = "1.6.2"
+kotlinx-serialization = "1.6.3"
 
 [libraries]
 
