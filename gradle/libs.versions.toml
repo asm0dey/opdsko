@@ -31,7 +31,7 @@ kotlinx-coroutines = "1.7.3"
 ##              ⬆ = "1.8.0-RC"
 ##              ⬆ = "1.8.0-RC2"
 
-netty-tcnative = "2.0.62.Final"
+netty-tcnative = "2.0.63.Final"
 
 tinylog = "2.7.0"
 ##   ⬆ = "2.7.0-M1"
