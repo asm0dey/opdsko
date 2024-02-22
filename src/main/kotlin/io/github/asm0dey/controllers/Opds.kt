@@ -31,7 +31,7 @@ import org.kodein.di.ktor.controller.AbstractDIController
 import org.redundent.kotlin.xml.*
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
@@ -84,7 +84,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                         call.request.path(),
                         "Latest books",
                         "new",
-                        books.maxOfOrNull { it.book.added }?.z ?: ZonedDateTime.now()
+                        books.mapNotNull { it.book.added }.maxOrNull()?.z ?: ZonedDateTime.now()
                     ),
                     ContentType.parse(ACQUISITION_TYPE)
                 )
@@ -204,7 +204,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                         val xml = bookXml(
                             result,
                             path,
-                            seqName,
+                            seqName!!,
                             "author:$authorId:series:$seqName"
                         )
                         call.respondText(xml, ContentType.parse(ACQUISITION_TYPE))
@@ -260,8 +260,8 @@ class Opds(application: Application) : AbstractDIController(application) {
                     val books = info.booksBySeriesId(seqId)
                     val allAuthors = books.flatMap { it.authors.map { it.buildName() to it.id } }.toSet()
                     val sorted = when (sorting) {
-                        "num" -> books.sortedBy { it.book.sequenceNumber ?: Int.MAX_VALUE }
-                        "name" -> books.sortedBy { it.book.name!! }
+                        "num" -> books.sortedBy { it.book.sequenceNumber ?: Long.MAX_VALUE }
+                        "name" -> books.sortedBy { it.book.name }
                         else -> books
                     }
                     val filtered =
@@ -270,9 +270,9 @@ class Opds(application: Application) : AbstractDIController(application) {
                     val xml = bookXml(
                         filtered,
                         path,
-                        books.first().sequence,
+                        books.first().sequence!!,
                         "series:$seqId",
-                        sorted.maxOf { it.book.added }.z,
+                        sorted.mapNotNull { it.book.added }.max().z,
                         listOfNotNull(
                             Entry.Link(
                                 "http://opds-spec.org/facet",
@@ -315,7 +315,7 @@ class Opds(application: Application) : AbstractDIController(application) {
         entryXml(
             book,
             info.imageTypes(listOf(book))[book.id],
-            bookDescriptionsLonger(listOf(book.id to book.book),"/opds/series/item", htmx = false)[book.id],
+            bookDescriptionsLonger(listOf(book.id to book.book), "/opds/series/item", htmx = false)[book.id],
             info.shortDescriptions(listOf(book))[book.id],
             call.request.path()
         )
@@ -422,7 +422,7 @@ class Opds(application: Application) : AbstractDIController(application) {
         path: String,
         title: String,
         id: String,
-        updated: ZonedDateTime = books.maxOf { it.book.added }.z,
+        updated: ZonedDateTime = books.mapNotNull { it.book.added }.max().z,
         additionalLinks: List<Entry.Link> = listOf()
     ): String {
         val shortDescriptions = info.shortDescriptions(books)
@@ -448,7 +448,7 @@ class Opds(application: Application) : AbstractDIController(application) {
                     book,
                     imageTypes,
                     shortDescriptions,
-                    formatDate(books.maxOf { it.book.added }.z)
+                    formatDate(books.mapNotNull { it.book.added }.max().z)
                 )
             }
         }
@@ -510,10 +510,10 @@ class Opds(application: Application) : AbstractDIController(application) {
             "published"(root) { -formatDate(ZonedDateTime.now()) }
             "updated"(root) { -updated }
             if (!book.book.lang.isNullOrBlank()) {
-                "language"(dcterms) { -book.book.lang }
+                "language"(dcterms) { -book.book.lang!! }
             }
-            if (!book.book.date.isNullOrBlank()) {
-                "date"(dcterms) { -book.book.date }
+            if (book.book.date != null) {
+                "date"(dcterms) { -book.book.date.toString() }
             }
             for (genre in book.genres) {
                 "category"(root) {
@@ -633,7 +633,7 @@ class Opds(application: Application) : AbstractDIController(application) {
         ),
     )
 
-    private fun authorSeries(namesWithDates: Map<Pair<Int, String>, Pair<LocalDateTime, Int>>, authorId: Long) =
+    private fun authorSeries(namesWithDates: Map<Pair<Int, String>, Pair<OffsetDateTime, Int>>, authorId: Long) =
         namesWithDates.map { (name, dateAndCount) ->
             Entry(
                 name.second,
@@ -679,9 +679,9 @@ class Opds(application: Application) : AbstractDIController(application) {
                 }
             }
             "published"(root) { -formatDate(ZonedDateTime.now()) }
-            "updated"(root) { -formatDate(book.book.added) }
-            if (!book.book.lang.isNullOrBlank()) "language"(dcterms) { -book.book.lang }
-            if (!book.book.date.isNullOrBlank()) "language"(dcterms) { -book.book.date }
+            "updated"(root) { -formatDate(book.book.added!!) }
+            if (!book.book.lang.isNullOrBlank()) "language"(dcterms) { -book.book.lang!! }
+            if (book.book.date != null) "language"(dcterms) { -book.book.date.toString() }
             for (genre in book.genres) {
                 "category"(root, Attribute("term", genre), Attribute("label", genre))
             }
