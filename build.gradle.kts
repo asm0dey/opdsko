@@ -1,6 +1,23 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jooq.meta.jaxb.Logging
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.utility.DockerImageName
 import java.util.*
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("org.testcontainers:testcontainers:1.19.5")
+        classpath("org.testcontainers:postgresql:1.19.5")
+//        classpath(libs.liquibase.core)
+//        classpath(libs.jooq.codegen)
+//        classpath(libs.postgres.jdbc)
+    }
+}
+
 
 plugins {
     java
@@ -10,7 +27,9 @@ plugins {
     alias(libs.plugins.jooq)
     alias(libs.plugins.org.flywaydb.flyway)
     alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
-    alias(libs.plugins.graalvm)
+    alias(libs.plugins.com.bmuschko.docker.remote.api)
+    alias(libs.plugins.org.liquibase.gradle)
+
 }
 
 group = "io.github.asm0dey"
@@ -67,7 +86,8 @@ dependencies {
     implementation(libs.jooq.kotlin)
     implementation(libs.sqlite.jdbc)
     jooqCodegen(libs.sqlite.jdbc)
-    nativeImageClasspath(libs.sqlite.jdbc)
+    jooqCodegen(libs.postgres.jdbc)
+
     // utils
     implementation(libs.commons.codec)
     implementation(libs.kotlin.process)
@@ -89,6 +109,10 @@ dependencies {
     implementation(libs.hyperscript.org)
     implementation(libs.font.awesome)
     implementation(libs.bulma)
+
+    liquibaseRuntime(libs.liquibase.core)
+    liquibaseRuntime(libs.picocli)
+    liquibaseRuntime(libs.postgres.jdbc)
 }
 
 configure<SourceSetContainer> {
@@ -107,36 +131,14 @@ kotlin {
 }
 
 java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
-val jooqDb = mapOf("url" to "jdbc:sqlite:$projectDir/build/db/opds.db")
 
-flyway {
-    url = jooqDb["url"]
-    locations = arrayOf("classpath:db/migration")
-    mixed = true
-}
-
-tasks.compileKotlin.configure {
-    dependsOn(tasks.named("jooqCodegen"))
-}
-
-sourceSets {
-    //add a flyway sourceSet
-    val flyway by creating {
-        compileClasspath += sourceSets.main.get().compileClasspath
-        runtimeClasspath += sourceSets.main.get().runtimeClasspath
-    }
-    //main sourceSet depends on the output of flyway sourceSet
-    main {
-        output.dir(flyway.output)
-    }
-}
-val migrationDirs = listOf(
-    "$projectDir/src/flyway/resources/db/migration",
-    // "$projectDir/src/flyway/kotlin/db/migration" // Uncomment if we'll add kotlin migrations
-)
+/*
 tasks.flywayMigrate {
     dependsOn("flywayClasses")
     migrationDirs.forEach { inputs.dir(it) }
@@ -148,14 +150,27 @@ tasks.flywayMigrate {
 
     }
 }
+*/
+tasks.register<StartContainer>("startContainer") {
+    container.set(
+        PostgreSQLContainer(
+            DockerImageName.parse("paradedb/paradedb:latest").asCompatibleSubstituteFor("postgres")
+        )
+    )
+}
 
 jooq {
     configuration {
         logging = Logging.WARN
         jdbc {
-            url = jooqDb["url"]
+            val container = tasks.named<StartContainer>("startContainer").get().container
+            driver = "org.postgresql.Driver"
+            url = container.get().getJdbcUrl()
+            username = container.get().username
+            password = container.get().password
         }
         generator {
+            name = "org.jooq.codegen.KotlinGenerator"
             generate {
                 isDeprecated = false
                 isRecords = true
@@ -164,52 +179,87 @@ jooq {
                 isJavaTimeTypes = true
                 isImmutableInterfaces = true
                 isDaos = true
+                isLinks = true
+                isPojosAsKotlinDataClasses = true
+                isDaos = true
                 isKotlinNotNullInterfaceAttributes = true
                 isKotlinNotNullPojoAttributes = true
                 isKotlinNotNullRecordAttributes = true
-                isLinks = true
-                isPojosAsKotlinDataClasses = true
+                isImplicitJoinPathsAsKotlinProperties = true
+                isKotlinDefaultedNullablePojoAttributes = true
+                isKotlinDefaultedNullableRecordAttributes = true
             }
             target {
                 packageName = "io.github.asm0dey.opdsko.jooq"
                 directory = "src/main/java"
             }
             database {
-                forcedTypes {
-                    forcedType {
-                        name = "TIMESTAMP"
-                        includeExpression = ".*\\.added"
+                schemata {
+                    schema {
+                        inputSchema = "public"
                     }
-                    forcedType {
-                        name = "BIGINT"
-                        includeExpression = ".*\\.id"
-                    }
-                    forcedType {
-                        name = "TEXT"
-                        includeExpression = ".*_fts\\..*"
-                    }
-                    forcedType {
-                        name = "BIGINT"
-                        includeExpression = ".*\\..*_id"
+                    schema {
+                        inputSchema = "book_ngr_idx"
                     }
                 }
-                excludes = ".*(_fts_|flyway_).*"
+                excludes = """
+                   databasechangelog.*
+                   | vector.*
+                   | svector.*
+                   | l1_.*
+                   | l2_.*
+                   | array_.*
+                   | cosine.*
+                   | avg
+                   | hnsw.*
+                   | inner.*
+                   | sum.*
+                   | ivf.*
+                   | shns.*
+                """.trimIndent()
             }
         }
     }
 }
 
-graalvmNative {
-    agent {
-        enabled.set(true)
+liquibase {
+    val container = tasks.named<StartContainer>("startContainer").get().container
+    activities.register("main") {
+        this.arguments = mapOf(
+            "logLevel" to "debug",
+            "classpath" to "${project.rootDir}/src/main/",
+            "changeLogFile" to "resources/db/changelog-main.xml",
+            "url" to container.get().getJdbcUrl(),
+            "username" to container.get().username,
+            "password" to container.get().password,
+            "driver" to "org.postgresql.Driver"
+        )
     }
-    toolchainDetection.set(true)
-    binaries {
-        named("main") {
-            imageName.set("opdsko")
-            verbose.set(true)
-            fallback.set(false)
-            useFatJar.set(true)
-        }
+    runList = "main"
+}
+
+//val pgContainer = PostgreSQLContainer(DockerImageName.parse("paradedb/paradedb:latest").asCompatibleSubstituteFor("postgres"))
+
+abstract class StartContainer : DefaultTask() {
+    @get:Input
+    abstract val container: Property<PostgreSQLContainer<*>>
+
+    @TaskAction
+    fun start() {
+        container.get().start()
     }
+}
+
+
+tasks.named("update") {
+    dependsOn("startContainer")
+}
+
+tasks.named("jooqCodegen") {
+    dependsOn("update")
+    finalizedBy("stopContainer")
+}
+
+tasks.compileKotlin {
+    dependsOn("jooqCodegen")
 }

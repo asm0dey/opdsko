@@ -20,17 +20,16 @@ package io.github.asm0dey.service
 import com.kursx.parser.fb2.Element
 import com.kursx.parser.fb2.FictionBook
 import io.github.asm0dey.genreNames
-import io.github.asm0dey.opdsko.jooq.Tables
-import io.github.asm0dey.opdsko.jooq.tables.interfaces.IAuthor
-import io.github.asm0dey.opdsko.jooq.tables.interfaces.IBook
-import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
-import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
+import io.github.asm0dey.opdsko.jooq.public.tables.interfaces.IAuthor
+import io.github.asm0dey.opdsko.jooq.public.tables.interfaces.IBook
+import io.github.asm0dey.opdsko.jooq.public.tables.records.AuthorRecord
+import io.github.asm0dey.opdsko.jooq.public.tables.records.BookRecord
+import io.github.asm0dey.opdsko.jooq.public.tables.records.GenreRecord
 import io.github.asm0dey.plugins.dtf
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import net.lingala.zip4j.ZipFile
-import org.jooq.Record2
-import org.jooq.Record5
+import org.jooq.Record3
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -48,21 +47,21 @@ val String.decoded: String get() = URLDecoder.decode(this, StandardCharsets.UTF_
 
 @JvmInline
 @Suppress("unused")
-value class BookWithInfo(val record: Record5<Long, MutableList<Book>, MutableList<Author>, List<Record2<String, Long>>, String>) {
+value class BookWithInfo(val record: Record3<BookRecord, List<AuthorRecord>, List<GenreRecord>>) {
     val book: IBook
-        get() = record.component2()[0]
+        get() = record.component1()
     val authors: List<IAuthor>
-        get() = record.component3()!!
+        get() = record.component2()!!
     val genres: List<Pair<String, Long>>
-        get() = record.component4().map {
-            val id = it.component2()
-            val name = genreNames[it.component1()] ?: it.component1()
+        get() = record.component3().map {
+            val id = it.id!!
+            val name = genreNames[it.name] ?: it.name
             name to id
         }
     val id
-        get() = record.get(Tables.BOOK.ID)!!
+        get() = book.id!!
     val sequence
-        get() = record.get(Tables.BOOK.SEQUENCE)
+        get() = book.sequence
 }
 
 @Suppress("unused")

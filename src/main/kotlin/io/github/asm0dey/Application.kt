@@ -21,18 +21,17 @@ import com.kursx.parser.fb2.FictionBook
 import com.kursx.parser.fb2.Person
 import io.github.asm0dey.inpx.InpxParser
 import io.github.asm0dey.model.Entry
-import io.github.asm0dey.opdsko.jooq.Tables.*
-import io.github.asm0dey.opdsko.jooq.tables.daos.BookAuthorDao
-import io.github.asm0dey.opdsko.jooq.tables.daos.BookGenreDao
-import io.github.asm0dey.opdsko.jooq.tables.daos.GenreDao
-import io.github.asm0dey.opdsko.jooq.tables.pojos.BookAuthor
-import io.github.asm0dey.opdsko.jooq.tables.pojos.BookGenre
-import io.github.asm0dey.opdsko.jooq.tables.records.AuthorRecord
-import io.github.asm0dey.opdsko.jooq.tables.records.BookAuthorRecord
-import io.github.asm0dey.opdsko.jooq.tables.records.BookGenreRecord
-import io.github.asm0dey.opdsko.jooq.tables.records.BookRecord
+import io.github.asm0dey.opdsko.jooq.public.tables.daos.GenreDao
+import io.github.asm0dey.opdsko.jooq.public.tables.records.AuthorRecord
+import io.github.asm0dey.opdsko.jooq.public.tables.records.BookAuthorRecord
+import io.github.asm0dey.opdsko.jooq.public.tables.records.BookGenreRecord
+import io.github.asm0dey.opdsko.jooq.public.tables.records.BookRecord
+import io.github.asm0dey.opdsko.jooq.public.tables.references.AUTHOR
+import io.github.asm0dey.opdsko.jooq.public.tables.references.BOOK
+import io.github.asm0dey.opdsko.jooq.public.tables.references.GENRE
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
+import kotlinx.coroutines.selects.select
 import net.lingala.zip4j.ZipFile
 import org.flywaydb.core.Flyway
 import org.jooq.Configuration
@@ -45,6 +44,7 @@ import java.net.URL
 import java.nio.channels.Channels
 import java.nio.file.attribute.PosixFilePermission.*
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events.StartElement
@@ -366,10 +366,10 @@ private fun Configuration.saveBook(
                 null,
                 bookPath,
                 title,
-                date,
-                LocalDateTime.now(),
+                LocalDateTime.parse(date),
+                OffsetDateTime.now(),
                 seqName,
-                seqNo,
+                seqNo?.toLong(),
                 lang,
                 archive,
                 null
@@ -377,7 +377,7 @@ private fun Configuration.saveBook(
         )
         .returning()
         .fetchSingle()
-        .id
+        .id!!
     val authorIds = authors?.map {
         transaction.select(AUTHOR.ID)
             .from(AUTHOR)
@@ -387,22 +387,22 @@ private fun Configuration.saveBook(
                 AUTHOR.FIRST_NAME.isNotDistinctFrom(it.firstName.normalizeName()),
                 AUTHOR.NICKNAME.isNotDistinctFrom(it.nickname.normalizeName()),
             )
-            .fetchOne { it[AUTHOR.ID] }
+            .fetchOne { it[AUTHOR.ID]!! }
             ?: transaction.insertInto(AUTHOR)
                 .set(
                     AuthorRecord(
                         null,
-                        it.id,
+                        it.id?.toIntOrNull(),
                         it.firstName.normalizeName(),
                         it.middleName.normalizeName(),
                         it.lastName.normalizeName(),
                         it.nickname.normalizeName(),
-                        LocalDateTime.now()
+                        OffsetDateTime.now()
                     )
                 )
                 .returning(AUTHOR.ID)
                 .fetchSingle()
-                .id
+                .id!!
     }?.toSet() ?: emptySet()
     val genreIds = genres?.map {
         GenreDao(this).fetchByName(it).firstOrNull()?.id
@@ -411,10 +411,8 @@ private fun Configuration.saveBook(
                 .values(it)
                 .returning()
                 .fetchSingle()
-                .id
+                .id!!
     }?.toSet() ?: setOf()
-    BookAuthorDao(this).insert(authorIds.map { BookAuthor(bookId, it) })
-    BookGenreDao(this).insert(genreIds.map { BookGenre(bookId, it) })
     transaction.batchInsert(
         authorIds.map { BookAuthorRecord(bookId, it) } + genreIds.map { BookGenreRecord(bookId, it) }
     )
