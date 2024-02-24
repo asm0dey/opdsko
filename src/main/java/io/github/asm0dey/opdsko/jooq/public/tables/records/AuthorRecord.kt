@@ -44,6 +44,10 @@ open class AuthorRecord private constructor() : UpdatableRecordImpl<AuthorRecord
         set(value): Unit = set(6, value)
         get(): OffsetDateTime? = get(6) as OffsetDateTime?
 
+    open override var fullName: String?
+        set(value): Unit = set(7, value)
+        get(): String? = get(7) as String?
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -62,13 +66,14 @@ open class AuthorRecord private constructor() : UpdatableRecordImpl<AuthorRecord
         this.lastName = from.lastName
         this.nickname = from.nickname
         this.added = from.added
+        this.fullName = from.fullName
         resetChangedOnNotNull()
     }
 
     /**
      * Create a detached, initialised AuthorRecord
      */
-    constructor(id: Long? = null, fb2id: Int? = null, firstName: String? = null, middleName: String? = null, lastName: String? = null, nickname: String? = null, added: OffsetDateTime? = null): this() {
+    constructor(id: Long? = null, fb2id: Int? = null, firstName: String? = null, middleName: String? = null, lastName: String? = null, nickname: String? = null, added: OffsetDateTime? = null, fullName: String? = null): this() {
         this.id = id
         this.fb2id = fb2id
         this.firstName = firstName
@@ -76,6 +81,7 @@ open class AuthorRecord private constructor() : UpdatableRecordImpl<AuthorRecord
         this.lastName = lastName
         this.nickname = nickname
         this.added = added
+        this.fullName = fullName
         resetChangedOnNotNull()
     }
 
@@ -91,6 +97,7 @@ open class AuthorRecord private constructor() : UpdatableRecordImpl<AuthorRecord
             this.lastName = value.lastName
             this.nickname = value.nickname
             this.added = value.added
+            this.fullName = value.fullName
             resetChangedOnNotNull()
         }
     }

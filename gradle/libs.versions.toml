@@ -2,25 +2,29 @@
 
 [plugins]
 
-org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.22" }
+org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
 com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 
 nu-studer-jooq = { id = "nu.studer.jooq", version = "9.0" }
 
 jooq = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.3" }
+##                                                 ⬆ = "3.19.4" }
 
 org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "10.8.1" }
 
-org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.9.22" }
+org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 graalvm = {id="org.graalvm.buildtools.native", version="0.10.0"}
 
 org-jooq-jooq-codegen-gradle = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.3" }
+##                                                                         ⬆ = "3.19.4" }
 
 com-bmuschko-docker-remote-api = { id = "com.bmuschko.docker-remote-api", version = "6.7.0" }
 
 org-liquibase-gradle = { id = "org.liquibase.gradle", version = "2.2.1" }
+
+com-dorongold-task-tree = { id = "com.dorongold.task-tree", version = "2.1.1" }
 
 [versions]
 
@@ -149,3 +153,11 @@ kotlin-serialization-compiler-plugin-embeddable = { group = "org.jetbrains.kotli
 liquibase-core = "org.liquibase:liquibase-core:4.26.0"
 
 picocli = "info.picocli:picocli:4.7.5"
+
+testcontainers = "org.testcontainers:testcontainers:1.19.6"
+
+org-testcontainers-postgresql = "org.testcontainers:postgresql:1.19.6"
+
+docker-java = "com.github.docker-java:docker-java:3.3.5"
+
+org-postgresql-postgresql = "org.postgresql:postgresql:42.7.2"

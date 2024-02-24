@@ -20,4 +20,5 @@ interface IAuthor : Serializable {
     val lastName: String?
     val nickname: String?
     val added: OffsetDateTime?
+    val fullName: String?
 }

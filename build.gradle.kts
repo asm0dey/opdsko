@@ -10,11 +10,9 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.testcontainers:testcontainers:1.19.5")
-        classpath("org.testcontainers:postgresql:1.19.5")
-//        classpath(libs.liquibase.core)
-//        classpath(libs.jooq.codegen)
-//        classpath(libs.postgres.jdbc)
+        classpath(libs.testcontainers)
+        classpath(libs.org.testcontainers.postgresql)
+        classpath(libs.docker.java)
     }
 }
 
@@ -25,15 +23,12 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.com.github.johnrengelman.shadow)
     alias(libs.plugins.jooq)
-    alias(libs.plugins.org.flywaydb.flyway)
-    alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
-    alias(libs.plugins.com.bmuschko.docker.remote.api)
     alias(libs.plugins.org.liquibase.gradle)
-
+    alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
 }
 
 group = "io.github.asm0dey"
-version = "0.1.7"
+version = "1.0.0"
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -110,9 +105,11 @@ dependencies {
     implementation(libs.font.awesome)
     implementation(libs.bulma)
 
+    implementation(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.picocli)
     liquibaseRuntime(libs.postgres.jdbc)
+    runtimeOnly(libs.postgres.jdbc)
 }
 
 configure<SourceSetContainer> {
@@ -138,32 +135,47 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-/*
-tasks.flywayMigrate {
-    dependsOn("flywayClasses")
-    migrationDirs.forEach { inputs.dir(it) }
-    outputs.dirs("${project.layout.buildDirectory}/generated/flyway", "${project.layout.buildDirectory}/db")
-    doFirst {
-        logger.info("Deleting old")
-        delete(outputs.files)
-        logger.info("Creating directory ${project.layout.buildDirectory}/db with result ${File("$projectDir/build/db").mkdirs()}")
+val parade = PostgreSQLContainer(
+    DockerImageName.parse("paradedb/paradedb:latest").asCompatibleSubstituteFor("postgres")
+)
 
+val start by tasks.registering(Container::class) {
+    println("START CONTAINER")
+    container = parade
+    start()
+}
+
+val stop by tasks.registering {
+    println("STOP CONTAINER CONFIG")
+    doLast {
+        println("STOP CONTAINER")
+        parade.stop()
+        parade.close()
+        println("PARADE STOPPED")
     }
 }
-*/
-tasks.register<StartContainer>("startContainer") {
-    container.set(
-        PostgreSQLContainer(
-            DockerImageName.parse("paradedb/paradedb:latest").asCompatibleSubstituteFor("postgres")
-        )
-    )
-}
 
+liquibase {
+    activities.register("main") {
+        val container = start.get().container
+        this.arguments = mapOf(
+            "logLevel" to "debug",
+            "classpath" to "${project.rootDir}/src/main/",
+            "changeLogFile" to "resources/db/changelog-main.xml",
+            "url" to container.get().getJdbcUrl(),
+            "username" to container.get().username,
+            "password" to container.get().password,
+            "driver" to "org.postgresql.Driver"
+        )
+    }
+    runList = "main"
+}
 jooq {
     configuration {
         logging = Logging.WARN
+
         jdbc {
-            val container = tasks.named<StartContainer>("startContainer").get().container
+            val container = start.get().container
             driver = "org.postgresql.Driver"
             url = container.get().getJdbcUrl()
             username = container.get().username
@@ -216,31 +228,20 @@ jooq {
                    | sum.*
                    | ivf.*
                    | shns.*
+                   | gin_.*
+                   | gtrgm_.*
+                   | strict_.*
+                   | word_.*
+                   | show_.*
+                   | similarity_.*
                 """.trimIndent()
             }
         }
+
     }
 }
 
-liquibase {
-    val container = tasks.named<StartContainer>("startContainer").get().container
-    activities.register("main") {
-        this.arguments = mapOf(
-            "logLevel" to "debug",
-            "classpath" to "${project.rootDir}/src/main/",
-            "changeLogFile" to "resources/db/changelog-main.xml",
-            "url" to container.get().getJdbcUrl(),
-            "username" to container.get().username,
-            "password" to container.get().password,
-            "driver" to "org.postgresql.Driver"
-        )
-    }
-    runList = "main"
-}
-
-//val pgContainer = PostgreSQLContainer(DockerImageName.parse("paradedb/paradedb:latest").asCompatibleSubstituteFor("postgres"))
-
-abstract class StartContainer : DefaultTask() {
+abstract class Container : DefaultTask() {
     @get:Input
     abstract val container: Property<PostgreSQLContainer<*>>
 
@@ -248,18 +249,21 @@ abstract class StartContainer : DefaultTask() {
     fun start() {
         container.get().start()
     }
+
+    fun stop() {
+        container.get().stop()
+    }
 }
 
-
-tasks.named("update") {
-    dependsOn("startContainer")
+tasks.named("update").configure {
+    dependsOn(start)
 }
 
-tasks.named("jooqCodegen") {
-    dependsOn("update")
-    finalizedBy("stopContainer")
+tasks.jooqCodegen.configure {
+    dependsOn(tasks.named("update"))
+    finalizedBy(stop)
 }
 
-tasks.compileKotlin {
-    dependsOn("jooqCodegen")
+tasks.compileKotlin.configure {
+    dependsOn(tasks.jooqCodegen)
 }

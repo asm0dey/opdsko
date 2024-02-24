@@ -4,7 +4,6 @@
 package io.github.asm0dey.opdsko.jooq.`public`.tables.pojos
 
 
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 
@@ -16,7 +15,7 @@ data class Book(
     override val id: Long? = null,
     override val path: String,
     override val name: String,
-    override val date: LocalDateTime? = null,
+    override val date: String? = null,
     override val added: OffsetDateTime? = null,
     override val sequence: String? = null,
     override val sequenceNumber: Long? = null,

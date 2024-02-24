@@ -36,11 +36,10 @@ class Simple(app: Application) : AbstractDIController(app) {
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
                 val searchTerm = URLDecoder.decode(call.request.queryParameters["search"]!!, StandardCharsets.UTF_8)
                 val (books, _, total) = info.searchBookByText(searchTerm, page - 1)
-                val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
-                        bookTile(book, imageTypes, shortDescriptions)
+                        bookTile(book, shortDescriptions)
                     }
                 }
                 val y = breadCrumbs(
@@ -54,11 +53,10 @@ class Simple(app: Application) : AbstractDIController(app) {
             }
             get("/new") {
                 val books = info.latestBooks().map { BookWithInfo(it) }
-                val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
-                        bookTile(book, imageTypes, shortDescriptions)
+                        bookTile(book, shortDescriptions)
                     }
                 }
                 val y = breadCrumbs(
@@ -153,11 +151,10 @@ class Simple(app: Application) : AbstractDIController(app) {
                         val genreName = info.genreName(genreId) ?: return@get call.respond(HttpStatusCode.NotFound)
                         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
                         val (total, books) = info.booksInGenre(genreId, page - 1)
-                        val images = info.imageTypes(books)
                         val descriptions = info.shortDescriptions(books)
                         val x = createHTML(false).div("tile is-parent columns is-multiline") {
                             for (book in books) {
-                                bookTile(book, images, descriptions)
+                                bookTile(book, descriptions)
                             }
                         }
                         val y = breadCrumbs(
@@ -192,11 +189,10 @@ class Simple(app: Application) : AbstractDIController(app) {
                             val genreName = info.genreName(genreId) ?: return@get call.respond(HttpStatusCode.NotFound)
                             val authorId = call.parameters["aid"]?.toLong()!!
                             val (authorName, books) = info.booksByGenreAndAuthor(genreId, authorId)
-                            val imageTypes = info.imageTypes(books)
                             val descriptions = info.shortDescriptions(books)
                             val x = createHTML(false).div("tile is-parent columns is-multiline") {
                                 for (book in books) {
-                                    bookTile(book, imageTypes, descriptions)
+                                    bookTile(book, descriptions)
                                 }
                             }
                             val y = breadCrumbs(
@@ -216,11 +212,10 @@ class Simple(app: Application) : AbstractDIController(app) {
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
                 val (total, books) = info.allBooksByAuthor(authorId, page - 1)
                 val authorName = info.authorName(authorId)
-                val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
-                        bookTile(book, imageTypes, shortDescriptions)
+                        bookTile(book, shortDescriptions)
                     }
                 }
                 val y = breadCrumbs(
@@ -239,11 +234,11 @@ class Simple(app: Application) : AbstractDIController(app) {
                 val books = info.booksWithoutSeriesByAuthorId(authorId)
                 val authorName = info.authorName(authorId)
 
-                val imageTypes = info.imageTypes(books)
+                info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
-                        bookTile(book, imageTypes, shortDescriptions)
+                        bookTile(book, shortDescriptions)
                     }
                 }
                 val y = breadCrumbs(
@@ -286,12 +281,11 @@ class Simple(app: Application) : AbstractDIController(app) {
                 val seqId = call.parameters["seqId"]!!.toLong()
                 val books = info.booksBySeriesAndAuthor(seqId, authorId)
                 val path = call.request.path()
-                val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val authorName = info.authorName(authorId)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (bookWithInfo in books) {
-                        bookTile(bookWithInfo, imageTypes, shortDescriptions)
+                        bookTile(bookWithInfo, shortDescriptions)
                     }
                 }
                 val y = breadCrumbs(
@@ -331,23 +325,22 @@ class Simple(app: Application) : AbstractDIController(app) {
                 val sorting = call.request.queryParameters["sort"] ?: "num"
                 val books = info.booksBySeriesId(seqId)
                 val sorted = when (sorting) {
-                    "num" -> books.sortedBy { it.book.sequenceNumber ?: Int.MAX_VALUE }
-                    "name" -> books.sortedBy { it.book.name!! }
+                    "num" -> books.sortedBy { it.book.sequenceNumber ?: Long.MAX_VALUE }
+                    "name" -> books.sortedBy { it.book.name }
                     else -> books
                 }
                 val filtered =
                     authorFilter?.let { aId -> sorted.filter { it.authors.any { it.id == aId } } }?.toList()
                         ?: sorted.toList()
-                val imageTypes = info.imageTypes(filtered)
                 val shortDescriptions = info.shortDescriptions(filtered)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
-                    for (bookWithInfo in filtered) bookTile(bookWithInfo, imageTypes, shortDescriptions)
+                    for (bookWithInfo in filtered) bookTile(bookWithInfo, shortDescriptions)
                 }
                 val y =
                     breadCrumbs(
                         "Library" to "/simple",
                         "Series" to "/simple/series/browse",
-                        books.first().sequence to "/simple/series/item/$seqId"
+                        books.first().sequence!! to "/simple/series/item/$seqId"
                     )
                 return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
@@ -355,8 +348,7 @@ class Simple(app: Application) : AbstractDIController(app) {
                 val bookId = call.parameters["id"]!!.toLong()
                 val book = info.bookInfo(bookId)
                 val descrHtml = bookDescriptionsLonger(listOf(bookId to book.book))[bookId]
-                val hasImage = info.imageTypes(listOf(book))[bookId] != null
-                val x = modalContent(book, hasImage, descrHtml)
+                val x = modalContent(book, descrHtml)
                 call.respondText(x, ContentType.Text.Html)
             }
             get("/book/{id}/image") {
@@ -367,43 +359,7 @@ class Simple(app: Application) : AbstractDIController(app) {
         }
     }
 
-    private fun BODY.navbar() {
-        script {
-            unsafe {
-                +("""function addFontSize(addPx){
-                                      html = document.querySelector('html');
-                                      currentSize = parseFloat(window.getComputedStyle(html, null)
-                                        .getPropertyValue('font-size'));
-                                      html.style.fontSize = (currentSize + addPx) + 'px';
-                                    }
-                                    """.trimIndent())
-            }
-        }
-        nav {
-            ul {
-                li { +"Library" }
-                li {
-                    a {
-                        onClick = "addFontSize(1)"
-                        +"A+"
-                    }
-                    +"|"
-                    a {
-                        onClick = "addFontSize(-1)"
-                        +"ᴀ-"
-                    }
-                }
-            }
-        }
-    }
-
-    private fun HTML.head() {
-        head {
-            link("https://unpkg.com/awsm.css/dist/awsm.min.css", rel = "stylesheet")
-        }
-    }
-
-    fun DIV.navTile(title: String, subtitle: String, href: String) {
+    private fun DIV.navTile(title: String, subtitle: String, href: String) {
         div("tile is-parent is-4 is-clickable") {
             a(href = href) {
                 article("tile box is-child") {
@@ -558,7 +514,6 @@ class Simple(app: Application) : AbstractDIController(app) {
 
     private fun DIV.bookTile(
         bookWithInfo: BookWithInfo,
-        images: Map<Long, String?>,
         descriptionsShort: Map<Long, String?>
     ) {
         div("tile is-parent is-4") {
@@ -607,7 +562,6 @@ class Simple(app: Application) : AbstractDIController(app) {
 
     private fun modalContent(
         book: BookWithInfo,
-        hasImage: Boolean,
         descrHtml: String?
     ): String {
         val closeModalScript = "on click take .is-active from #modal wait 200ms then remove #modal"

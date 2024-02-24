@@ -4,7 +4,6 @@
 package io.github.asm0dey.opdsko.jooq.`public`.tables.records
 
 
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 import org.jooq.Record1
@@ -29,9 +28,9 @@ open class BookRecord private constructor() : UpdatableRecordImpl<BookRecord>(io
         set(value): Unit = set(2, value)
         get(): String = get(2) as String
 
-    open override var date: LocalDateTime?
+    open override var date: String?
         set(value): Unit = set(3, value)
-        get(): LocalDateTime? = get(3) as LocalDateTime?
+        get(): String? = get(3) as String?
 
     open override var added: OffsetDateTime?
         set(value): Unit = set(4, value)
@@ -84,7 +83,7 @@ open class BookRecord private constructor() : UpdatableRecordImpl<BookRecord>(io
     /**
      * Create a detached, initialised BookRecord
      */
-    constructor(id: Long? = null, path: String, name: String, date: LocalDateTime? = null, added: OffsetDateTime? = null, sequence: String? = null, sequenceNumber: Long? = null, lang: String? = null, zipFile: String? = null, seqid: Int? = null): this() {
+    constructor(id: Long? = null, path: String, name: String, date: String? = null, added: OffsetDateTime? = null, sequence: String? = null, sequenceNumber: Long? = null, lang: String? = null, zipFile: String? = null, seqid: Int? = null): this() {
         this.id = id
         this.path = path
         this.name = name

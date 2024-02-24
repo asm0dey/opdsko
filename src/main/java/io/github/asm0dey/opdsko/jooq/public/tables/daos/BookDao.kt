@@ -4,7 +4,6 @@
 package io.github.asm0dey.opdsko.jooq.`public`.tables.daos
 
 
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 import kotlin.collections.List
@@ -68,12 +67,12 @@ open class BookDao(configuration: Configuration?) : DAOImpl<io.github.asm0dey.op
      * Fetch records that have <code>date BETWEEN lowerInclusive AND
      * upperInclusive</code>
      */
-    fun fetchRangeOfDate(lowerInclusive: LocalDateTime?, upperInclusive: LocalDateTime?): List<io.github.asm0dey.opdsko.jooq.`public`.tables.pojos.Book> = fetchRange(io.github.asm0dey.opdsko.jooq.`public`.tables.Book.BOOK.DATE, lowerInclusive, upperInclusive)
+    fun fetchRangeOfDate(lowerInclusive: String?, upperInclusive: String?): List<io.github.asm0dey.opdsko.jooq.`public`.tables.pojos.Book> = fetchRange(io.github.asm0dey.opdsko.jooq.`public`.tables.Book.BOOK.DATE, lowerInclusive, upperInclusive)
 
     /**
      * Fetch records that have <code>date IN (values)</code>
      */
-    fun fetchByDate(vararg values: LocalDateTime): List<io.github.asm0dey.opdsko.jooq.`public`.tables.pojos.Book> = fetch(io.github.asm0dey.opdsko.jooq.`public`.tables.Book.BOOK.DATE, *values)
+    fun fetchByDate(vararg values: String): List<io.github.asm0dey.opdsko.jooq.`public`.tables.pojos.Book> = fetch(io.github.asm0dey.opdsko.jooq.`public`.tables.Book.BOOK.DATE, *values)
 
     /**
      * Fetch records that have <code>added BETWEEN lowerInclusive AND

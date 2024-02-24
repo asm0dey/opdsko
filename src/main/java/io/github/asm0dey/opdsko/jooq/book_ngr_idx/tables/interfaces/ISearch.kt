@@ -5,7 +5,6 @@ package io.github.asm0dey.opdsko.jooq.book_ngr_idx.tables.interfaces
 
 
 import java.io.Serializable
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 
@@ -17,7 +16,7 @@ interface ISearch : Serializable {
     val id: Long?
     val path: String
     val name: String
-    val date: LocalDateTime?
+    val date: String?
     val added: OffsetDateTime?
     val sequence: String?
     val sequenceNumber: Long?

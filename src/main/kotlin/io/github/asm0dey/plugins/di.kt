@@ -36,6 +36,8 @@ import org.kodein.di.ktor.di
 import org.tinylog.kotlin.Logger
 import javax.sql.DataSource
 
+
+@Suppress("unused")
 fun Application.ioc() {
     di {
         bindSingleton<DataSource> {
@@ -48,21 +50,13 @@ fun Application.ioc() {
             config.connectionTestQuery = "SELECT 1"
             config.maxLifetime = 60000
             config.idleTimeout = 45000
-            config.maximumPoolSize = 3
-            HikariDataSource(config).also {
-                it.connection.use {
-                    it.prepareStatement("PRAGMA trusted_schema=1;").use {
-                        it.execute()
-                    }
-                }
-            }
+            HikariDataSource(config)
         }
         bindSingleton {
-            DSL.using(instance<DataSource>(), SQLDialect.SQLITE).apply {
-                settings().apply {
-                    isExecuteLogging = false
-                    renderImplicitJoinToManyType = INNER_JOIN
-                }
+            val settings: Settings = Settings()
+                .withRenderImplicitJoinType(INNER_JOIN)
+                .withRenderImplicitJoinToManyType(RenderImplicitJoinType.LEFT_JOIN)
+            DSL.using(instance<DataSource>(), SQLDialect.POSTGRES, settings).apply {
                 configuration().set(DefaultExecuteListenerProvider(CustomLogger()))
             }
         }

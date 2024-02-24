@@ -4,7 +4,6 @@
 package io.github.asm0dey.opdsko.jooq.`public`.tables
 
 
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 import kotlin.collections.Collection
@@ -90,7 +89,7 @@ open class Book(
     /**
      * The column <code>public.book.date</code>.
      */
-    val DATE: TableField<io.github.asm0dey.opdsko.jooq.`public`.tables.records.BookRecord, LocalDateTime?> = createField(DSL.name("date"), SQLDataType.LOCALDATETIME(6), this, "")
+    val DATE: TableField<io.github.asm0dey.opdsko.jooq.`public`.tables.records.BookRecord, String?> = createField(DSL.name("date"), SQLDataType.CLOB, this, "")
 
     /**
      * The column <code>public.book.added</code>.
@@ -154,7 +153,7 @@ open class Book(
         override fun `as`(alias: Table<*>): BookPath = BookPath(alias.qualifiedName, this)
     }
     override fun getSchema(): Schema? = if (aliased()) null else io.github.asm0dey.opdsko.jooq.`public`.Public.PUBLIC
-    override fun getIndexes(): List<Index> = listOf(io.github.asm0dey.opdsko.jooq.`public`.indexes.BOOK_ADDED_IDX, io.github.asm0dey.opdsko.jooq.`public`.indexes.BOOK_SEQUENCE_IDX)
+    override fun getIndexes(): List<Index> = listOf(io.github.asm0dey.opdsko.jooq.`public`.indexes.BOOK_ADDED_IDX, io.github.asm0dey.opdsko.jooq.`public`.indexes.BOOK_PATH_ARCHIVE, io.github.asm0dey.opdsko.jooq.`public`.indexes.BOOK_SEQUENCE_IDX, io.github.asm0dey.opdsko.jooq.`public`.indexes.NEWONE)
     override fun getIdentity(): Identity<io.github.asm0dey.opdsko.jooq.`public`.tables.records.BookRecord, Long?> = super.getIdentity() as Identity<io.github.asm0dey.opdsko.jooq.`public`.tables.records.BookRecord, Long?>
     override fun getPrimaryKey(): UniqueKey<io.github.asm0dey.opdsko.jooq.`public`.tables.records.BookRecord> = io.github.asm0dey.opdsko.jooq.`public`.keys.BOOK_PKEY
 

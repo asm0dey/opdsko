@@ -106,4 +106,15 @@ open class AuthorDao(configuration: Configuration?) : DAOImpl<io.github.asm0dey.
      * Fetch records that have <code>added IN (values)</code>
      */
     fun fetchByAdded(vararg values: OffsetDateTime): List<io.github.asm0dey.opdsko.jooq.`public`.tables.pojos.Author> = fetch(io.github.asm0dey.opdsko.jooq.`public`.tables.Author.AUTHOR.ADDED, *values)
+
+    /**
+     * Fetch records that have <code>full_name BETWEEN lowerInclusive AND
+     * upperInclusive</code>
+     */
+    fun fetchRangeOfFullName(lowerInclusive: String?, upperInclusive: String?): List<io.github.asm0dey.opdsko.jooq.`public`.tables.pojos.Author> = fetchRange(io.github.asm0dey.opdsko.jooq.`public`.tables.Author.AUTHOR.FULL_NAME, lowerInclusive, upperInclusive)
+
+    /**
+     * Fetch records that have <code>full_name IN (values)</code>
+     */
+    fun fetchByFullName(vararg values: String): List<io.github.asm0dey.opdsko.jooq.`public`.tables.pojos.Author> = fetch(io.github.asm0dey.opdsko.jooq.`public`.tables.Author.AUTHOR.FULL_NAME, *values)
 }

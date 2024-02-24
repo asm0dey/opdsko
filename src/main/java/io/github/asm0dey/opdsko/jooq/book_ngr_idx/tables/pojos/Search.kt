@@ -6,7 +6,6 @@ package io.github.asm0dey.opdsko.jooq.book_ngr_idx.tables.pojos
 
 import io.github.asm0dey.opdsko.jooq.book_ngr_idx.tables.interfaces.ISearch
 
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 
@@ -18,7 +17,7 @@ data class Search(
     override val id: Long? = null,
     override val path: String,
     override val name: String,
-    override val date: LocalDateTime? = null,
+    override val date: String? = null,
     override val added: OffsetDateTime? = null,
     override val sequence: String? = null,
     override val sequenceNumber: Long? = null,

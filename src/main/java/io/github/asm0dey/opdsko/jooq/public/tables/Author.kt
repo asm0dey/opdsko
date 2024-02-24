@@ -106,6 +106,11 @@ open class Author(
      */
     val ADDED: TableField<io.github.asm0dey.opdsko.jooq.`public`.tables.records.AuthorRecord, OffsetDateTime?> = createField(DSL.name("added"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("CURRENT_TIMESTAMP"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "")
 
+    /**
+     * The column <code>public.author.full_name</code>.
+     */
+    val FULL_NAME: TableField<io.github.asm0dey.opdsko.jooq.`public`.tables.records.AuthorRecord, String?> = createField(DSL.name("full_name"), SQLDataType.CLOB, this, "")
+
     private constructor(alias: Name, aliased: Table<io.github.asm0dey.opdsko.jooq.`public`.tables.records.AuthorRecord>?): this(alias, null, null, null, aliased, null, null)
     private constructor(alias: Name, aliased: Table<io.github.asm0dey.opdsko.jooq.`public`.tables.records.AuthorRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
     private constructor(alias: Name, aliased: Table<io.github.asm0dey.opdsko.jooq.`public`.tables.records.AuthorRecord>?, where: Condition?): this(alias, null, null, null, aliased, null, where)
@@ -138,7 +143,7 @@ open class Author(
         override fun `as`(alias: Table<*>): AuthorPath = AuthorPath(alias.qualifiedName, this)
     }
     override fun getSchema(): Schema? = if (aliased()) null else io.github.asm0dey.opdsko.jooq.`public`.Public.PUBLIC
-    override fun getIndexes(): List<Index> = listOf(io.github.asm0dey.opdsko.jooq.`public`.indexes.AUTHOR_ADDED_IDX, io.github.asm0dey.opdsko.jooq.`public`.indexes.AUTHOR_NAMES_IDX)
+    override fun getIndexes(): List<Index> = listOf(io.github.asm0dey.opdsko.jooq.`public`.indexes.AUTHOR_ADDED_IDX, io.github.asm0dey.opdsko.jooq.`public`.indexes.AUTHOR_NAME_IDX, io.github.asm0dey.opdsko.jooq.`public`.indexes.AUTHOR_NAMES_IDX)
     override fun getIdentity(): Identity<io.github.asm0dey.opdsko.jooq.`public`.tables.records.AuthorRecord, Long?> = super.getIdentity() as Identity<io.github.asm0dey.opdsko.jooq.`public`.tables.records.AuthorRecord, Long?>
     override fun getPrimaryKey(): UniqueKey<io.github.asm0dey.opdsko.jooq.`public`.tables.records.AuthorRecord> = io.github.asm0dey.opdsko.jooq.`public`.keys.AUTHOR_PKEY
 

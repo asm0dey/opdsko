@@ -18,7 +18,8 @@ data class Author(
     override val middleName: String? = null,
     override val lastName: String? = null,
     override val nickname: String? = null,
-    override val added: OffsetDateTime? = null
+    override val added: OffsetDateTime? = null,
+    override val fullName: String? = null
 ): io.github.asm0dey.opdsko.jooq.`public`.tables.interfaces.IAuthor {
 
     override fun equals(other: Any?): Boolean {
@@ -71,6 +72,12 @@ data class Author(
         }
         else if (this.added != o.added)
             return false
+        if (this.fullName == null) {
+            if (o.fullName != null)
+                return false
+        }
+        else if (this.fullName != o.fullName)
+            return false
         return true
     }
 
@@ -84,6 +91,7 @@ data class Author(
         result = prime * result + (if (this.lastName == null) 0 else this.lastName.hashCode())
         result = prime * result + (if (this.nickname == null) 0 else this.nickname.hashCode())
         result = prime * result + (if (this.added == null) 0 else this.added.hashCode())
+        result = prime * result + (if (this.fullName == null) 0 else this.fullName.hashCode())
         return result
     }
 
@@ -97,6 +105,7 @@ data class Author(
         sb.append(", ").append(lastName)
         sb.append(", ").append(nickname)
         sb.append(", ").append(added)
+        sb.append(", ").append(fullName)
 
         sb.append(")")
         return sb.toString()

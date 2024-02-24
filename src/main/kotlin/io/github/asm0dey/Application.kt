@@ -21,29 +21,28 @@ import com.kursx.parser.fb2.FictionBook
 import com.kursx.parser.fb2.Person
 import io.github.asm0dey.inpx.InpxParser
 import io.github.asm0dey.model.Entry
-import io.github.asm0dey.opdsko.jooq.public.tables.daos.GenreDao
-import io.github.asm0dey.opdsko.jooq.public.tables.records.AuthorRecord
-import io.github.asm0dey.opdsko.jooq.public.tables.records.BookAuthorRecord
-import io.github.asm0dey.opdsko.jooq.public.tables.records.BookGenreRecord
-import io.github.asm0dey.opdsko.jooq.public.tables.records.BookRecord
+import io.github.asm0dey.opdsko.jooq.public.keys.GENRE_NAME_KEY
+import io.github.asm0dey.opdsko.jooq.public.tables.records.*
 import io.github.asm0dey.opdsko.jooq.public.tables.references.AUTHOR
 import io.github.asm0dey.opdsko.jooq.public.tables.references.BOOK
 import io.github.asm0dey.opdsko.jooq.public.tables.references.GENRE
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
-import kotlinx.coroutines.selects.select
+import liquibase.Liquibase
+import liquibase.database.DatabaseFactory
+import liquibase.database.jvm.JdbcConnection
+import liquibase.resource.ClassLoaderResourceAccessor
 import net.lingala.zip4j.ZipFile
-import org.flywaydb.core.Flyway
-import org.jooq.Configuration
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.*
 import org.tinylog.Logger
 import java.io.File
 import java.io.FileOutputStream
+import java.net.URI
 import java.net.URL
 import java.nio.channels.Channels
 import java.nio.file.attribute.PosixFilePermission.*
-import java.time.LocalDateTime
+import java.sql.DriverManager
 import java.time.OffsetDateTime
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLInputFactory
@@ -53,7 +52,8 @@ import kotlin.concurrent.thread
 import kotlin.io.path.Path
 import kotlin.io.path.setPosixFilePermissions
 
-const val FB2C_VERSION = "v1.73.1"
+
+const val FB2C_VERSION = "v1.75.1"
 
 val genreNames = genreNames()
 var epubConverterAccessible = true
@@ -86,14 +86,14 @@ fun main(args: Array<String>) {
         val arch = if (os != null) {
             when {
                 osArch.contains("64") -> when (os) {
-                    "linux" -> "_amd64"
+                    "linux" -> "-amd64"
                     "win" -> "64"
                     "darwin" -> "amd64"
                     else -> error("Unsupported platform")
                 }
 
                 osArch.contains("86") -> when (os) {
-                    "linux" -> "_i386"
+                    "linux" -> "-i386"
                     "win" -> "32"
                     else -> error("Unsupported platform")
                 }
@@ -112,7 +112,7 @@ fun main(args: Array<String>) {
                             "downloading it…"
                 )
                 downloadFile(
-                    URL("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$os$arch.zip"),
+                    URI("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c-$os$arch.zip").toURL(),
                     targetFile
                 )
                 println(
@@ -153,12 +153,23 @@ private fun posixSetAccessible(fileName: String) = try {
 
 @Suppress("unused")
 fun Application.main() {
-    initDb()
-    Flyway.configure().mixed(true).dataSource(
-        environment.config.propertyOrNull("db.url")?.getString() ?: throw IllegalStateException("No db url defined"),
+    val connection = DriverManager.getConnection(
+        environment.config.propertyOrNull("db.url")?.getString()
+            ?: throw IllegalStateException("No db url defined"),
         environment.config.propertyOrNull("db.username")?.getString(),
-        environment.config.propertyOrNull("db.password")?.getString()
-    ).load().migrate()
+        environment.config.propertyOrNull("db.password")?.getString(),
+    )
+    connection.use {
+        val database: liquibase.database.Database =
+            DatabaseFactory.getInstance().findCorrectDatabaseImplementation(
+                JdbcConnection(
+                    connection
+                )
+            )
+        val liquibase = Liquibase("db/changelog-main.xml", ClassLoaderResourceAccessor(), database)
+        liquibase.update()
+    }
+
 }
 
 private fun initDb() {
@@ -223,51 +234,84 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
             .filterNot { it.third == null }
             .associateBy { it.third }
             .mapValues { (_, b) -> b.first to b.second }
-        create.transaction { txConfig ->
-            for ((key, value) in files) {
-                Logger.info { "Processing book $key" }
-                val fb = inpxData[key] ?: continue
-                val authors = fb.authors.map {
-                    Person().apply {
-                        lastName = it.names.firstOrNull()
-                        firstName = it.names.getOrNull(1)
-                        middleName = it.names.getOrNull(2)
+            .toList()
+            .chunked(1000)
+        for (chunk in files) {
+            create.transaction { txc ->
+                for ((key, value) in chunk) {
+                    Logger.info { "Processing book $key" }
+                    val fb = inpxData[key] ?: continue
+                    val authors = fb.authors.map {
+                        Person().apply {
+                            lastName = it.names.firstOrNull()
+                            firstName = it.names.getOrNull(1)
+                            middleName = it.names.getOrNull(2)
+                        }
                     }
+                    using(txc).saveBook(
+                        bookPath = value.second,
+                        archive = value.first,
+                        title = fb.title,
+                        date = fb.date,
+                        seqName = fb.bookSequence?.name,
+                        seqNo = fb.bookSequence?.no,
+                        lang = fb.lang,
+                        authors = authors,
+                        genres = fb.genres
+                    )
                 }
-                txConfig.saveBook(
-                    bookPath = value.second,
-                    archive = value.first,
-                    title = fb.title,
-                    date = fb.date,
-                    seqName = fb.bookSequence?.name,
-                    seqNo = fb.bookSequence?.no,
-                    lang = fb.lang,
-                    authors = authors,
-                    genres = fb.genres
-                )
-            }
-            try {
-                updateSequenceIds(txConfig)
-            } catch (e: Exception) {
-                Logger.error(e) { "Error while updating sequence ids" }
+
             }
         }
+        try {
+            updateSequenceIds(create)
+        } catch (e: Exception) {
+            Logger.error(e) { "Error while updating sequence ids" }
+        }
+
         return
     }
     if (ext == null || ext == "fb2")
-        create.transaction { txCtx ->
-            for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2", true) }) {
-                val bookPath = file.absoluteFile.canonicalPath
-                Logger.info { "Processing file $bookPath" }
-                if (file.length() < 20) continue
+        for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".fb2", true) }) {
+            val bookPath = file.absoluteFile.canonicalPath
+            Logger.info { "Processing file $bookPath" }
+            if (file.length() < 20) continue
+            val fb = try {
+                FictionBook(file)
+            } catch (e: Exception) {
+                Logger.error("Unable to parse fb2 in file $bookPath", e)
+                continue
+            }
+            create.saveBook(
+                bookPath = bookPath,
+                title = fb.description?.titleInfo?.bookTitle,
+                date = fb.description?.titleInfo?.date,
+                seqName = fb.description?.titleInfo?.sequence?.name,
+                seqNo = fb.description?.titleInfo?.sequence?.number?.toIntOrNull(),
+                lang = fb.description?.titleInfo?.lang,
+                authors = fb.description?.titleInfo?.authors,
+                genres = fb.description?.titleInfo?.genres
+            )
+        }
+    updateSequenceIds(create)
+    if (ext == null || ext == "zip")
+        for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip", true) }) {
+            val bookPath = file.absoluteFile.canonicalPath
+            Logger.info { "Processing file $bookPath" }
+            if (file.length() < 20) continue
+            val zipFile = ZipFile(file)
+            for (fileHeader in zipFile.fileHeaders) {
+                if (!fileHeader.fileName.endsWith(".fb2")) continue
                 val fb = try {
-                    FictionBook(file)
+                    Logger.info { "\tProcessing entry $fileHeader" }
+                    FictionBook(zipFile, fileHeader)
                 } catch (e: Exception) {
                     Logger.error("Unable to parse fb2 in file $bookPath", e)
                     continue
                 }
-                txCtx.saveBook(
-                    bookPath = bookPath,
+                create.saveBook(
+                    bookPath = fileHeader.fileName,
+                    archive = zipFile.file.absoluteFile.canonicalPath,
                     title = fb.description?.titleInfo?.bookTitle,
                     date = fb.description?.titleInfo?.date,
                     seqName = fb.description?.titleInfo?.sequence?.name,
@@ -277,43 +321,12 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
                     genres = fb.description?.titleInfo?.genres
                 )
             }
-            updateSequenceIds(txCtx)
         }
-    if (ext == null || ext == "zip")
-        create.transaction { txCtx ->
-            for (file in File(libraryRoot).walkTopDown().filter { it.name.endsWith(".zip", true) }) {
-                val bookPath = file.absoluteFile.canonicalPath
-                Logger.info { "Processing file $bookPath" }
-                if (file.length() < 20) continue
-                val zipFile = ZipFile(file)
-                for (fileHeader in zipFile.fileHeaders) {
-                    if (!fileHeader.fileName.endsWith(".fb2")) continue
-                    val fb = try {
-                        Logger.info { "\tProcessing entry $fileHeader" }
-                        FictionBook(zipFile, fileHeader)
-                    } catch (e: Exception) {
-                        Logger.error("Unable to parse fb2 in file $bookPath", e)
-                        continue
-                    }
-                    txCtx.saveBook(
-                        bookPath = fileHeader.fileName,
-                        archive = zipFile.file.absoluteFile.canonicalPath,
-                        title = fb.description?.titleInfo?.bookTitle,
-                        date = fb.description?.titleInfo?.date,
-                        seqName = fb.description?.titleInfo?.sequence?.name,
-                        seqNo = fb.description?.titleInfo?.sequence?.number?.toIntOrNull(),
-                        lang = fb.description?.titleInfo?.lang,
-                        authors = fb.description?.titleInfo?.authors,
-                        genres = fb.description?.titleInfo?.genres
-                    )
-                }
-            }
-            updateSequenceIds(txCtx)
-        }
+    updateSequenceIds(create)
+
 }
 
-private fun updateSequenceIds(txConfig: Configuration) {
-    val tr = using(txConfig)
+private fun updateSequenceIds(txConfig: DSLContext) {
     val names = selectDistinct(BOOK.SEQUENCE.`as`("seqname"))
         .from(BOOK)
         .where(BOOK.SEQUENCE.isNotNull)
@@ -322,14 +335,14 @@ private fun updateSequenceIds(txConfig: Configuration) {
     val numbers = select(rowNumber().over().`as`("seqrow"), names.field("seqname")!!.`as`("seqname"))
         .from(names)
         .asTable("numbers")
-    tr.update(BOOK)
+    txConfig.update(BOOK)
         .set(BOOK.SEQID, numbers.field("seqrow", Int::class.javaObjectType))
         .from(numbers)
         .where(BOOK.SEQUENCE.eq(numbers.field("seqname", String::class.java)))
         .execute()
 }
 
-private fun Configuration.saveBook(
+private fun DSLContext.saveBook(
     bookPath: String,
     archive: String? = null,
     title: String?,
@@ -344,8 +357,7 @@ private fun Configuration.saveBook(
         Logger.error(IllegalStateException("No book title in $bookPath"))
         return
     }
-    val transaction = using(this)
-    val existingBookId = transaction.select(BOOK.ID)
+    val existingBookId = this.select(BOOK.ID)
         .from(BOOK)
         .where(
             BOOK.NAME.eq(title),
@@ -358,15 +370,15 @@ private fun Configuration.saveBook(
         Logger.debug { "Already added" }
         return
     }
-    transaction.delete(BOOK).where(BOOK.PATH.eq(bookPath), BOOK.ZIP_FILE.isNotDistinctFrom(archive)).execute()
-    val bookId = transaction
+
+    val bookId = this
         .insertInto(BOOK)
         .set(
             BookRecord(
                 null,
                 bookPath,
                 title,
-                LocalDateTime.parse(date),
+                date,
                 OffsetDateTime.now(),
                 seqName,
                 seqNo?.toLong(),
@@ -375,47 +387,57 @@ private fun Configuration.saveBook(
                 null
             )
         )
+        .onConflict(BOOK.PATH, BOOK.ZIP_FILE)
+        .doUpdate()
+        .set(
+            mapOf(
+                BOOK.NAME to excluded(BOOK.NAME),
+                BOOK.SEQUENCE to excluded(BOOK.SEQUENCE),
+                BOOK.DATE to excluded(BOOK.DATE),
+                BOOK.ADDED to excluded(BOOK.ADDED),
+                BOOK.SEQUENCE_NUMBER to excluded(BOOK.SEQUENCE_NUMBER),
+                BOOK.LANG to excluded(BOOK.LANG)
+            )
+        )
         .returning()
         .fetchSingle()
         .id!!
-    val authorIds = authors?.map {
-        transaction.select(AUTHOR.ID)
-            .from(AUTHOR)
-            .where(
-                AUTHOR.MIDDLE_NAME.isNotDistinctFrom(it.middleName.normalizeName()),
-                AUTHOR.LAST_NAME.isNotDistinctFrom(it.lastName.normalizeName()),
-                AUTHOR.FIRST_NAME.isNotDistinctFrom(it.firstName.normalizeName()),
-                AUTHOR.NICKNAME.isNotDistinctFrom(it.nickname.normalizeName()),
-            )
-            .fetchOne { it[AUTHOR.ID]!! }
-            ?: transaction.insertInto(AUTHOR)
-                .set(
-                    AuthorRecord(
-                        null,
-                        it.id?.toIntOrNull(),
-                        it.firstName.normalizeName(),
-                        it.middleName.normalizeName(),
-                        it.lastName.normalizeName(),
-                        it.nickname.normalizeName(),
-                        OffsetDateTime.now()
-                    )
+    val authorIds = this.insertInto(AUTHOR)
+        .set(
+            authors?.toSet()?.map {
+                AuthorRecord(
+                    null,
+                    it.id?.toIntOrNull(),
+                    it.firstName.normalizeName(),
+                    it.middleName.normalizeName(),
+                    it.lastName.normalizeName(),
+                    it.nickname.normalizeName(),
+                    OffsetDateTime.now()
                 )
-                .returning(AUTHOR.ID)
-                .fetchSingle()
-                .id!!
-    }?.toSet() ?: emptySet()
-    val genreIds = genres?.map {
-        GenreDao(this).fetchByName(it).firstOrNull()?.id
-            ?: transaction
-                .insertInto(GENRE, GENRE.NAME)
-                .values(it)
-                .returning()
-                .fetchSingle()
-                .id!!
-    }?.toSet() ?: setOf()
-    transaction.batchInsert(
-        authorIds.map { BookAuthorRecord(bookId, it) } + genreIds.map { BookGenreRecord(bookId, it) }
+
+            }
+        )
+        .onConflict(AUTHOR.MIDDLE_NAME, AUTHOR.LAST_NAME, AUTHOR.FIRST_NAME, AUTHOR.NICKNAME)
+        .doUpdate()
+        .set(AUTHOR.FB2ID, excluded(AUTHOR.FB2ID))
+        .returning(AUTHOR.ID)
+        .fetch { it[AUTHOR.ID]!! }
+        .toSet()
+
+    val genreIds = this
+        .insertInto(GENRE)
+        .set(genres?.distinct()?.map { GenreRecord(null, it) })
+        .onConflictOnConstraint(GENRE_NAME_KEY)
+        .doUpdate()
+        .set(GENRE.NAME, excluded(GENRE.NAME))
+        .returning()
+        .fetch { it[GENRE.ID]!! }
+        .toSet()
+    this.batchInsert(
+        authorIds.map { BookAuthorRecord(bookId, it) } +
+                genreIds.map { BookGenreRecord(bookId, it) }
     )
+        .execute()
 }
 
 fun String?.normalizeName() = if (isNullOrBlank()) null else trim().split(" ").joinToString(" ") {

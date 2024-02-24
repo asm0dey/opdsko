@@ -6,7 +6,6 @@ package io.github.asm0dey.opdsko.jooq.book_ngr_idx.tables
 
 import io.github.asm0dey.opdsko.jooq.book_ngr_idx.BookNgrIdx
 
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 import org.jooq.Condition
@@ -80,7 +79,7 @@ open class Search(
     /**
      * The column <code>book_ngr_idx.search.date</code>.
      */
-    val DATE: TableField<io.github.asm0dey.opdsko.jooq.`public`.tables.records.BookRecord, LocalDateTime?> = createField(DSL.name("date"), SQLDataType.LOCALDATETIME(6), this, "")
+    val DATE: TableField<io.github.asm0dey.opdsko.jooq.`public`.tables.records.BookRecord, String?> = createField(DSL.name("date"), SQLDataType.CLOB, this, "")
 
     /**
      * The column <code>book_ngr_idx.search.added</code>.

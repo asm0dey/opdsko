@@ -30,11 +30,13 @@ import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import net.lingala.zip4j.ZipFile
 import org.jooq.Record3
+import org.jooq.Record4
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.text.StringCharacterIterator
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.TemporalAccessor
@@ -43,6 +45,8 @@ import kotlin.math.sign
 
 val LocalDateTime.z: ZonedDateTime
     get() = ZonedDateTime.of(this, ZoneId.systemDefault())
+val OffsetDateTime.z: ZonedDateTime
+    get() = toZonedDateTime()
 val String.decoded: String get() = URLDecoder.decode(this, StandardCharsets.UTF_8)
 
 @JvmInline

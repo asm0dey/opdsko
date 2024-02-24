@@ -359,8 +359,8 @@ class Api(application: Application) : AbstractDIController(application) {
                 val sorting = call.request.queryParameters["sort"] ?: "num"
                 val books = info.booksBySeriesId(seqId)
                 val sorted = when (sorting) {
-                    "num" -> books.sortedBy { it.book.sequenceNumber ?: Int.MAX_VALUE }
-                    "name" -> books.sortedBy { it.book.name!! }
+                    "num" -> books.sortedBy { it.book.sequenceNumber ?: Long.MAX_VALUE }
+                    "name" -> books.sortedBy { it.book.name }
                     else -> books
                 }
                 val filtered =
@@ -375,7 +375,7 @@ class Api(application: Application) : AbstractDIController(application) {
                     BreadCrumbs(
                         "Library" to "/api",
                         "Series" to "/api/series/browse",
-                        books.first().sequence to "/api/series/item/$seqId"
+                        books.first().sequence!! to "/api/series/item/$seqId"
                     )
                 return@get smartHtml(call, x, y)
             }
