@@ -18,7 +18,7 @@ graalvm = {id="org.graalvm.buildtools.native", version="0.10.0"}
 
 org-jooq-jooq-codegen-gradle = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.4" }
 
-com-bmuschko-docker-remote-api = { id = "com.bmuschko.docker-remote-api", version = "6.7.0" }
+com-bmuschko-docker-remote-api = { id = "com.bmuschko.docker-remote-api", version = "9.4.0" }
 
 org-liquibase-gradle = { id = "org.liquibase.gradle", version = "2.2.1" }
 
