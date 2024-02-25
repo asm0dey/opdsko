@@ -14,7 +14,7 @@ org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "10.8.1" }
 
 org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
-graalvm = {id="org.graalvm.buildtools.native", version="0.10.0"}
+graalvm = {id="org.graalvm.buildtools.native", version="0.10.1"}
 
 org-jooq-jooq-codegen-gradle = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.4" }
 
