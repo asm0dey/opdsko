@@ -156,6 +156,6 @@ testcontainers = "org.testcontainers:testcontainers:1.19.6"
 
 org-testcontainers-postgresql = "org.testcontainers:postgresql:1.19.6"
 
-docker-java = "com.github.docker-java:docker-java:3.3.5"
+docker-java = "com.github.docker-java:docker-java:3.3.6"
 
 org-postgresql-postgresql = "org.postgresql:postgresql:42.7.2"
