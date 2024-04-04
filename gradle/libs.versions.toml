@@ -60,7 +60,7 @@ hikaricp = "com.zaxxer:HikariCP:5.1.0"
 
 flyway-core = "org.flywaydb:flyway-core:10.8.1"
 
-jooq-kotlin = "org.jooq:jooq-kotlin:3.19.4"
+jooq-kotlin = "org.jooq:jooq-kotlin:3.19.7"
 
 sqlite-jdbc = "org.xerial:sqlite-jdbc:3.45.1.0"
 
