@@ -234,7 +234,6 @@ class Simple(app: Application) : AbstractDIController(app) {
                 val books = info.booksWithoutSeriesByAuthorId(authorId)
                 val authorName = info.authorName(authorId)
 
-                info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val x = createHTML(false).div("tile is-parent columns is-multiline") {
                     for (book in books) {
@@ -325,7 +324,7 @@ class Simple(app: Application) : AbstractDIController(app) {
                 val sorting = call.request.queryParameters["sort"] ?: "num"
                 val books = info.booksBySeriesId(seqId)
                 val sorted = when (sorting) {
-                    "num" -> books.sortedBy { it.book.sequenceNumber ?: Long.MAX_VALUE }
+                    "num" -> books.sortedBy { it.book.sequenceNumber ?: Int.MAX_VALUE }
                     "name" -> books.sortedBy { it.book.name }
                     else -> books
                 }
@@ -340,7 +339,7 @@ class Simple(app: Application) : AbstractDIController(app) {
                     breadCrumbs(
                         "Library" to "/simple",
                         "Series" to "/simple/series/browse",
-                        books.first().sequence!! to "/simple/series/item/$seqId"
+                        books.first().sequence to "/simple/series/item/$seqId"
                     )
                 return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }

@@ -22,7 +22,7 @@ package io.github.asm0dey.plugins
 import io.github.asm0dey.controllers.Api
 import io.github.asm0dey.controllers.Opds
 import io.github.asm0dey.controllers.Simple
-import io.github.asm0dey.opdsko.jooq.public.tables.references.BOOK
+import io.github.asm0dey.opdsko.jooq.tables.references.BOOK
 import io.github.asm0dey.scan
 import io.ktor.server.application.*
 import io.ktor.server.http.content.*
@@ -62,7 +62,7 @@ fun Application.routes() {
                             val zipFile = it[BOOK.ZIP_FILE]
                             val path = it[BOOK.PATH]
                             val id = it[BOOK.ID]
-                            if (zipFile == null && !File(path!!).exists() ||
+                            if (zipFile == null && !File(path).exists() ||
                                 zipFile != null && !File(zipFile).exists() ||
                                 zipFile != null && ZipFile(zipFile).getFileHeader(path) == null
                             ) id

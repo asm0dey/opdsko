@@ -22,7 +22,9 @@ import com.github.pgreze.process.process
 import com.github.pgreze.process.unwrap
 import com.kursx.parser.fb2.Binary
 import com.kursx.parser.fb2.FictionBook
-import io.github.asm0dey.opdsko.jooq.public.tables.interfaces.IBook
+import io.github.asm0dey.opdsko.jooq.tables.interfaces.IBook
+import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
+import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
 import io.github.asm0dey.repository.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -39,6 +41,9 @@ import org.ehcache.config.units.EntryUnit
 import org.ehcache.config.units.MemoryUnit
 import org.ehcache.impl.config.persistence.CacheManagerPersistenceConfiguration
 import org.ehcache.spi.serialization.Serializer
+import org.jooq.Record2
+import org.jooq.Record5
+import org.jooq.Result
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.ByteBuffer
@@ -160,7 +165,7 @@ class InfoService(private val repo: Repository) {
             id to type
         }
 
-    fun latestBooks(page: Int = 0) =
+    fun latestBooks(page: Int = 0): Result<Record5<Long?, MutableList<Book>, MutableList<Author>, List<Record2<String?, Long?>>, String?>> =
         repo.latestBooks(page)
 
     fun imageByBookId(bookId: Long): Pair<Binary, ByteArray> {

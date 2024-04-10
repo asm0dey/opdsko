@@ -50,7 +50,7 @@ class Api(application: Application) : AbstractDIController(application) {
     override fun Route.getRoutes() {
         route("/api") {
             get {
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     NavTile("New books", "Recent publications from this catalog", "/api/new")
                     NavTile("Books by series", "Authors by first letters", "/api/series/browse")
                     NavTile("Books by author", "Series by first letters", "/api/author/c")
@@ -65,7 +65,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val (books, _, total) = info.searchBookByText(searchTerm, page - 1)
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for (book in books) {
                         BookTile(book, imageTypes, shortDescriptions)
                     }
@@ -84,7 +84,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val books = info.latestBooks(page - 1).map { BookWithInfo(it) }
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for (book in books) {
                         BookTile(book, imageTypes, shortDescriptions)
                     }
@@ -102,7 +102,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val nameStart = URLDecoder.decode(call.parameters["name"] ?: "", UTF_8)
                 val trim = nameStart.length < 5
                 val items = info.authorNameStarts(nameStart, trim)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for ((name, countOrId) in items) {
                         if (trim) NavTile(name, "$countOrId items inside", "/api/author/c/${name.encoded}")
                         else NavTile(name, "Books by $name", "/api/author/browse/$countOrId")
@@ -121,7 +121,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val authorId = call.parameters["id"]!!.toLong()
                 val (inseries, out) = info.seriesNumberByAuthor(authorId)
                 val authorName = info.authorName(authorId)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     if (inseries > 0)
                         NavTile(
                             "By series",
@@ -153,7 +153,7 @@ class Api(application: Application) : AbstractDIController(application) {
             route("/genre") {
                 get {
                     val genres = info.genres()
-                    val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                    val x = createHTML(false).div("grid") {
                         for ((id, genre, count) in genres) {
                             NavTile(genre, "$count items", "/api/genre/$id")
                         }
@@ -165,7 +165,7 @@ class Api(application: Application) : AbstractDIController(application) {
                     get {
                         val genreId = call.parameters["id"]?.toLong()!!
                         val genreName = info.genreName(genreId) ?: return@get call.respond(HttpStatusCode.NotFound)
-                        val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                        val x = createHTML(false).div("grid") {
                             NavTile("Authors", "Books in genre by author", "/api/genre/$genreId/author")
                             NavTile("All", "All books in genre", "/api/genre/$genreId/all")
                         }
@@ -183,7 +183,7 @@ class Api(application: Application) : AbstractDIController(application) {
                         val (total, books) = info.booksInGenre(genreId, page - 1)
                         val images = info.imageTypes(books)
                         val descriptions = info.shortDescriptions(books)
-                        val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                        val x = createHTML(false).div("grid") {
                             for (book in books) {
                                 BookTile(book, images, descriptions)
                             }
@@ -202,7 +202,7 @@ class Api(application: Application) : AbstractDIController(application) {
                             val genreId = call.parameters["id"]?.toLong()!!
                             val genreName = info.genreName(genreId) ?: return@get call.respond(HttpStatusCode.NotFound)
                             val genreAuthors = info.genreAuthors(genreId)
-                            val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                            val x = createHTML(false).div("grid") {
                                 for ((id, name) in genreAuthors) {
                                     NavTile(name, "Books in $genreName by $name", "/api/genre/$genreId/author/$id")
                                 }
@@ -222,7 +222,7 @@ class Api(application: Application) : AbstractDIController(application) {
                             val (authorName, books) = info.booksByGenreAndAuthor(genreId, authorId)
                             val imageTypes = info.imageTypes(books)
                             val descriptions = info.shortDescriptions(books)
-                            val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                            val x = createHTML(false).div("grid") {
                                 for (book in books) {
                                     BookTile(book, imageTypes, descriptions)
                                 }
@@ -246,7 +246,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val authorName = info.authorName(authorId)
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for (book in books) {
                         BookTile(book, imageTypes, shortDescriptions)
                     }
@@ -269,7 +269,7 @@ class Api(application: Application) : AbstractDIController(application) {
 
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for (book in books) {
                         BookTile(book, imageTypes, shortDescriptions)
                     }
@@ -290,7 +290,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val namesWithDates = info.seriesByAuthorId(authorId)
                 val authorName = info.authorName(authorId)
 
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for ((name, pair) in namesWithDates) {
                         NavTile(
                             name.second,
@@ -317,7 +317,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val imageTypes = info.imageTypes(books)
                 val shortDescriptions = info.shortDescriptions(books)
                 val authorName = info.authorName(authorId)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for (bookWithInfo in books) {
                         BookTile(bookWithInfo, imageTypes, shortDescriptions)
                     }
@@ -336,7 +336,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val nameStart = (call.parameters["name"] ?: "").decoded
                 val trim = nameStart.length < 5
                 val series = info.seriesNameStarts(nameStart, trim)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for ((name, countOrId, complete, seqid) in series) {
                         if (!complete)
                             NavTile(name, "$countOrId items inside", "/api/series/browse/${name.encoded}")
@@ -359,7 +359,7 @@ class Api(application: Application) : AbstractDIController(application) {
                 val sorting = call.request.queryParameters["sort"] ?: "num"
                 val books = info.booksBySeriesId(seqId)
                 val sorted = when (sorting) {
-                    "num" -> books.sortedBy { it.book.sequenceNumber ?: Long.MAX_VALUE }
+                    "num" -> books.sortedBy { it.book.sequenceNumber?.toLong() ?: Long.MAX_VALUE }
                     "name" -> books.sortedBy { it.book.name }
                     else -> books
                 }
@@ -368,14 +368,14 @@ class Api(application: Application) : AbstractDIController(application) {
                         ?: sorted.toList()
                 val imageTypes = info.imageTypes(filtered)
                 val shortDescriptions = info.shortDescriptions(filtered)
-                val x = createHTML(false).div("tile is-parent columns is-multiline") {
+                val x = createHTML(false).div("grid") {
                     for (bookWithInfo in filtered) BookTile(bookWithInfo, imageTypes, shortDescriptions)
                 }
                 val y =
                     BreadCrumbs(
                         "Library" to "/api",
                         "Series" to "/api/series/browse",
-                        books.first().sequence!! to "/api/series/item/$seqId"
+                        books.first().sequence to "/api/series/item/$seqId"
                     )
                 return@get smartHtml(call, x, y)
             }
@@ -431,52 +431,49 @@ class Api(application: Application) : AbstractDIController(application) {
         images: Map<Long, String?>,
         descriptionsShort: Map<Long, String?>
     ) {
-        div("tile is-parent is-4") {
-            div("tile is-child") {
-                div("card") {
-                    div("card-header") {
-                        p("card-header-title") {
-                            +bookWithInfo.book.name
-                        }
+        div("cell") {
+            div("card") {
+                div("card-header") {
+                    p("card-header-title") {
+                        +bookWithInfo.book.name
                     }
-                    if (images[bookWithInfo.id] != null) {
-                        div("card-image") {
-                            figure("image") {
-                                a {
-                                    attributes["hx-get"] = "/api/book/${bookWithInfo.id}/image"
-                                    attributes["hx-swap"] = "innerHTML show:.input:top"
-                                    attributes["hx-target"] = "#modal-cont"
-                                    attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
-                                    img(src = "/opds/image/${bookWithInfo.id}") {
-                                        attributes["loading"] = "lazy"
-                                    }
+                }
+                if (images[bookWithInfo.id] != null) {
+                    div("card-image") {
+                        figure("image") {
+                            a {
+                                attributes["hx-get"] = "/api/book/${bookWithInfo.id}/image"
+                                attributes["hx-swap"] = "innerHTML show:.input:top"
+                                attributes["hx-target"] = "#modal-cont"
+                                attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
+                                img(src = "/opds/image/${bookWithInfo.id}") {
+                                    attributes["loading"] = "lazy"
                                 }
                             }
                         }
                     }
-                    div("card-content") {
-                        div("content") {
-                            text((descriptionsShort[bookWithInfo.id]?.let {
-                                it.substring(0 until min(it.length, 200))
-                            }?.plus('…') ?: ""))
-                        }
-                    }
-                    footer("card-footer mb-0 pb-0 is-align-items-self-end") {
-                        a(classes = "card-footer-item") {
-                            attributes["hx-get"] = "/api/book/${bookWithInfo.id}/info"
-                            attributes["hx-target"] = "#modal-cont"
-                            attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
-                            +"Info"
-                        }
-                        if (!epubConverterAccessible)
-                            a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"Download" }
-                        else {
-                            a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"fb2" }
-                            a("/opds/book/${bookWithInfo.id}/download/epub", classes = "card-footer-item") { +"epub" }
-                        }
+                }
+                div("card-content") {
+                    div("content") {
+                        text((descriptionsShort[bookWithInfo.id]?.let {
+                            it.substring(0 until min(it.length, 200))
+                        }?.plus('…') ?: ""))
                     }
                 }
-
+                footer("card-footer mb-0 pb-0 is-align-items-self-end") {
+                    a(classes = "card-footer-item") {
+                        attributes["hx-get"] = "/api/book/${bookWithInfo.id}/info"
+                        attributes["hx-target"] = "#modal-cont"
+                        attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
+                        +"Info"
+                    }
+                    if (!epubConverterAccessible)
+                        a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"Download" }
+                    else {
+                        a("/opds/book/${bookWithInfo.id}/download", classes = "card-footer-item") { +"fb2" }
+                        a("/opds/book/${bookWithInfo.id}/download/epub", classes = "card-footer-item") { +"epub" }
+                    }
+                }
             }
         }
     }
@@ -651,21 +648,33 @@ class Api(application: Application) : AbstractDIController(application) {
             title("Asm0dey's library")
             link(rel = "stylesheet", href = "/webjars/bulma/css/bulma.min.css")
             link(rel = "stylesheet", href = "/webjars/font-awesome/css/all.min.css")
-            script(src = "/webjars/htmx.org/dist/htmx.min.js") {
-                defer = true
+
+            link(href = "/apple-touch-icon.png", rel = "apple-touch-icon") {
+                sizes = "180x180"
             }
-            script(src = "/webjars/hyperscript.org/dist/_hyperscript.min.js") {
-                defer = true
+            link(href = "/favicon-32x32.png", rel = "icon", type = "image/png") {
+                sizes = "32x32"
             }
+            link(href = "/favicon-16x16.png", rel = "icon", type = "image/png") {
+                sizes = "16x16"
+            }
+            link(rel = "manifest", href = "/site.webmanifest")
+            link(rel = "mask-icon", href = "/safari-pinned-tab.svg") {
+                attributes["color"] = "#5bbad5"
+            }
+            meta(name = "msapplication-TileColor", content = "#2b5797")
+            meta(name = "theme-color", content = "#ffffff")
         }
         body {
-            nav(classes = "navbar is-black") {
+            nav(classes = "navbar") {
                 div("container") {
                     div("navbar-brand") {
-                        a("navbar-item brand-text") {
+                        a(classes = "navbar-item brand-text", href = "/api") {
                             attributes["hx-get"] = "/api"
                             attributes["hx-swap"] = "innerHTML show:.input:top"
                             attributes["hx-target"] = "#layout"
+                            img(alt = "Logo", src = "/logo.png")
+                            +Entities.nbsp
                             +"Asm0dey's library"
                         }
                     }
@@ -704,7 +713,7 @@ class Api(application: Application) : AbstractDIController(application) {
                         +breadcrumbs
                     }
                 }
-                div("tile is-ancestor column is-12") {
+                div("fixed-grid column has-3-cols has-1-cols-mobile") {
                     id = "layout"
                     unsafe {
                         +content
@@ -719,13 +728,15 @@ class Api(application: Application) : AbstractDIController(application) {
             div {
                 id = "modal-cont"
             }
+            script(src = "/webjars/htmx.org/dist/htmx.min.js") {}
+            script(src = "/webjars/hyperscript.org/dist/_hyperscript.min.js") {}
         }
     }
 
     fun DIV.NavTile(title: String, subtitle: String, href: String) {
-        div("tile is-parent is-4 is-clickable") {
+        div("cell is-clickable") {
             layoutUpdateAttributes(href)
-            article("tile box is-child") {
+            article("box") {
                 p("title") { +title }
                 p("subtitle") { +subtitle }
             }

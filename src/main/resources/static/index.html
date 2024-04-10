@@ -6,13 +6,22 @@
     <title>Hello Bulma!</title>
     <link rel="stylesheet" href="/webjars/bulma/css/bulma.min.css">
     <link rel="stylesheet" href="/webjars/font-awesome/css/all.min.css"/>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#2b5797">
+    <meta name="theme-color" content="#ffffff">
 </head>
 <body>
 <!-- START NAV -->
-<nav class="navbar is-black" hx-boost="true">
+<nav class="navbar" hx-boost="true">
     <div class="container">
         <div class="navbar-brand">
-            <a class="navbar-item brand-text" hx-get="/api" hx-target="#layout" href="/api">Asm0dey's library</a>
+            <a class="navbar-item brand-text" hx-get="/api" hx-target="#layout" href="/api">
+                <img src="/logo.png" alt="Logo">&nbsp;Asm0dey's library</a>
         </div>
     </div>
 </nav>
@@ -21,7 +30,8 @@
     <div class="section" hx-boost="true">
         <div class="field has-addons">
             <div class="control has-icons-left is-expanded">
-                <input class="input" type="text" name="search" id="search" placeholder="Search" hx-trigger="keyup[keyCode === 13]"
+                <input class="input" type="text" name="search" id="search" placeholder="Search"
+                       hx-trigger="keyup[keyCode === 13]"
                        hx-get="/api/search" hx-target="#layout">
                 <span class="icon is-small is-left">
                       <i class="fas fa-search"></i>
@@ -29,7 +39,8 @@
             </div>
             <div class="control">
                 <button class="button" hx-include="[name='search']"
-                        hx-get="/api/search" hx-target="#layout">Search</button>
+                        hx-get="/api/search" hx-target="#layout">Search
+                </button>
             </div>
         </div>
     </div>
@@ -38,7 +49,7 @@
         </ul>
     </nav>
 
-    <div class="tile is-ancestor column is-12" hx-trigger="load" hx-get="/api" id="layout"></div>
+    <div class="fixed-grid has-3-cols has-1-cols-mobile" hx-trigger="load" hx-get="/api" id="layout"></div>
     <div class="navv"></div>
 </div>
 

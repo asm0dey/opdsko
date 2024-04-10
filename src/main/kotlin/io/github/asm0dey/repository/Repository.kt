@@ -18,63 +18,66 @@
 package io.github.asm0dey.repository
 
 import io.github.asm0dey.genreNames
-import io.github.asm0dey.opdsko.jooq.book_ngr_idx.routines.references.search
-import io.github.asm0dey.opdsko.jooq.book_ngr_idx.tables.references.SEARCH
-import io.github.asm0dey.opdsko.jooq.public.tables.Author.Companion.AUTHOR
-import io.github.asm0dey.opdsko.jooq.public.tables.Book.Companion.BOOK
-import io.github.asm0dey.opdsko.jooq.public.tables.BookAuthor.Companion.BOOK_AUTHOR
-import io.github.asm0dey.opdsko.jooq.public.tables.Genre.Companion.GENRE
-import io.github.asm0dey.opdsko.jooq.public.tables.records.AuthorRecord
-import io.github.asm0dey.opdsko.jooq.public.tables.records.BookRecord
-import io.github.asm0dey.opdsko.jooq.public.tables.records.GenreRecord
+import io.github.asm0dey.opdsko.jooq.tables.pojos.Author
+import io.github.asm0dey.opdsko.jooq.tables.pojos.Book
+import io.github.asm0dey.opdsko.jooq.tables.references.*
 import io.github.asm0dey.service.BookWithInfo
-import org.jooq.DSLContext
-import org.jooq.Record
-import org.jooq.Record3
+import org.jooq.*
 import org.jooq.impl.DSL.*
-import org.jooq.kotlin.get
-import org.jooq.kotlin.mapping
-import org.jooq.kotlin.or
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
+import kotlin.sequences.Sequence
 
 class Repository(val create: DSLContext) {
     private val genres by lazy { genreNames() }
-    fun seriesByAuthorId(authorId: Long): Map<Pair<Int, String>, Pair<OffsetDateTime, Int>> {
+    fun seriesByAuthorId(authorId: Long): Map<Pair<Int, String>, Pair<LocalDateTime, Int>> {
         val latestBookInSeq = max(BOOK.ADDED)
         val booksInSeries = count(BOOK.ID)
-        return create.select(BOOK.SEQUENCE, latestBookInSeq, booksInSeries, min(BOOK.SEQID))
+        return create.select(BOOK.SEQUENCE, latestBookInSeq, booksInSeries, BOOK.SEQID)
             .from(BOOK)
-            .innerJoin(BOOK.bookAuthor())
-            .where(BOOK.bookAuthor().AUTHOR_ID.eq(authorId), BOOK.SEQUENCE.isNotNull)
+            .innerJoin(BOOK.author)
+            .where(BOOK.author.ID.eq(authorId), BOOK.SEQUENCE.isNotNull)
             .groupBy(BOOK.SEQUENCE)
             .orderBy(BOOK.SEQUENCE, latestBookInSeq.desc())
             .fetch {
-                (it.value4()!! to it[BOOK.SEQUENCE]!!) to (it[latestBookInSeq]!! to it[booksInSeries])
+                (it[BOOK.SEQID]!! to it[BOOK.SEQUENCE]!!) to (it[latestBookInSeq]!! to it[booksInSeries])
             }
             .toMap()
     }
 
     private val bookAuthors = multiset(
-        selectDistinct(AUTHOR)
+        selectDistinct(AUTHOR.asterisk())
             .from(AUTHOR)
-            .innerJoin(AUTHOR.bookAuthor)
-            .where(AUTHOR.bookAuthor().BOOK_ID.eq(BOOK.ID))
-    ).`as`("authors").mapping { it }
+            .innerJoin(AUTHOR.book)
+            .where(AUTHOR.book.ID.eq(BOOK.ID))
+    ).`as`("authors").convertFrom { it.into(Author::class.java) }
 
     private val bookGenres = multiset(
-        select(GENRE)
+        selectDistinct(GENRE.NAME, GENRE.ID)
             .from(GENRE)
-            .innerJoin(GENRE.bookGenre)
-            .where(GENRE.bookGenre.BOOK_ID.eq(BOOK.ID))
-    ).`as`("genres").mapping { it }
+            .innerJoin(GENRE.book)
+            .where(GENRE.book.ID.eq(BOOK.ID))
+    ).`as`("genres").convertFrom { it.toList() }
 
-    private fun getBookWithInfo() =
+    private fun Result<Record1<String>>.toList(): List<String> =
+        collect(Records.intoList())
+
+    private val bookById = run {
+        val bookAlias = io.github.asm0dey.opdsko.jooq.tables.Book("b")
+        multiset(selectFrom(bookAlias).where(bookAlias.ID.eq(BOOK.ID)))
+            .`as`("book")
+            .convertFrom { it.into(Book::class.java) }
+
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun getBookWithInfo(): SelectJoinStep<Record5<Long?, MutableList<Book>, MutableList<Author>, List<Record2<String?, Long?>>, String?>> =
         create
-            .select(
-//                BOOK.ID,
-                BOOK,
+            .selectDistinct(
+                BOOK.ID,
+                bookById,
                 bookAuthors,
                 bookGenres,
+                BOOK.SEQUENCE
             )
             .from(BOOK)
 
@@ -87,18 +90,18 @@ class Repository(val create: DSLContext) {
                 isnull,
             )
             .from(BOOK_AUTHOR)
-            .innerJoin(BOOK.bookAuthor())
-            .where(BOOK.bookAuthor().AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.author)
+            .where(BOOK.author.ID.eq(authorId))
             .limit(1)
             .fetchSingle { it[notnull] to it[isnull] }
     }
 
-    fun latestAuthorUpdate(authorId: Long): OffsetDateTime {
+    fun latestAuthorUpdate(authorId: Long): LocalDateTime {
         return create
             .select(BOOK.ADDED)
             .from(BOOK)
-            .innerJoin(BOOK.bookAuthor())
-            .where(BOOK.bookAuthor().AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.author)
+            .where(BOOK.author.ID.eq(authorId))
             .orderBy(BOOK.ADDED.desc())
             .limit(1)
             .fetchSingle { it[BOOK.ADDED] }
@@ -108,105 +111,123 @@ class Repository(val create: DSLContext) {
         create.select(BOOK.PATH, BOOK.ZIP_FILE).from(BOOK).where(BOOK.ID.eq(bookId))
             .fetchSingle { it[BOOK.PATH]!! to it[BOOK.ZIP_FILE] }
 
+    private val fullName = concat(
+        coalesce(AUTHOR.LAST_NAME, ""),
+        if_(
+            AUTHOR.FIRST_NAME.isNotNull,
+            if_(
+                AUTHOR.LAST_NAME.isNotNull,
+                concat(", ", AUTHOR.FIRST_NAME),
+                AUTHOR.FIRST_NAME
+            ),
+            ""
+        ),
+        if_(
+            AUTHOR.MIDDLE_NAME.isNotNull,
+            if_(
+                AUTHOR.FIRST_NAME.isNotNull.or(AUTHOR.LAST_NAME.isNotNull),
+                concat(" ", AUTHOR.MIDDLE_NAME),
+                AUTHOR.MIDDLE_NAME
+            ),
+            ""
+        ),
+        if_(
+            AUTHOR.NICKNAME.isNotNull,
+            if_(
+                AUTHOR.FIRST_NAME.isNull.and(AUTHOR.LAST_NAME.isNotNull)
+                    .and(AUTHOR.MIDDLE_NAME.isNotNull),
+                AUTHOR.NICKNAME,
+                concat(`val`(" ("), AUTHOR.NICKNAME, `val`(")"))
+            ),
+            ""
+        ),
+    )
 
     fun authorName(authorId: Long): String {
         return create
-            .select(AUTHOR.FULL_NAME)
+            .select(fullName)
             .from(AUTHOR)
             .where(AUTHOR.ID.eq(authorId))
-            .fetchSingle { it[AUTHOR.FULL_NAME] }
+            .fetchSingle { it[fullName] }
     }
 
     fun searchBookByText(term: String, page: Int, pageSize: Int): Triple<List<BookWithInfo>, Boolean, Int> {
-        val ids = create.select(
-            SEARCH.ID,
-//            bookById
-        )
-            .from(
-                search(
-                    term,
-                    page * pageSize,
-                    pageSize + 1,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                )
-            )
-        val total = create.select(
-            count(SEARCH.ID),
-//            bookById
-        )
-            .from(
-                search(
-                    term,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                )
-            )
-            .fetchSingle { it.value1() }
-
-        val bookWithInfo = getBookWithInfo()
-        val infos = bookWithInfo
-            .innerJoin(ids).on(BOOK.ID.eq(ids[SEARCH.ID]))
+        val ftsId = BOOKS_FTS.rowid().cast(Long::class.java).`as`("fts_id")
+        val total = create
+            .select(count(BOOKS_FTS.rowid()))
+            .from(BOOKS_FTS)
+            .where(BOOKS_FTS.match(value(term)))
+            .fetchSingle().value1()
+        val ids = create
+            .select(ftsId)
+            .from(BOOKS_FTS).where(BOOKS_FTS.match(value(term)))
+            .orderBy(field("bm25(books_fts)"))
+            .limit(pageSize + 1)
+            .offset(page * pageSize)
+        val infos = getBookWithInfo()
+            .innerJoin(ids).on(ftsId.eq(BOOK.ID))
             .fetch { BookWithInfo(it) }
         val hasMore = infos.size > pageSize
         return Triple(infos.take(pageSize), hasMore, total)
     }
 
+    private fun Table<*>.match(text: Typed<String>): Condition {
+        return condition("$name MATCH {0}", text)
+    }
+
+
     fun authorNameStarts(prefix: String, trim: Boolean): List<Pair<String, Long>> {
-        val outPrefix = substring(AUTHOR.FULL_NAME, 1, prefix.length + 1)
-        val toSelect = (if (trim) outPrefix else AUTHOR.FULL_NAME)
-        val second = (if (trim) count(AUTHOR.ID).cast(Long::class.java) else min(AUTHOR.ID)).`as`("number")
+        val primaryNamesAreNulls = AUTHOR.LAST_NAME.isNull
+            .and(AUTHOR.MIDDLE_NAME.isNull)
+            .and(AUTHOR.FIRST_NAME.isNull)
+
+        val fullName = trim(
+            concat(
+                if_(AUTHOR.LAST_NAME.isNotNull, AUTHOR.LAST_NAME.concat(" "), ""),
+                if_(AUTHOR.FIRST_NAME.isNotNull, AUTHOR.FIRST_NAME.concat(" "), ""),
+                if_(AUTHOR.MIDDLE_NAME.isNotNull, AUTHOR.MIDDLE_NAME.concat(" "), ""),
+                if_(
+                    AUTHOR.NICKNAME.isNull, "", concat(
+                        if_(primaryNamesAreNulls, "", "("),
+                        AUTHOR.NICKNAME,
+                        if_(primaryNamesAreNulls, "", ")"),
+                    )
+                )
+            )
+        )
+
+        val toSelect = (
+                if (trim) substring(fullName, 1, prefix.length + 1)
+                else fullName).`as`("term")
+        val second = (if (trim) count(AUTHOR.ID).cast(Long::class.java) else AUTHOR.ID).`as`("number")
         return create
-            .selectDistinct(toSelect.`as`("res"), second)
+            .selectDistinct(toSelect, second)
             .from(AUTHOR)
             .where(toSelect.isNotNull, toSelect.ne(""), toSelect.startsWith(prefix))
-            .groupBy(toSelect.`as`("res"))
-            .orderBy(toSelect.`as`("res"))
-            .fetch { it.value1() to it[second] }
+            .groupBy(toSelect)
+            .orderBy(toSelect)
+            .fetch { it[toSelect] to it[second] }
     }
 
     fun seriesNameStarts(prefix: String, trim: Boolean): List<SequenceShortInfo> {
-        val starts = name("starts").fields("prefix").`as`(
-            if (trim) {
-                val substring = substring(BOOK.SEQUENCE, 1, prefix.length + 1)
-                selectDistinct(substring).from(BOOK).where(length(substring).gt(0))
-            } else selectDistinct(BOOK.SEQUENCE).from(BOOK)
+        val fst = (
+                if (trim) substring(BOOK.SEQUENCE, 1, prefix.length + 1)
+                else BOOK.SEQUENCE
+                )
+        val snd = count(BOOK.ID)
+        val third = if (trim) field(length(BOOK.SEQUENCE).eq(prefix.length)) else value(true)
+        val fourth = if_(
+            length(BOOK.SEQUENCE).eq(prefix.length).or(value(prefix.length == 5)),
+            BOOK.SEQID,
+            castNull(Int::class.javaObjectType)
         )
-        val foundPrefix = starts.field("prefix", String::class.java)
-        val final = countDistinct(BOOK.SEQUENCE).eq(1).and(length(min(BOOK.SEQUENCE)).eq(prefix.length))
         return create
-            .with(starts)
-            .select(
-                foundPrefix,
-                if_(final.or(value(prefix.length == 5)), countDistinct(BOOK.ID), countDistinct(BOOK.SEQUENCE)),
-                if (trim) final
-                else value(true),
-                if_(
-                    value(prefix.length == 5).or(final),
-                    min(BOOK.SEQID),
-                    `val`(null, Int::class.java)
-                ),
-            )
+            .selectDistinct(fst, snd, third, fourth)
             .from(BOOK)
-            .innerJoin(starts).on(
-                if (prefix.length == 5) BOOK.SEQUENCE.eq(foundPrefix) else BOOK.SEQUENCE.startsWith(foundPrefix)
-            )
-            .where(BOOK.SEQUENCE.startsWith(prefix), length(foundPrefix).gt(0))
-            .groupBy(foundPrefix)
-            .orderBy(foundPrefix)
-            .fetch { SequenceShortInfo(it.value1(), it.value2(), it.value3(), it.value4()) }
+            .where(fst.isNotNull, trim(fst).ne(""), fst.startsWith(prefix))
+            .groupBy(fst)
+            .orderBy(fst)
+            .fetch { SequenceShortInfo(it[fst], it[snd], it[third], it[fourth]) }
     }
 
     data class SequenceShortInfo(val seqName: String, val bookCount: Int, val fullName: Boolean, val seqId: Int?)
@@ -218,7 +239,7 @@ class Repository(val create: DSLContext) {
             .offset(page * 21)
             .fetch()
 
-    fun bookInfo(bookId: Long): Record3<BookRecord, List<AuthorRecord>, List<GenreRecord>> {
+    fun bookInfo(bookId: Long): Record5<Long?, MutableList<Book>, MutableList<Author>, List<Record2<String?, Long?>>, String?> {
         return getBookWithInfo()
             .where(BOOK.ID.eq(bookId))
             .fetchSingle()
@@ -228,12 +249,12 @@ class Repository(val create: DSLContext) {
     fun allBooksByAuthor(authorId: Long, page: Int, pageSize: Int): Pair<Int, MutableList<BookWithInfo>> {
         val total = create.select(countDistinct(BOOK.ID))
             .from(BOOK)
-            .innerJoin(BOOK.bookAuthor)
-            .where(BOOK.bookAuthor.AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.author)
+            .where(BOOK.author.ID.eq(authorId))
             .fetchSingle().value1()
         return total to getBookWithInfo()
-            .innerJoin(BOOK.bookAuthor)
-            .where(BOOK.bookAuthor.AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.author)
+            .where(BOOK.author.ID.eq(authorId))
             .orderBy(BOOK.NAME)
             .limit(pageSize)
             .offset(pageSize * page)
@@ -242,8 +263,8 @@ class Repository(val create: DSLContext) {
 
     fun booksWithoutSeriesByAuthorId(authorId: Long): List<BookWithInfo> {
         return getBookWithInfo()
-            .innerJoin(BOOK.bookAuthor)
-            .where(BOOK.bookAuthor.AUTHOR_ID.eq(authorId), BOOK.SEQUENCE.isNull)
+            .innerJoin(BOOK.author)
+            .where(BOOK.author.ID.eq(authorId), BOOK.SEQUENCE.isNull)
             .orderBy(BOOK.NAME)
             .fetch { BookWithInfo(it) }
     }
@@ -252,8 +273,8 @@ class Repository(val create: DSLContext) {
         seriesId: Long,
         authorId: Long,
     ): List<BookWithInfo> = getBookWithInfo()
-        .innerJoin(BOOK.bookAuthor)
-        .where(BOOK.SEQID.eq(seriesId.toInt()), BOOK.bookAuthor.AUTHOR_ID.eq(authorId))
+        .innerJoin(BOOK.author)
+        .where(BOOK.SEQID.eq(seriesId.toInt()), BOOK.author.ID.eq(authorId))
         .orderBy(BOOK.SEQUENCE_NUMBER.asc().nullsLast(), BOOK.NAME)
         .fetch { BookWithInfo(it) }
 
@@ -263,12 +284,12 @@ class Repository(val create: DSLContext) {
         .asSequence()
 
     fun genres(): List<Triple<Long, String, Int>> {
-        val bookCount = count(GENRE.bookGenre.BOOK_ID)
+        val bookCount = count(GENRE.book.ID)
         val genreName = min(GENRE.NAME)
         val map = create
             .select(GENRE.ID, genreName, bookCount)
             .from(GENRE)
-            .innerJoin(GENRE.bookGenre)
+            .leftJoin(GENRE.book)
             .groupBy(GENRE.ID)
             .fetch { Triple(it[GENRE.ID]!!, it[genreName]!!, it[bookCount]) }
             .groupBy { genres.containsKey(it.second) }
@@ -286,15 +307,16 @@ class Repository(val create: DSLContext) {
     }
 
     fun genreAuthors(genreId: Long): List<Pair<Long, String>> {
+        val book = AUTHOR.book
+        val genre = book.genre
         return create
-            .selectDistinct(AUTHOR.ID, AUTHOR.FULL_NAME)
+            .selectDistinct(AUTHOR.ID, fullName)
             .from(AUTHOR)
-            .innerJoin(AUTHOR.bookAuthor)
-            .innerJoin(AUTHOR.bookAuthor.book)
-            .innerJoin(AUTHOR.bookAuthor.book.bookGenre)
-            .where(AUTHOR.bookAuthor.book.bookGenre.GENRE_ID.eq(genreId))
-            .orderBy(AUTHOR.FULL_NAME)
-            .fetch { Pair(it[AUTHOR.ID]!!, it[AUTHOR.FULL_NAME]!!) }
+            .innerJoin(book)
+            .innerJoin(genre)
+            .where(genre.ID.eq(genreId))
+            .orderBy(fullName)
+            .fetch { Pair(it[AUTHOR.ID]!!, it[fullName]) }
             .toList()
     }
 
@@ -305,43 +327,45 @@ class Repository(val create: DSLContext) {
         val authorName = authorName(authorId)
         return authorName to create
             .selectDistinct(
-                BOOK.NAME,
-                BOOK,
+                BOOK.ID,
+                bookById,
                 bookAuthors,
                 bookGenres,
+                BOOK.SEQUENCE
             )
             .from(BOOK)
-            .innerJoin(BOOK.bookGenre)
-            .innerJoin(BOOK.bookAuthor)
-            .where(BOOK.bookGenre.GENRE_ID.eq(genreId), BOOK.bookAuthor.AUTHOR_ID.eq(authorId))
+            .innerJoin(BOOK.genre)
+            .innerJoin(BOOK.author)
+            .where(BOOK.genre.ID.eq(genreId), BOOK.author.ID.eq(authorId))
             .orderBy(BOOK.NAME)
-            .fetch { BookWithInfo(it.into(it.field2(), it.field3(), it.field4())) }
+            .fetch(::BookWithInfo)
             .toList()
 
     }
 
     fun booksInGenre(genreId: Long, page: Int, pageSize: Int): Pair<Int, List<BookWithInfo>> {
         val total = create
-            .select(countDistinct(GENRE.bookGenre.BOOK_ID))
-            .from(GENRE)
-            .innerJoin(GENRE.bookGenre)
-            .where(GENRE.ID.eq(genreId))
+            .select(countDistinct(BOOK.ID))
+            .from(BOOK)
+            .innerJoin(BOOK.genre)
+            .where(BOOK.genre.ID.eq(genreId))
             .fetchSingle().value1()
 
         return total to create
             .selectDistinct(
-                BOOK.NAME,
-                BOOK,
+                BOOK.ID,
+                bookById,
                 bookAuthors,
                 bookGenres,
+                BOOK.SEQUENCE
             )
             .from(BOOK)
-            .innerJoin(BOOK.bookGenre)
-            .where(BOOK.bookGenre.GENRE_ID.eq(genreId))
+            .innerJoin(BOOK.genre)
+            .where(BOOK.genre.ID.eq(genreId))
             .orderBy(BOOK.NAME)
             .limit(pageSize)
             .offset(page * pageSize)
-            .fetch { BookWithInfo(it.into(it.field2(), it.field3(), it.field4())) }
+            .fetch(::BookWithInfo)
             .toList()
     }
 }

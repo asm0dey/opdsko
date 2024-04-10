@@ -8,69 +8,63 @@ com-github-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", vers
 
 nu-studer-jooq = { id = "nu.studer.jooq", version = "9.0" }
 
-jooq = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.4" }
+jooq = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.7" }
 
-org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "10.8.1" }
+org-flywaydb-flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 
 org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
-graalvm = {id="org.graalvm.buildtools.native", version="0.10.0"}
-
-org-jooq-jooq-codegen-gradle = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.4" }
-
-com-bmuschko-docker-remote-api = { id = "com.bmuschko.docker-remote-api", version = "6.7.0" }
-
-org-liquibase-gradle = { id = "org.liquibase.gradle", version = "2.2.1" }
-
-com-dorongold-task-tree = { id = "com.dorongold.task-tree", version = "2.1.1" }
+graalvm = {id="org.graalvm.buildtools.native", version="0.10.1"}
 
 [versions]
 
-kotlin = "1.9.22"
+kotlin = "1.9.23"
 ##  ⬆ = "2.0.0-Beta1"
 ##  ⬆ = "2.0.0-Beta2"
 ##  ⬆ = "2.0.0-Beta3"
 ##  ⬆ = "2.0.0-Beta4"
+##  ⬆ = "2.0.0-Beta5"
+##  ⬆ = "2.0.0-RC1"
 
-ktor = "2.3.8"
+ktor = "2.3.10"
+##⬆ = "2.3.10"
 ##⬆ = "3.0.0-beta-1"
 
 kodein-di = "7.21.2"
 
 kotlinx-coroutines = "1.8.0"
+##              ⬆ = "1.8.1-Beta"
 
-netty-tcnative = "2.0.62.Final"
+netty-tcnative = "2.0.65.Final"
 
 tinylog = "2.7.0"
 
 xmlutil = "0.86.3"
 
-flyway = "10.8.1"
+flyway = "10.11.0"
 
 kotlinx-serialization = "1.6.3"
 
 [libraries]
 
-netty-tcnative = "io.netty:netty-tcnative:2.0.63.Final"
-netty-tcnative-boringssl-static = "io.netty:netty-tcnative-boringssl-static:2.0.63.Final"
+netty-tcnative = { group = "io.netty", name = "netty-tcnative", version.ref = "netty-tcnative" }
+netty-tcnative-boringssl-static = { group = "io.netty", name = "netty-tcnative-boringssl-static", version.ref = "netty-tcnative" }
 
 kodein-di-framework-ktor-server-controller-jvm = { group = "org.kodein.di", name = "kodein-di-framework-ktor-server-controller-jvm", version.ref = "kodein-di" }
 
 hikaricp = "com.zaxxer:HikariCP:5.1.0"
 
-flyway-core = "org.flywaydb:flyway-core:10.8.1"
+flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
 
-jooq-kotlin = "org.jooq:jooq-kotlin:3.19.4"
+jooq-kotlin = "org.jooq:jooq-kotlin:3.19.7"
 
-sqlite-jdbc = "org.xerial:sqlite-jdbc:3.45.1.0"
-
-postgres-jdbc = "org.postgresql:postgresql:42.7.2"
+sqlite-jdbc = "org.xerial:sqlite-jdbc:3.45.2.0"
 
 commons-codec = "commons-codec:commons-codec:1.16.1"
 
 jsoup = "org.jsoup:jsoup:1.17.2"
 
-jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.4"
+jaxb-runtime = "org.glassfish.jaxb:jaxb-runtime:4.0.5"
 
 xmlutil-serialization-jvm = { group = "io.github.pdvrieze.xmlutil", name = "serialization-jvm", version.ref = "xmlutil" }
 
@@ -78,21 +72,21 @@ xmlutil-ktor = { group = "io.github.pdvrieze.xmlutil", name = "ktor", version = 
 
 kotlin-xml-builder = "org.redundent:kotlin-xml-builder:1.9.1"
 
-tinylog-api-kotlin = "org.tinylog:tinylog-api-kotlin:2.7.0"
+tinylog-api-kotlin = { group = "org.tinylog", name = "tinylog-api-kotlin", version.ref = "tinylog" }
 
-slf4j-tinylog = "org.tinylog:slf4j-tinylog:2.7.0"
+slf4j-tinylog = { group = "org.tinylog", name = "slf4j-tinylog", version.ref = "tinylog" }
 
-tinylog-impl = "org.tinylog:tinylog-impl:2.7.0"
+tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }
 
-htmx-org = "org.webjars.npm:htmx.org:1.9.10"
+htmx-org = "org.webjars.npm:htmx.org:1.9.11"
 ##                               ⬆ :2.0.0-alpha1"
 ##                               ⬆ :2.0.0-alpha2"
 
 hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.12"
 
-font-awesome = "org.webjars:font-awesome:6.5.1"
+font-awesome = "org.webjars:font-awesome:6.5.2"
 
-bulma = "org.webjars.npm:bulma:0.9.4"
+bulma = "org.webjars.npm:bulma:1.0.0"
 
 jooq = { module = "org.jooq:jooq" }
 
@@ -136,26 +130,6 @@ kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotl
 
 kotlin-serialization = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
 
-zip4j = "net.lingala.zip4j:zip4j:2.11.5"
+zip4j = { group = "net.lingala.zip4j", name = "zip4j", version = "2.11.5" }
 
 ehcache = "org.ehcache:ehcache:3.10.8"
-
-serialization-jvm = "io.github.pdvrieze.xmlutil:serialization-jvm:0.86.3"
-
-ktor = "io.github.pdvrieze.xmlutil:ktor:0.86.2"
-
-postgresql = "org.postgresql:postgresql:42.7.2"
-
-kotlin-serialization-compiler-plugin-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-serialization-compiler-plugin-embeddable", version.ref = "kotlin" }
-
-liquibase-core = "org.liquibase:liquibase-core:4.26.0"
-
-picocli = "info.picocli:picocli:4.7.5"
-
-testcontainers = "org.testcontainers:testcontainers:1.19.6"
-
-org-testcontainers-postgresql = "org.testcontainers:postgresql:1.19.6"
-
-docker-java = "com.github.docker-java:docker-java:3.3.5"
-
-org-postgresql-postgresql = "org.postgresql:postgresql:42.7.2"
