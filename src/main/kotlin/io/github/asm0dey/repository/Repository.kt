@@ -62,7 +62,7 @@ class Repository(val create: DSLContext) {
         collect(Records.intoList())
 
     private val bookById = run {
-        val bookAlias = io.github.asm0dey.opdsko.jooq.tables.Book("b")
+        val bookAlias = BOOK.`as`("b")
         multiset(selectFrom(bookAlias).where(bookAlias.ID.eq(BOOK.ID)))
             .`as`("book")
             .convertFrom { it.into(Book::class.java) }

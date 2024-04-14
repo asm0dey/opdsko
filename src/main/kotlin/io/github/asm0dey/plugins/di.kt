@@ -56,7 +56,7 @@ fun Application.ioc() {
             val settings: Settings = Settings()
                 .withRenderImplicitJoinType(INNER_JOIN)
                 .withRenderImplicitJoinToManyType(RenderImplicitJoinType.LEFT_JOIN)
-            DSL.using(instance<DataSource>(), SQLDialect.POSTGRES, settings).apply {
+            DSL.using(instance<DataSource>(), SQLDialect.SQLITE, settings).apply {
                 configuration().set(DefaultExecuteListenerProvider(CustomLogger()))
             }
         }
