@@ -77,7 +77,7 @@ slf4j-tinylog = { group = "org.tinylog", name = "slf4j-tinylog", version.ref = "
 
 tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }
 
-htmx-org = "org.webjars.npm:htmx.org:1.9.11"
+htmx-org = "org.webjars.npm:htmx.org:1.9.12"
 ##                               ⬆ :2.0.0-alpha1"
 ##                               ⬆ :2.0.0-alpha2"
 
