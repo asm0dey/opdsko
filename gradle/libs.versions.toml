@@ -31,7 +31,7 @@ ktor = "2.3.10"
 
 kodein-di = "7.21.2"
 
-kotlinx-coroutines = "1.8.0"
+kotlinx-coroutines = "1.8.1"
 ##              ⬆ = "1.8.1-Beta"
 
 netty-tcnative = "2.0.65.Final"
