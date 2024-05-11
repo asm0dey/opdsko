@@ -56,7 +56,7 @@ import kotlin.concurrent.thread
 import kotlin.io.path.Path
 import kotlin.io.path.setPosixFilePermissions
 
-const val FB2C_VERSION = "v1.73.1"
+const val FB2C_VERSION = "v1.75.1"
 
 val genreNames = genreNames()
 var epubConverterAccessible = true

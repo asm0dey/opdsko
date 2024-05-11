@@ -25,6 +25,8 @@ kotlin = "1.9.24"
 ##  ⬆ = "2.0.0-Beta4"
 ##  ⬆ = "2.0.0-Beta5"
 ##  ⬆ = "2.0.0-RC1"
+##  ⬆ = "2.0.0-RC2"
+##  ⬆ = "2.0.0-RC3"
 
 ktor = "2.3.11"
 ##⬆ = "3.0.0-beta-1"
@@ -32,15 +34,16 @@ ktor = "2.3.11"
 kodein-di = "7.21.2"
 
 kotlinx-coroutines = "1.8.1"
-##              ⬆ = "1.8.1-Beta"
 
 netty-tcnative = "2.0.65.Final"
 
 tinylog = "2.7.0"
+##   ⬆ = "2.8.0-M1"
 
 xmlutil = "0.86.3"
 
-flyway = "10.11.1"
+flyway = "10.12.0"
+##  ⬆ = "10.12.0"
 
 kotlinx-serialization = "1.6.3"
 
@@ -80,6 +83,7 @@ tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "ti
 htmx-org = "org.webjars.npm:htmx.org:1.9.12"
 ##                               ⬆ :2.0.0-alpha1"
 ##                               ⬆ :2.0.0-alpha2"
+##                               ⬆ :2.0.0-beta3"
 
 hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.12"
 
