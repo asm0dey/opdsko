@@ -89,7 +89,7 @@ hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.12"
 
 font-awesome = "org.webjars:font-awesome:6.5.2"
 
-bulma = "org.webjars.npm:bulma:1.0.0"
+bulma = "org.webjars.npm:bulma:1.0.1"
 
 jooq = { module = "org.jooq:jooq" }
 
