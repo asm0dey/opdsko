@@ -1,5 +1,6 @@
 .gradle
 build/
+!build/db/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -41,3 +42,6 @@ fb2c
 fb2c.conf.toml
 fb2c_*.zip
 /cache/
+/fb2c-v1.75.1.zip
+/kls_database.db
+/opdsko.tar

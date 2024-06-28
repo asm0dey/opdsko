@@ -89,15 +89,12 @@ fun main(args: Array<String>) {
         val arch = if (os != null) {
             when {
                 osArch.contains("64") -> when (os) {
-                    "linux" -> "_amd64"
-                    "win" -> "64"
-                    "darwin" -> "amd64"
+                    "linux", "win", "darwin" -> "amd64"
                     else -> error("Unsupported platform")
                 }
 
                 osArch.contains("86") -> when (os) {
-                    "linux" -> "_i386"
-                    "win" -> "32"
+                    "linux", "win" -> "386"
                     else -> error("Unsupported platform")
                 }
 
@@ -108,14 +105,14 @@ fun main(args: Array<String>) {
             }
         } else null
         if (arch != null) {
-            val targetFile = "fb2c_$FB2C_VERSION.zip"
+            val targetFile = "fb2c-$FB2C_VERSION.zip"
             if (!File(targetFile).exists()) {
                 println(
                     "It seems that there is no archive of fb2c next to the executable,\n" +
                             "downloading it…"
                 )
                 downloadFile(
-                    URI("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c_$os$arch.zip").toURL(),
+                    URI("https://github.com/rupor-github/fb2converter/releases/download/$FB2C_VERSION/fb2c-$os-$arch.zip").toURL(),
                     targetFile
                 )
                 println(
@@ -207,55 +204,7 @@ fun genreNames(): Map<String, String> {
 fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolean = false) {
     require(!inpxMode || (inpxMode && ext == null))
     if (inpxMode) {
-        val inpx = File(libraryRoot).listFiles { it -> it.name.endsWith(".inpx") }?.first()
-        require(inpx != null) { ".inpx should be located in the scan root" }
-        val inpxData = InpxParser.scan(inpx.absolutePath)
-        val files = File(libraryRoot)
-            .walkTopDown()
-            .filter { it.name.endsWith(".zip") }
-            .flatMap {
-                val zip = ZipFile(it)
-                zip.fileHeaders.map {
-                    Triple(
-                        zip.file.absolutePath,
-                        it.fileName,
-                        it.fileName.substringAfterLast('/').substringBeforeLast(".fb2").toIntOrNull()
-                    )
-                }
-            }
-            .filterNot { it.third == null }
-            .associateBy { it.third }
-            .mapValues { (_, b) -> b.first to b.second }
-        create.transaction { txConfig ->
-            for ((key, value) in files) {
-                Logger.info { "Processing book $key" }
-                val fb = inpxData[key] ?: continue
-                val authors = fb.authors.map {
-                    Person().apply {
-                        lastName = it.names.firstOrNull()
-                        firstName = it.names.getOrNull(1)
-                        middleName = it.names.getOrNull(2)
-                    }
-                }
-                txConfig.saveBook(
-                    bookPath = value.second,
-                    archive = value.first,
-                    title = fb.title,
-                    date = fb.date,
-                    seqName = fb.bookSequence?.name,
-                    seqNo = fb.bookSequence?.no,
-                    lang = fb.lang,
-                    authors = authors,
-                    genres = fb.genres
-                )
-            }
-            try {
-                updateSequenceIds(txConfig)
-            } catch (e: Exception) {
-                Logger.error(e) { "Error while updating sequence ids" }
-            }
-        }
-        return
+        return handleInpx(libraryRoot, create)
     }
     if (ext == null || ext == "fb2")
         create.transaction { txCtx ->
@@ -313,6 +262,61 @@ fun scan(libraryRoot: String, create: DSLContext, ext: String?, inpxMode: Boolea
             }
             updateSequenceIds(txCtx)
         }
+}
+
+private fun handleInpx(libraryRoot: String, create: DSLContext) {
+    val inpx = File(libraryRoot).listFiles { it -> it.name.endsWith(".inpx") }?.first()
+    require(inpx != null) { ".inpx should be located in the scan root" }
+    val inpxData = InpxParser.scan(inpx.absolutePath)[true]!!
+    val files = File(libraryRoot)
+        .walkTopDown()
+        .filter { it.name.endsWith(".zip") }
+        .flatMap {
+            val zip = ZipFile(it)
+            zip.fileHeaders.map {
+                Triple(
+                    zip.file.absolutePath,
+                    it.fileName,
+                    it.fileName.substringAfterLast('/').substringBeforeLast(".fb2").toIntOrNull()
+                )
+            }
+        }
+        .filterNot { it.third == null }
+        .associateBy { it.third }
+        .mapValues { (_, b) -> b.first to b.second }
+    create.transaction { txConfig ->
+        for ((key, value) in files) {
+            Logger.info { "Processing book $key" }
+            val fb = inpxData[key] ?: continue
+            val authors = fb.authors.map {
+                Person().apply {
+                    lastName = it.names.firstOrNull()
+                    firstName = it.names.getOrNull(1)
+                    middleName = it.names.getOrNull(2)
+                }
+            }
+            txConfig.saveBook(
+                bookPath = value.second,
+                archive = value.first,
+                title = fb.title,
+                date = fb.date,
+                seqName = fb.bookSequence?.name,
+                seqNo = fb.bookSequence?.no,
+                lang = fb.lang,
+                authors = authors,
+                genres = fb.genres
+            )
+        }
+        try {
+            updateSequenceIds(txConfig)
+        } catch (e: Exception) {
+            Logger.error(e) { "Error while updating sequence ids" }
+        }
+    }
+    create.transaction { txConfig ->
+        val deleted = InpxParser.scan(inpx.absolutePath)[false] ?: return@transaction
+        using(txConfig).deleteFrom(BOOK).where(BOOK.ID.`in`(deleted.keys.map { it.toLong() }))
+    }
 }
 
 private fun updateSequenceIds(txConfig: Configuration) {

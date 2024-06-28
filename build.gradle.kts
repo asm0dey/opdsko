@@ -1,6 +1,6 @@
+import java.util.*
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jooq.meta.jaxb.Logging
-import java.util.*
 
 plugins {
     java
@@ -10,11 +10,13 @@ plugins {
     alias(libs.plugins.jooq)
     alias(libs.plugins.org.flywaydb.flyway)
     alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
-    alias(libs.plugins.graalvm)
+    alias(libs.plugins.io.ktor.plugin)
 }
 
 group = "io.github.asm0dey"
+
 version = "2.0.1"
+
 application {
     mainClass.set("io.github.asm0dey.ApplicationKt")
 
@@ -25,15 +27,16 @@ application {
 repositories {
     mavenCentral()
     maven { url = uri("https://jitpack.io") }
+}
 
-}
 val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
-val tcnativeClassifier = when {
-    osName.contains("win") -> "windows-x86_64"
-    osName.contains("linux") -> "linux-x86_64"
-    osName.contains("mac") -> "osx-x86_64"
-    else -> null
-}
+val tcnativeClassifier =
+        when {
+            osName.contains("win") -> "windows-x86_64"
+            osName.contains("linux") -> "linux-x86_64"
+            osName.contains("mac") -> "osx-x86_64"
+            else -> null
+        }
 
 dependencies {
     implementation(libs.kotlinx.coroutines.reactor)
@@ -55,7 +58,9 @@ dependencies {
     // http2
     implementation(libs.netty.tcnative)
     if (tcnativeClassifier != null) {
-        implementation("io.netty:netty-tcnative-boringssl-static:${libs.versions.netty.tcnative.get()}:$tcnativeClassifier")
+        implementation(
+                "io.netty:netty-tcnative-boringssl-static:${libs.versions.netty.tcnative.get()}:$tcnativeClassifier"
+        )
     } else {
         implementation(libs.netty.tcnative.boringssl.static)
     }
@@ -67,7 +72,6 @@ dependencies {
     implementation(libs.jooq.kotlin)
     implementation(libs.sqlite.jdbc)
     jooqCodegen(libs.sqlite.jdbc)
-    nativeImageClasspath(libs.sqlite.jdbc)
     // utils
     implementation(libs.commons.codec)
     implementation(libs.kotlin.process)
@@ -91,25 +95,18 @@ dependencies {
     implementation(libs.bulma)
 }
 
-configure<SourceSetContainer> {
-    named("main") {
-        java.srcDir("src/main/kotlin")
-    }
-}
+configure<SourceSetContainer> { named("main") { java.srcDir("src/main/kotlin") } }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
-    }
+    jvmToolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
 }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
+
 val jooqDb = mapOf("url" to "jdbc:sqlite:$projectDir/build/db/opds.db")
 
 flyway {
@@ -118,43 +115,45 @@ flyway {
     mixed = true
 }
 
-tasks.compileKotlin.configure {
-    dependsOn(tasks.named("jooqCodegen"))
-}
+tasks.compileKotlin.configure { dependsOn(tasks.named("jooqCodegen")) }
 
 sourceSets {
-    //add a flyway sourceSet
+    // add a flyway sourceSet
     val flyway by creating {
         compileClasspath += sourceSets.main.get().compileClasspath
         runtimeClasspath += sourceSets.main.get().runtimeClasspath
     }
-    //main sourceSet depends on the output of flyway sourceSet
-    main {
-        output.dir(flyway.output)
-    }
+    // main sourceSet depends on the output of flyway sourceSet
+    main { output.dir(flyway.output) }
 }
-val migrationDirs = listOf(
-    "$projectDir/src/flyway/resources/db/migration",
-    // "$projectDir/src/flyway/kotlin/db/migration" // Uncomment if we'll add kotlin migrations
-)
+
+val migrationDirs =
+        listOf(
+                "$projectDir/src/flyway/resources/db/migration",
+                // "$projectDir/src/flyway/kotlin/db/migration" // Uncomment if we'll add kotlin
+                // migrations
+                )
+
 tasks.flywayMigrate {
     dependsOn("flywayClasses")
     migrationDirs.forEach { inputs.dir(it) }
-    outputs.dirs("${project.layout.buildDirectory}/generated/flyway", "${project.layout.buildDirectory}/db")
+    outputs.dirs(
+            "${project.layout.buildDirectory}/generated/flyway",
+            "${project.layout.buildDirectory}/db"
+    )
     doFirst {
         logger.info("Deleting old")
         delete(outputs.files)
-        logger.info("Creating directory ${project.layout.buildDirectory}/db with result ${File("$projectDir/build/db").mkdirs()}")
-
+        logger.info(
+                "Creating directory ${project.layout.buildDirectory}/db with result ${File("$projectDir/build/db").mkdirs()}"
+        )
     }
 }
 
 jooq {
     configuration {
         logging = Logging.WARN
-        jdbc {
-            url = jooqDb["url"]
-        }
+        jdbc { url = jooqDb["url"] }
         generator {
             name = "org.jooq.codegen.KotlinGenerator"
             generate {
@@ -202,17 +201,10 @@ jooq {
     }
 }
 
-graalvmNative {
-    agent {
-        enabled.set(true)
-    }
-    toolchainDetection.set(true)
-    binaries {
-        named("main") {
-            imageName.set("opdsko")
-            verbose.set(true)
-            fallback.set(false)
-            useFatJar.set(true)
-        }
+ktor {
+    docker {
+        localImageName.set("opdsko")
+        jreVersion.set(JavaVersion.VERSION_21)
     }
 }
+
