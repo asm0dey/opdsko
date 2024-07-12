@@ -81,7 +81,7 @@ slf4j-tinylog = "org.tinylog:slf4j-tinylog:2.7.0"
 tinylog-impl = "org.tinylog:tinylog-impl:2.7.0"
 ##                                   ⬆ :2.8.0-M1"
 
-htmx-org = "org.webjars.npm:htmx.org:2.0.0"
+htmx-org = "org.webjars.npm:htmx.org:2.0.1"
 
 hyperscript-org = "org.webjars.npm:hyperscript.org:0.9.12"
 
