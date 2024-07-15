@@ -60,7 +60,7 @@ jooq-kotlin = "org.jooq:jooq-kotlin:3.19.10"
 
 sqlite-jdbc = "org.xerial:sqlite-jdbc:3.46.0.0"
 
-commons-codec = "commons-codec:commons-codec:1.17.0"
+commons-codec = "commons-codec:commons-codec:1.17.1"
 
 jsoup = "org.jsoup:jsoup:1.17.2"
 
