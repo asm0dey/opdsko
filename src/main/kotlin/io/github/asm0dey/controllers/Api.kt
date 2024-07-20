@@ -375,7 +375,7 @@ class Api(application: Application) : AbstractDIController(application) {
                     BreadCrumbs(
                         "Library" to "/api",
                         "Series" to "/api/series/browse",
-                        books.first().sequence to "/api/series/item/$seqId"
+                        books.first().sequence!! to "/api/series/item/$seqId"
                     )
                 return@get smartHtml(call, x, y)
             }

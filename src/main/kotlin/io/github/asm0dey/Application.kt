@@ -315,7 +315,9 @@ private fun handleInpx(libraryRoot: String, create: DSLContext) {
     }
     create.transaction { txConfig ->
         val deleted = InpxParser.scan(inpx.absolutePath)[false] ?: return@transaction
-        using(txConfig).deleteFrom(BOOK).where(BOOK.ID.`in`(deleted.keys.map { it.toLong() }))
+        deleted.keys.map { it.toLong() }.chunked(100).forEach {
+            using(txConfig).deleteFrom(BOOK).where(BOOK.ID.`in`(it))
+        }
     }
 }
 

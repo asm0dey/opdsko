@@ -62,7 +62,13 @@ value class BookWithInfo(val record: Record5<Long?, MutableList<Book>, MutableLi
     val id
         get() = record.get(BOOK.ID)!!
     val sequence
-        get() = record.get(BOOK.SEQUENCE)!!
+        get() = record.get(BOOK.SEQUENCE)
+
+    operator fun component1(): IBook = book
+    operator fun component2(): List<IAuthor> = authors
+    operator fun component3(): List<Pair<String, Long>> = genres
+    operator fun component4(): Long = id
+    operator fun component5(): String? = sequence
 }
 
 @Suppress("unused")

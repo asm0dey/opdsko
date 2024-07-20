@@ -339,7 +339,7 @@ class Simple(app: Application) : AbstractDIController(app) {
                     breadCrumbs(
                         "Library" to "/simple",
                         "Series" to "/simple/series/browse",
-                        books.first().sequence to "/simple/series/item/$seqId"
+                        books.first().sequence!! to "/simple/series/item/$seqId"
                     )
                 return@get call.respondHtml { fullHtml(y, x, pagination(1, 1, "")) }
             }
