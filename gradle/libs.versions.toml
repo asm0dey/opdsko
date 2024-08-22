@@ -10,7 +10,7 @@ nu-studer-jooq = { id = "nu.studer.jooq", version = "9.0" }
 
 jooq = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.10" }
 
-org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "10.16.0" }
+org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "10.17.2" }
 
 org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
