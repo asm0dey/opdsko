@@ -374,13 +374,15 @@ class Simple(app: Application) : AbstractDIController(app) {
             meta(charset = "utf-8")
             meta(name = "viewport", content = "width=device-width, initial-scale=1")
             title("Asm0dey's library")
-            link(rel = "stylesheet", href = "/webjars/bulma/css/bulma.min.css")
-            link(rel = "stylesheet", href = "/webjars/font-awesome/css/all.min.css")
+            link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bulma@1.0.1/css/bulma.min.css")
+            link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css")
 //            script(src = "/webjars/htmx.org/dist/htmx.min.js") {
 //                defer = true
 //            }
-            script(src = "/webjars/hyperscript.org/dist/_hyperscript.min.js") {
-                defer = true
+            script(type = "module"){
+                unsafe {
+                    raw("import hyperscript from 'https://cdn.jsdelivr.net/npm/hyperscript/+esm'")
+                }
             }
         }
         body {

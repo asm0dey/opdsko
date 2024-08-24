@@ -8,7 +8,7 @@ import io.github.asm0dey.opdsko.jooq.DefaultSchema
 import io.github.asm0dey.opdsko.jooq.indexes.GENRE_NAME
 import io.github.asm0dey.opdsko.jooq.keys.BOOK_GENRE__FK_BOOK_GENRE_PK_GENRE
 import io.github.asm0dey.opdsko.jooq.keys.GENRE__PK_GENRE
-import io.github.asm0dey.opdsko.jooq.keys.GENRE__UK_GENRE_113431810
+import io.github.asm0dey.opdsko.jooq.keys.GENRE__UK_GENRE_1_134034859
 import io.github.asm0dey.opdsko.jooq.tables.Book.BookPath
 import io.github.asm0dey.opdsko.jooq.tables.BookGenre.BookGenrePath
 import io.github.asm0dey.opdsko.jooq.tables.records.GenreRecord
@@ -123,7 +123,7 @@ open class Genre(
     override fun getIndexes(): List<Index> = listOf(GENRE_NAME)
     override fun getIdentity(): Identity<GenreRecord, Long?> = super.getIdentity() as Identity<GenreRecord, Long?>
     override fun getPrimaryKey(): UniqueKey<GenreRecord> = GENRE__PK_GENRE
-    override fun getUniqueKeys(): List<UniqueKey<GenreRecord>> = listOf(GENRE__UK_GENRE_113431810)
+    override fun getUniqueKeys(): List<UniqueKey<GenreRecord>> = listOf(GENRE__UK_GENRE_1_134034859)
 
     private lateinit var _bookGenre: BookGenrePath
 

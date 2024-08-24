@@ -31,7 +31,7 @@ val BOOK__PK_BOOK: UniqueKey<BookRecord> = Internal.createUniqueKey(Book.BOOK, D
 val BOOK_AUTHOR__PK_BOOK_AUTHOR: UniqueKey<BookAuthorRecord> = Internal.createUniqueKey(BookAuthor.BOOK_AUTHOR, DSL.name("pk_book_author"), arrayOf(BookAuthor.BOOK_AUTHOR.BOOK_ID, BookAuthor.BOOK_AUTHOR.AUTHOR_ID), true)
 val BOOK_GENRE__PK_BOOK_GENRE: UniqueKey<BookGenreRecord> = Internal.createUniqueKey(BookGenre.BOOK_GENRE, DSL.name("pk_book_genre"), arrayOf(BookGenre.BOOK_GENRE.BOOK_ID, BookGenre.BOOK_GENRE.GENRE_ID), true)
 val GENRE__PK_GENRE: UniqueKey<GenreRecord> = Internal.createUniqueKey(Genre.GENRE, DSL.name("pk_genre"), arrayOf(Genre.GENRE.ID), true)
-val GENRE__UK_GENRE_113431810: UniqueKey<GenreRecord> = Internal.createUniqueKey(Genre.GENRE, DSL.name("uk_genre_113431810"), arrayOf(Genre.GENRE.NAME), true)
+val GENRE__UK_GENRE_1_134034859: UniqueKey<GenreRecord> = Internal.createUniqueKey(Genre.GENRE, DSL.name("uk_genre_1_134034859"), arrayOf(Genre.GENRE.NAME), true)
 
 // -------------------------------------------------------------------------
 // FOREIGN KEY definitions

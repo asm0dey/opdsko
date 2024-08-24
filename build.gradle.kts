@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.org.flywaydb.flyway)
     alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
     alias(libs.plugins.io.ktor.plugin)
+    alias(libs.plugins.graalvm)
 }
 
 group = "io.github.asm0dey"
@@ -31,12 +32,12 @@ repositories {
 
 val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
 val tcnativeClassifier =
-        when {
-            osName.contains("win") -> "windows-x86_64"
-            osName.contains("linux") -> "linux-x86_64"
-            osName.contains("mac") -> "osx-x86_64"
-            else -> null
-        }
+    when {
+        osName.contains("win") -> "windows-x86_64"
+        osName.contains("linux") -> "linux-x86_64"
+        osName.contains("mac") -> "osx-x86_64"
+        else -> null
+    }
 
 dependencies {
     implementation(libs.kotlinx.coroutines.reactor)
@@ -54,12 +55,15 @@ dependencies {
     implementation(libs.ktor.server.resources)
     implementation(libs.ktor.server.webjars)
     testImplementation(libs.ktor.server.tests.jvm)
+    //cache
+//    implementation(libs.caffeine)
+//    implementation(libs.rocksdb)
     implementation(libs.zip4j)
     // http2
     implementation(libs.netty.tcnative)
     if (tcnativeClassifier != null) {
         implementation(
-                "io.netty:netty-tcnative-boringssl-static:${libs.versions.netty.tcnative.get()}:$tcnativeClassifier"
+            "io.netty:netty-tcnative-boringssl-static:${libs.versions.netty.tcnative.get()}:$tcnativeClassifier"
         )
     } else {
         implementation(libs.netty.tcnative.boringssl.static)
@@ -75,7 +79,11 @@ dependencies {
     // utils
     implementation(libs.commons.codec)
     implementation(libs.kotlin.process)
-    implementation(libs.ehcache)
+    implementation(libs.ehcache) {
+        capabilities {
+            requireCapability("org.ehcache:ehcache-jakarta")
+        }
+    }
     // xml
     implementation(libs.jsoup)
     implementation(libs.jaxb.runtime)
@@ -98,13 +106,21 @@ dependencies {
 configure<SourceSetContainer> { named("main") { java.srcDir("src/main/kotlin") } }
 
 kotlin {
-    jvmToolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
-    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(22))
+        vendor.set(JvmVendorSpec.BELLSOFT)
+    }
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_22) }
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_22
+    targetCompatibility = JavaVersion.VERSION_22
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of("22"))
+        vendor.set(JvmVendorSpec.BELLSOFT)
+    }
+
 }
 
 val jooqDb = mapOf("url" to "jdbc:sqlite:$projectDir/build/db/opds.db")
@@ -128,24 +144,24 @@ sourceSets {
 }
 
 val migrationDirs =
-        listOf(
-                "$projectDir/src/flyway/resources/db/migration",
-                // "$projectDir/src/flyway/kotlin/db/migration" // Uncomment if we'll add kotlin
-                // migrations
-                )
+    listOf(
+        "$projectDir/src/flyway/resources/db/migration",
+        // "$projectDir/src/flyway/kotlin/db/migration" // Uncomment if we'll add kotlin
+        // migrations
+    )
 
 tasks.flywayMigrate {
     dependsOn("flywayClasses")
     migrationDirs.forEach { inputs.dir(it) }
     outputs.dirs(
-            "${project.layout.buildDirectory}/generated/flyway",
-            "${project.layout.buildDirectory}/db"
+        "${project.layout.buildDirectory}/generated/flyway",
+        "${project.layout.buildDirectory}/db"
     )
     doFirst {
         logger.info("Deleting old")
         delete(outputs.files)
         logger.info(
-                "Creating directory ${project.layout.buildDirectory}/db with result ${File("$projectDir/build/db").mkdirs()}"
+            "Creating directory ${project.layout.buildDirectory}/db with result ${File("$projectDir/build/db").mkdirs()}"
         )
     }
 }
@@ -208,3 +224,34 @@ ktor {
     }
 }
 
+graalvmNative {
+    toolchainDetection.set(true)
+    binaries {
+        named("main") {
+            useFatJar.set(false)
+            javaLauncher.set(javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of("22"))
+                vendor.set(JvmVendorSpec.BELLSOFT)
+            })
+            fallback.set(false)
+            verbose.set(true)
+//            buildArgs.add("--initialize-at-build-time=io.ktor,kotlin")
+
+            buildArgs.add("-H:+InstallExitHandlers")
+            buildArgs.add("-H:+ReportUnsupportedElementsAtRuntime")
+            buildArgs.add("-H:+ReportExceptionStackTraces")
+            buildArgs.add("--initialize-at-build-time=org.sqlite.util.ProcessRunner")
+            buildArgs.add("--initialize-at-build-time=io.netty.handler.codec.http.HttpResponseStatus")
+            buildArgs.add("--enable-url-protocols=https")
+
+            imageName.set("opdsko")
+        }
+    }
+
+    tasks.withType<Test>().configureEach {
+        useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
+    }
+}

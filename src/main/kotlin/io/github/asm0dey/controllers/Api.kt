@@ -28,7 +28,6 @@ import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.routing.get
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.kodein.di.instance
@@ -646,8 +645,10 @@ class Api(application: Application) : AbstractDIController(application) {
             meta(charset = "utf-8")
             meta(name = "viewport", content = "width=device-width, initial-scale=1")
             title("Asm0dey's library")
-            link(rel = "stylesheet", href = "/webjars/bulma/css/bulma.min.css")
-            link(rel = "stylesheet", href = "/webjars/font-awesome/css/all.min.css")
+//            link(rel = "stylesheet", href = "/webjars/bulma/css/bulma.min.css")
+//            link(rel = "stylesheet", href = "/webjars/font-awesome/css/all.min.css")
+            link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bulma@1.0.1/css/bulma.min.css")
+            link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css")
 
             link(href = "/apple-touch-icon.png", rel = "apple-touch-icon") {
                 sizes = "180x180"
@@ -728,8 +729,13 @@ class Api(application: Application) : AbstractDIController(application) {
             div {
                 id = "modal-cont"
             }
-            script(src = "/webjars/htmx.org/dist/htmx.min.js") {}
-            script(src = "/webjars/hyperscript.org/dist/_hyperscript.min.js") {}
+            script(src = "https://cdn.jsdelivr.net/npm/htmx.org/dist/htmx.min.js") {}
+//            script(src = "/webjars/hyperscript.org/dist/_hyperscript.min.js") {}
+            script(type = "module"){
+                unsafe {
+                    raw("import hyperscript from 'https://cdn.jsdelivr.net/npm/hyperscript/+esm'")
+                }
+            }
         }
     }
 

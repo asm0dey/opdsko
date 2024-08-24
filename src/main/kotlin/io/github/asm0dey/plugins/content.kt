@@ -18,8 +18,7 @@
 package io.github.asm0dey.plugins
 
 import io.ktor.server.application.*
-import io.ktor.server.webjars.*
 
 fun Application.content() {
-    install(Webjars)
+//    install(Webjars)
 }

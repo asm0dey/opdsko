@@ -122,22 +122,7 @@ open class BookAuthor(
     override fun getSchema(): Schema? = if (aliased()) null else DefaultSchema.DEFAULT_SCHEMA
     override fun getIndexes(): List<Index> = listOf(BOOK_AUTHOR_AUTHOR_ID, BOOK_AUTHOR_BOOK_ID)
     override fun getPrimaryKey(): UniqueKey<BookAuthorRecord> = BOOK_AUTHOR__PK_BOOK_AUTHOR
-    override fun getReferences(): List<ForeignKey<BookAuthorRecord, *>> = listOf(BOOK_AUTHOR__FK_BOOK_AUTHOR_PK_BOOK, BOOK_AUTHOR__FK_BOOK_AUTHOR_PK_AUTHOR)
-
-    private lateinit var _book: BookPath
-
-    /**
-     * Get the implicit join path to the <code>book</code> table.
-     */
-    fun book(): BookPath {
-        if (!this::_book.isInitialized)
-            _book = BookPath(this, BOOK_AUTHOR__FK_BOOK_AUTHOR_PK_BOOK, null)
-
-        return _book;
-    }
-
-    val book: BookPath
-        get(): BookPath = book()
+    override fun getReferences(): List<ForeignKey<BookAuthorRecord, *>> = listOf(BOOK_AUTHOR__FK_BOOK_AUTHOR_PK_AUTHOR, BOOK_AUTHOR__FK_BOOK_AUTHOR_PK_BOOK)
 
     private lateinit var _author: AuthorPath
 
@@ -153,6 +138,21 @@ open class BookAuthor(
 
     val author: AuthorPath
         get(): AuthorPath = author()
+
+    private lateinit var _book: BookPath
+
+    /**
+     * Get the implicit join path to the <code>book</code> table.
+     */
+    fun book(): BookPath {
+        if (!this::_book.isInitialized)
+            _book = BookPath(this, BOOK_AUTHOR__FK_BOOK_AUTHOR_PK_BOOK, null)
+
+        return _book;
+    }
+
+    val book: BookPath
+        get(): BookPath = book()
     override fun `as`(alias: String): BookAuthor = BookAuthor(DSL.name(alias), this)
     override fun `as`(alias: Name): BookAuthor = BookAuthor(alias, this)
     override fun `as`(alias: Table<*>): BookAuthor = BookAuthor(alias.qualifiedName, this)
