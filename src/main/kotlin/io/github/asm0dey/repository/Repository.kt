@@ -28,7 +28,6 @@ import java.time.LocalDateTime
 import kotlin.sequences.Sequence
 
 class Repository(val create: DSLContext) {
-    private val genres by lazy { genreNames() }
     fun seriesByAuthorId(authorId: Long): Map<Pair<Int, String>, Pair<LocalDateTime, Int>> {
         val latestBookInSeq = max(BOOK.ADDED)
         val booksInSeries = count(BOOK.ID)
@@ -58,9 +57,6 @@ class Repository(val create: DSLContext) {
             .where(GENRE.book.ID.eq(BOOK.ID))
     ).`as`("genres").convertFrom { it.toList() }
 
-    private fun Result<Record1<String>>.toList(): List<String> =
-        collect(Records.intoList())
-
     private val bookById = run {
         val bookAlias = BOOK.`as`("b")
         multiset(selectFrom(bookAlias).where(bookAlias.ID.eq(BOOK.ID)))
@@ -69,8 +65,7 @@ class Repository(val create: DSLContext) {
 
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun getBookWithInfo(): SelectJoinStep<Record5<Long?, MutableList<Book>, MutableList<Author>, List<Record2<String?, Long?>>, String?>> =
+    private fun getBookWithInfo(): SelectJoinStep<Record5<Long?, MutableList<Book>, MutableList<Author>, List<Record2<String?, Long?>>, String?>> =
         create
             .selectDistinct(
                 BOOK.ID,
@@ -292,8 +287,8 @@ class Repository(val create: DSLContext) {
             .leftJoin(GENRE.book)
             .groupBy(GENRE.ID)
             .fetch { Triple(it[GENRE.ID]!!, it[genreName]!!, it[bookCount]) }
-            .groupBy { genres.containsKey(it.second) }
-        val def = map[true]?.map { (a, b, c) -> Triple(a, genres[b]!!, c) }?.sortedBy { it.second } ?: listOf()
+            .groupBy { genreNames.containsKey(it.second) }
+        val def = map[true]?.map { (a, b, c) -> Triple(a, genreNames[b]!!, c) }?.sortedBy { it.second } ?: listOf()
         val undef = map[false]?.sortedBy { it.second } ?: listOf()
         return def + undef
     }
@@ -321,7 +316,7 @@ class Repository(val create: DSLContext) {
     }
 
     private fun genreName(it: Record): String =
-        genres[it[GENRE.NAME]] ?: it[GENRE.NAME]!!
+        genreNames[it[GENRE.NAME]] ?: it[GENRE.NAME]!!
 
     fun booksByGenreAndAuthor(genreId: Long, authorId: Long): Pair<String, List<BookWithInfo>> {
         val authorName = authorName(authorId)
