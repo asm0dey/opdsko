@@ -47,7 +47,7 @@ val String.encoded get() = this.encodeURLPath()
 class Api(application: Application) : AbstractDIController(application) {
     private val info by instance<InfoService>()
     override fun Route.getRoutes() {
-        route("/api") {
+        route("/api")
             get {
                 val x = createHTML(false).div("grid") {
                     NavTile("New books", "Recent publications from this catalog", "/api/new")
@@ -445,7 +445,7 @@ class Api(application: Application) : AbstractDIController(application) {
                                 attributes["hx-swap"] = "innerHTML show:.input:top"
                                 attributes["hx-target"] = "#modal-cont"
                                 attributes["_"] = "on htmx:afterOnLoad wait 10ms then add .is-active to #modal"
-                                img(src = "/opds/image/${bookWithInfo.id}") {
+                                img(src = "/opds/imag       e/${bookWithInfo.id}") {
                                     attributes["loading"] = "lazy"
                                 }
                             }
@@ -730,12 +730,14 @@ class Api(application: Application) : AbstractDIController(application) {
                 id = "modal-cont"
             }
             script(src = "https://cdn.jsdelivr.net/npm/htmx.org/dist/htmx.min.js") {}
-//            script(src = "/webjars/hyperscript.org/dist/_hyperscript.min.js") {}
+            script(src = "https://unpkg.com/hyperscript.org@0.9.12") {}
+/*
             script(type = "module"){
                 unsafe {
                     raw("import hyperscript from 'https://cdn.jsdelivr.net/npm/hyperscript/+esm'")
                 }
             }
+*/
         }
     }
 
