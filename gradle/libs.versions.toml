@@ -52,7 +52,7 @@ netty-tcnative-boringssl-static = "io.netty:netty-tcnative-boringssl-static:2.0.
 
 kodein-di-framework-ktor-server-controller-jvm = { group = "org.kodein.di", name = "kodein-di-framework-ktor-server-controller-jvm", version.ref = "kodein-di" }
 
-hikaricp = "com.zaxxer:HikariCP:5.1.0"
+hikaricp = "com.zaxxer:HikariCP:6.0.0"
 
 flyway-core = "org.flywaydb:flyway-core:10.17.3"
 
