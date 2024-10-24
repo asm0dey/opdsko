@@ -10,7 +10,7 @@ nu-studer-jooq = { id = "nu.studer.jooq", version = "9.0" }
 
 jooq = { id = "org.jooq.jooq-codegen-gradle", version = "3.19.11" }
 
-org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "10.17.3" }
+org-flywaydb-flyway = { id = "org.flywaydb.flyway", version = "10.20.1" }
 
 org-jetbrains-kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
@@ -54,7 +54,7 @@ kodein-di-framework-ktor-server-controller-jvm = { group = "org.kodein.di", name
 
 hikaricp = "com.zaxxer:HikariCP:5.1.0"
 
-flyway-core = "org.flywaydb:flyway-core:10.17.3"
+flyway-core = "org.flywaydb:flyway-core:10.20.1"
 
 jooq-kotlin = "org.jooq:jooq-kotlin:3.19.11"
 
