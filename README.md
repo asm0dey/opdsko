@@ -1,4 +1,8 @@
 # opdsko
+
+This repo is way outdated; consider using [Grimmory](https://grimmory.org/) instead. It's better in roughly everything, except it doesn't support flibusta archives, but this is not too big of a deal.
+
+
 OPDS server for FB2 files
 
 ## Goal
